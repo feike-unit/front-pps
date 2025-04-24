@@ -1,0 +1,68 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* 覆盖 antd 默认样式 */
+.ant-layout {
+  min-height: 100vh;
+}
+
+.ant-layout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px !important;
+}
+
+.ant-layout-content {
+  margin: 24px 16px;
+  padding: 24px;
+  background: #fff;
+  min-height: 280px;
+}
+
+/* 表格样式优化 */
+.ant-table-wrapper {
+  background: #fff;
+  padding: 24px;
+  border-radius: 2px;
+}
+
+/* 表单样式优化 */
+.ant-form-item-label {
+  font-weight: 500;
+}
+
+/* 按钮样式优化 */
+.ant-btn {
+  border-radius: 2px;
+}
+
+/* 卡片样式优化 */
+.ant-card {
+  border-radius: 2px;
+}
+
+/* 统计数字样式优化 */
+.ant-statistic-title {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.ant-statistic-content {
+  font-size: 24px;
+  font-weight: 600;
+} 
