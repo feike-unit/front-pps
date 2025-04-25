@@ -4,7 +4,6 @@ import { lazy } from 'react';
 const Login = lazy(() => import('./pages/Login'));
 const MainLayout = lazy(() => import('./layouts/MainLayout'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const UserManagement = lazy(() => import('./pages/UserManagement'));
 const ProjectManagement = lazy(() => import('./pages/ProjectManagement'));
 // 系统管理
 const SystemUserManagement = lazy(() => import('./pages/system/UserManagement'));

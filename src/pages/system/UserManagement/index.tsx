@@ -34,8 +34,8 @@ const UserManagement: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const result = await getUsers();
-      setUsers(result);
+      const result = await getUsers({ pageNum: 1, pageSize: 10 });
+      setUsers(result.list);
     } catch (error) {
       message.error('获取用户列表失败');
     } finally {
@@ -249,7 +249,6 @@ const UserManagement: React.FC = () => {
             name="username"
             label="用户名"
             rules={[{ required: true, message: '请输入用户名' }]}
-            disabled={!!currentUser}
           >
             <Input disabled={!!currentUser} />
           </Form.Item>
