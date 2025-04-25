@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Layout, Menu, Button, theme } from 'antd';
+import type { MenuProps } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -25,16 +26,11 @@ const MainLayout: React.FC = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  const menuItems = [
+  const menuItems: MenuProps['items'] = [
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: '仪表盘',
-    },
-    {
-      key: '/users',
-      icon: <UserOutlined />,
-      label: '用户管理',
     },
     {
       key: '/projects',
@@ -61,14 +57,11 @@ const MainLayout: React.FC = () => {
           icon: <MenuOutlined />,
           label: '菜单管理',
         },
-      ]
-    },
+      ],
+    }
   ];
 
-  const handleMenuClick = ({ key }: { key: string }) => {
-    if (key === location.pathname || !key.startsWith('/')) {
-      return;
-    }
+  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     navigate(key);
   };
 

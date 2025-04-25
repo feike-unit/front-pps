@@ -29,10 +29,6 @@ export const routes: RouteObject[] = [
         element: <Dashboard />,
       },
       {
-        path: 'users',
-        element: <UserManagement />,
-      },
-      {
         path: 'projects',
         element: <ProjectManagement />,
       },
