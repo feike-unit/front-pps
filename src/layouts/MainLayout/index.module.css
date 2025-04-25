@@ -2,15 +2,15 @@
   height: 32px;
   margin: 16px;
   color: white;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
-  text-align: center;
-  line-height: 32px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .logoutButton {
   float: right;
-  margin: 16px 24px;
+  margin-right: 16px;
 } 

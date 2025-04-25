@@ -7,9 +7,13 @@ import {
   UserOutlined,
   ProjectOutlined,
   LogoutOutlined,
+  SettingOutlined,
+  TeamOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
+import { logout } from '../../services/auth';
 
 const { Header, Sider, Content } = Layout;
 
@@ -37,15 +41,44 @@ const MainLayout: React.FC = () => {
       icon: <ProjectOutlined />,
       label: '项目管理',
     },
+    {
+      key: 'system',
+      icon: <SettingOutlined />,
+      label: '系统管理',
+      children: [
+        {
+          key: '/system/users',
+          icon: <UserOutlined />,
+          label: '用户管理',
+        },
+        {
+          key: '/system/roles',
+          icon: <TeamOutlined />,
+          label: '角色管理',
+        },
+        {
+          key: '/system/menus',
+          icon: <MenuOutlined />,
+          label: '菜单管理',
+        },
+      ]
+    },
   ];
 
-  const handleMenuClick = (key: string) => {
+  const handleMenuClick = ({ key }: { key: string }) => {
+    if (key === location.pathname || !key.startsWith('/')) {
+      return;
+    }
     navigate(key);
   };
 
-  const handleLogout = () => {
-    // TODO: 实现登出逻辑
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      navigate('/login');
+    }
   };
 
   return (
@@ -56,8 +89,9 @@ const MainLayout: React.FC = () => {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
+          defaultOpenKeys={['system']}
           items={menuItems}
-          onClick={({ key }) => handleMenuClick(key)}
+          onClick={handleMenuClick}
         />
       </Sider>
       <Layout>

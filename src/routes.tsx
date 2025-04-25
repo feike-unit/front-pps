@@ -6,6 +6,10 @@ const MainLayout = lazy(() => import('./layouts/MainLayout'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
 const ProjectManagement = lazy(() => import('./pages/ProjectManagement'));
+// 系统管理
+const SystemUserManagement = lazy(() => import('./pages/system/UserManagement'));
+const RoleManagement = lazy(() => import('./pages/system/RoleManagement'));
+const MenuManagement = lazy(() => import('./pages/system/MenuManagement'));
 
 export const routes: RouteObject[] = [
   {
@@ -31,6 +35,19 @@ export const routes: RouteObject[] = [
       {
         path: 'projects',
         element: <ProjectManagement />,
+      },
+      // 系统管理路由
+      {
+        path: 'system/users',
+        element: <SystemUserManagement />,
+      },
+      {
+        path: 'system/roles',
+        element: <RoleManagement />,
+      },
+      {
+        path: 'system/menus',
+        element: <MenuManagement />,
       },
     ],
   },

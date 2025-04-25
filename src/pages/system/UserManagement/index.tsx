@@ -13,8 +13,8 @@ import {
   Popconfirm,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined } from '@ant-design/icons';
-import { User, getUsers, createUser, updateUser, deleteUser, resetPassword } from '../../services/user';
-import { Role, getRoles } from '../../services/role';
+import { User, getUsers, createUser, updateUser, deleteUser, resetPassword } from '../../../services/user';
+import { Role, getRoles } from '../../../services/role';
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -341,4 +341,4 @@ const UserManagement: React.FC = () => {
   );
 };
 
-export default UserManagement; 
+export default UserManagement;
