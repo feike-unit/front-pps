@@ -40,7 +40,6 @@ api.interceptors.response.use(
     // 确保错误信息显示在控制台，方便调试
     console.error('API Error:', error);
 
-    debugger
     if (error.response) {
       const { status, data } = error.response;
       
