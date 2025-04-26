@@ -7,11 +7,15 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons';
 
+// 仪表盘组件
+// 展示系统关键指标的统计数据
 const Dashboard: React.FC = () => {
   return (
     <div>
       <h2>仪表盘</h2>
+      {/* 统计卡片网格布局 */}
       <Row gutter={16}>
+        {/* 用户统计卡片 */}
         <Col span={6}>
           <Card>
             <Statistic
@@ -21,6 +25,7 @@ const Dashboard: React.FC = () => {
             />
           </Card>
         </Col>
+        {/* 项目总数统计卡片 */}
         <Col span={6}>
           <Card>
             <Statistic
@@ -30,6 +35,7 @@ const Dashboard: React.FC = () => {
             />
           </Card>
         </Col>
+        {/* 已完成项目统计卡片 */}
         <Col span={6}>
           <Card>
             <Statistic
@@ -39,6 +45,7 @@ const Dashboard: React.FC = () => {
             />
           </Card>
         </Col>
+        {/* 进行中项目统计卡片 */}
         <Col span={6}>
           <Card>
             <Statistic

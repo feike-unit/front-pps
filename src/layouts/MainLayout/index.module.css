@@ -1,15 +1,21 @@
+/* 系统Logo样式 */
+/* 位于侧边栏顶部的Logo容器 */
 .logo {
   height: 32px;
   margin: 16px;
   color: white;
   font-size: 18px;
   font-weight: bold;
+  /* 使用flex布局使Logo水平垂直居中 */
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 半透明白色背景 */
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* 退出登录按钮样式 */
+/* 位于顶部导航栏右侧 */
 .logoutButton {
   float: right;
   margin-right: 16px;

@@ -1,23 +1,29 @@
+/* 登录页面容器样式 */
+/* 使用flex布局使登录卡片垂直水平居中 */
 .container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #f0f2f5;
+  background: #f0f2f5;  /* 浅灰色背景 */
 }
 
+/* 登录卡片样式 */
 .loginCard {
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 400px;  /* 限制最大宽度 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);  /* 添加阴影效果 */
 }
 
+/* 登录卡片标题样式 */
+/* 使用:global修饰符访问antd组件内部类名 */
 .loginCard :global(.ant-card-head-title) {
   text-align: center;
   font-size: 24px;
   font-weight: bold;
 }
 
+/* 移除表单最后一个元素的底部边距 */
 .loginCard :global(.ant-form-item:last-child) {
   margin-bottom: 0;
 } 

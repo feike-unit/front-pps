@@ -5,22 +5,30 @@ import { useNavigate } from 'react-router-dom';
 import { login } from '../../services/auth';
 import styles from './index.module.css';
 
+// 登录表单数据接口定义
 interface LoginForm {
   username: string;
   password: string;
 }
 
+// 登录页面组件
 const Login: React.FC = () => {
+  // 路由导航hook
   const navigate = useNavigate();
+  // 登录加载状态
   const [loading, setLoading] = useState(false);
 
+  // 表单提交处理函数
   const onFinish = async (values: LoginForm) => {
     try {
       setLoading(true);
+      // 调用登录API
       await login(values);
       message.success('登录成功');
+      // 登录成功后跳转到仪表盘
       navigate('/dashboard');
     } catch (error: any) {
+      // 登录失败错误处理
       message.error(error.response?.data?.message || '登录失败，请重试');
     } finally {
       setLoading(false);
@@ -36,6 +44,7 @@ const Login: React.FC = () => {
           onFinish={onFinish}
           size="large"
         >
+          {/* 用户名输入框 */}
           <Form.Item
             name="username"
             rules={[{ required: true, message: '请输入用户名' }]}
@@ -43,6 +52,7 @@ const Login: React.FC = () => {
             <Input prefix={<UserOutlined />} placeholder="用户名" />
           </Form.Item>
 
+          {/* 密码输入框 */}
           <Form.Item
             name="password"
             rules={[{ required: true, message: '请输入密码' }]}
@@ -53,6 +63,7 @@ const Login: React.FC = () => {
             />
           </Form.Item>
 
+          {/* 登录按钮 */}
           <Form.Item>
             <Button type="primary" htmlType="submit" block loading={loading}>
               登录

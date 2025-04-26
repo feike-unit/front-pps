@@ -3,25 +3,31 @@ import { Table, Button, Space, Modal, Form, Input, Select, DatePicker, message }
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
+// 项目数据接口定义
 interface Project {
-  id: number;
-  name: string;
-  manager: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-  description: string;
+  id: number;        // 项目ID
+  name: string;      // 项目名称
+  manager: string;   // 项目经理
+  status: string;    // 项目状态
+  startDate: string; // 开始日期
+  endDate: string;   // 结束日期
+  description: string; // 项目描述
 }
 
+// 解构需要的组件
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
 
+// 项目管理组件
 const ProjectManagement: React.FC = () => {
+  // 控制模态框显示状态
   const [isModalVisible, setIsModalVisible] = useState(false);
+  // 表单实例
   const [form] = Form.useForm();
+  // 当前编辑的项目数据
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
-  // 模拟数据
+  // 模拟项目数据
   const [projects] = useState<Project[]>([
     {
       id: 1,
@@ -43,6 +49,7 @@ const ProjectManagement: React.FC = () => {
     },
   ]);
 
+  // 定义表格列配置
   const columns: ColumnsType<Project> = [
     {
       title: '项目名称',
@@ -94,8 +101,10 @@ const ProjectManagement: React.FC = () => {
     },
   ];
 
+  // 处理编辑项目
   const handleEdit = (project: Project) => {
     setEditingProject(project);
+    // 设置表单初始值
     form.setFieldsValue({
       ...project,
       dates: [project.startDate, project.endDate],
@@ -103,6 +112,7 @@ const ProjectManagement: React.FC = () => {
     setIsModalVisible(true);
   };
 
+  // 处理删除项目
   const handleDelete = (project: Project) => {
     Modal.confirm({
       title: '确认删除',
@@ -113,14 +123,17 @@ const ProjectManagement: React.FC = () => {
     });
   };
 
+  // 处理添加项目
   const handleAdd = () => {
     setEditingProject(null);
     form.resetFields();
     setIsModalVisible(true);
   };
 
+  // 处理模态框确认
   const handleModalOk = () => {
     form.validateFields().then((values) => {
+      // 处理日期范围数据
       const [startDate, endDate] = values.dates;
       const projectData = {
         ...values,
@@ -136,13 +149,16 @@ const ProjectManagement: React.FC = () => {
 
   return (
     <div>
+      {/* 添加项目按钮 */}
       <div style={{ marginBottom: 16 }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
           添加项目
         </Button>
       </div>
+      {/* 项目列表表格 */}
       <Table columns={columns} dataSource={projects} rowKey="id" />
 
+      {/* 项目编辑/添加模态框 */}
       <Modal
         title={editingProject ? '编辑项目' : '添加项目'}
         open={isModalVisible}
@@ -151,6 +167,7 @@ const ProjectManagement: React.FC = () => {
         width={600}
       >
         <Form form={form} layout="vertical">
+          {/* 项目名称输入框 */}
           <Form.Item
             name="name"
             label="项目名称"
@@ -158,6 +175,7 @@ const ProjectManagement: React.FC = () => {
           >
             <Input />
           </Form.Item>
+          {/* 项目经理输入框 */}
           <Form.Item
             name="manager"
             label="项目经理"
@@ -165,6 +183,7 @@ const ProjectManagement: React.FC = () => {
           >
             <Input />
           </Form.Item>
+          {/* 项目状态选择器 */}
           <Form.Item
             name="status"
             label="状态"
@@ -177,6 +196,7 @@ const ProjectManagement: React.FC = () => {
               <Select.Option value="已暂停">已暂停</Select.Option>
             </Select>
           </Form.Item>
+          {/* 项目周期选择器 */}
           <Form.Item
             name="dates"
             label="项目周期"
@@ -184,6 +204,7 @@ const ProjectManagement: React.FC = () => {
           >
             <RangePicker style={{ width: '100%' }} />
           </Form.Item>
+          {/* 项目描述输入框 */}
           <Form.Item
             name="description"
             label="项目描述"
