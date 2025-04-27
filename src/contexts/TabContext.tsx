@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Spin } from 'antd';
 import IndexedDBUtil from '../utils/indexedDB';
 
 // 路由到标签页的映射配置
@@ -43,6 +44,7 @@ interface TabContextType {
   addTab: (tab: TabItem) => void;
   removeTab: (targetKey: string) => void;
   setActiveTab: (key: string) => void;
+  isLoading: boolean;
 }
 
 const TAB_STORAGE_KEY = 'tabs';
@@ -80,7 +82,7 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [tabs, setTabs] = useState<TabItem[]>([{ key: '/dashboard', label: '仪表盘', closable: false }]);
   const [activeTab, setActiveTab] = useState('/dashboard');
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // 根据路由路径获取标签页信息
   const getTabFromPath = (path: string): TabItem | null => {
@@ -100,39 +102,31 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // 初始化时从 IndexedDB 加载数据
   useEffect(() => {
     const initTabs = async () => {
+      if (isInitialized) return;
+      
       try {
         setIsLoading(true);
         await dbInitPromise;
-        console.log('Current location:', location.pathname); // 调试日志
         
-      const [storedTabs, storedActiveTab] = await Promise.all([
-        getStoredTabs(),
-        getStoredActiveTab()
-      ]);
+        const [storedTabs, storedActiveTab] = await Promise.all([
+          getStoredTabs(),
+          getStoredActiveTab()
+        ]);
 
-        console.log('Stored tabs:', storedTabs); // 调试日志
-        console.log('Stored active tab:', storedActiveTab); // 调试日志
-
-        // 获取当前路由对应的标签页
         const currentPath = location.pathname;
         const currentTab = getTabFromPath(currentPath);
         
         if (currentTab) {
-          // 如果当前路由有对应的标签页配置
           let existingTabs = storedTabs || [{ key: '/dashboard', label: '仪表盘', closable: false }];
           
-          // 确保当前路由对应的标签页存在
           if (!existingTabs.find(tab => tab.key === currentPath)) {
             existingTabs = [...existingTabs, currentTab];
           }
           
-          console.log('Setting tabs to:', existingTabs); // 调试日志
           setTabs(existingTabs);
           setActiveTab(currentPath);
         } else if (storedTabs && storedTabs.length > 0) {
-          // 如果当前路由没有对应的标签页配置，但有存储的标签页
-      setTabs(storedTabs);
-          // 确保要设置的 activeTab 存在于 tabs 中
+          setTabs(storedTabs);
           const validActiveTab = storedTabs.find(tab => tab.key === storedActiveTab)
             ? storedActiveTab
             : storedTabs[0].key;
@@ -144,13 +138,13 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } catch (error) {
         console.error('Error initializing tabs:', error);
       } finally {
-      setIsInitialized(true);
+        setIsInitialized(true);
         setIsLoading(false);
       }
     };
 
     initTabs();
-  }, [location.pathname, navigate]);
+  }, []); // 只在组件挂载时执行一次
 
   // 监听路由变化
   useEffect(() => {
@@ -202,9 +196,16 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [activeTab, isInitialized]);
 
   const addTab = (tab: TabItem) => {
-    console.log('Adding tab:', tab); // 调试日志
     if (!tabs.find((t) => t.key === tab.key)) {
-      setTabs(prev => [...prev, tab]);
+      const newTabs = [...tabs, tab];
+      setTabs(newTabs);
+      // 批量更新状态
+      Promise.all([
+        indexedDB.put('tabs', { key: TAB_STORAGE_KEY, value: newTabs }),
+        indexedDB.put('tabs', { key: ACTIVE_TAB_STORAGE_KEY, value: tab.key })
+      ]).catch(error => {
+        console.error('Error saving tab state:', error);
+      });
     }
     setActiveTab(tab.key);
     navigate(tab.key);
@@ -224,11 +225,11 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return null; // 不显示任何加载状态，避免闪烁
   }
 
   return (
-    <TabContext.Provider value={{ tabs, activeTab, addTab, removeTab, setActiveTab }}>
+    <TabContext.Provider value={{ tabs, activeTab, addTab, removeTab, setActiveTab, isLoading }}>
       {children}
     </TabContext.Provider>
   );

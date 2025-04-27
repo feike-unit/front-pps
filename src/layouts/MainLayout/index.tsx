@@ -189,6 +189,7 @@ const MainLayoutContent: React.FC = () => {
         </Header>
         <TabNavigation />
         <Content
+          className={styles.contentWrapper}
           style={{
             margin: '24px 16px',
             padding: 24,
