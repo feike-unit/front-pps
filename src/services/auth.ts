@@ -10,16 +10,6 @@ interface RefreshTokenParams {
   refreshToken: string;
 }
 
-export interface UserInfo {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: number;
-  roles: string[];
-}
-
 interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -66,10 +56,6 @@ class AuthService {
     }
   }
 
-  async getUserInfo(): Promise<UserInfo> {
-    const { data } = await api.get<UserInfo>('/auth/userinfo');
-    return data;
-  }
 }
 
 export const authService = new AuthService(); 

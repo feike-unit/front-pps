@@ -55,10 +55,10 @@ const UserManagement: React.FC = () => {
   const [keyword, setKeyword] = useState<string>('');
 
   // 获取用户列表
-  const fetchUsers = async (page = pagination.current || 1, pageSize = pagination.pageSize || 10) => {
+  const fetchUsers = async (page = pagination.current || 1, pageSize = pagination.pageSize || 10, searchKeyword = keyword) => {
     setLoading(true);
     try {
-      const result = await getUsers({ pageNum: page, pageSize, keyword });
+      const result = await getUsers({ pageNum: page, pageSize, keyword: searchKeyword });
       setUsers(result.list);
       setPagination({
         ...pagination,
@@ -86,7 +86,9 @@ const UserManagement: React.FC = () => {
 
   // 处理搜索
   const handleSearch = () => {
-    fetchUsers(1);
+    if (keyword.trim() !== '') {
+      fetchUsers(1, pagination.pageSize, keyword);
+    }
   };
 
   // 处理搜索框回车
