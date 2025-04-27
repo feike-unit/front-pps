@@ -16,6 +16,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
 import { authService } from '../../services/auth';
 import { getUserInfo } from '../../services/user';
+import { TabProvider, useTab } from '../../contexts/TabContext';
+import TabNavigation from '../../components/TabNavigation';
 
 interface UserInfo {
   id: number;
@@ -29,11 +31,12 @@ interface UserInfo {
 
 const { Header, Sider, Content } = Layout;
 
-const MainLayout: React.FC = () => {
+const MainLayoutContent: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { addTab } = useTab();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -92,7 +95,29 @@ const MainLayout: React.FC = () => {
     }
   ];
 
-  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
+  const handleMenuClick: MenuProps['onClick'] = ({ key, domEvent }) => {
+    // 获取菜单项的标签文本
+    const menuItem = menuItems.flatMap(item => {
+      if (item && 'children' in item) {
+        return item.children || [];
+      }
+      return item;
+    }).find(item => item?.key === key) as Required<MenuProps>['items'][number];
+    
+    if (menuItem && 'label' in menuItem && 'icon' in menuItem) {
+      addTab({
+        key: key as string,
+        label: menuItem.label as string,
+        icon: menuItem.icon,
+        closable: key !== '/dashboard',
+      });
+    } else if (menuItem && 'label' in menuItem) {
+      addTab({
+        key: key as string,
+        label: menuItem.label as string,
+        closable: key !== '/dashboard',
+      });
+    }
     navigate(key);
   };
 
@@ -163,6 +188,7 @@ const MainLayout: React.FC = () => {
             )}
           </Space>
         </Header>
+        <TabNavigation />
         <Content
           style={{
             margin: '24px 16px',
@@ -176,6 +202,14 @@ const MainLayout: React.FC = () => {
         </Content>
       </Layout>
     </Layout>
+  );
+};
+
+const MainLayout: React.FC = () => {
+  return (
+    <TabProvider>
+      <MainLayoutContent />
+    </TabProvider>
   );
 };
 
