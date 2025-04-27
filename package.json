@@ -6,7 +6,9 @@
   "scripts": {
     "build": "rsbuild build",
     "dev": "rsbuild dev --open",
-    "preview": "rsbuild preview"
+    "preview": "rsbuild preview",
+    "update-api": "./update-apidocs.sh",
+    "dev:with-api": "./update-apidocs.sh && rsbuild dev --open"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",

@@ -49,12 +49,34 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  // 获取角色列表
-  const fetchRoles = async () => {
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // 添加或编辑用户
+  const handleAddOrEdit = async (user?: User) => {
     try {
       const result = await getRoles();
       if (result && Array.isArray(result)) {
         setRoles(result);
+        if (user) {
+          setModalTitle('编辑用户');
+          setCurrentUser(user);
+          form.setFieldsValue({
+            username: user.username,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            status: user.status === 1,
+            roleIds: user.roles?.map(role => result.find(r => r.name === role)?.id).filter(Boolean),
+          });
+        } else {
+          setModalTitle('添加用户');
+          setCurrentUser(null);
+          form.resetFields();
+          form.setFieldsValue({ status: true });
+        }
+        setModalVisible(true);
       } else {
         setRoles([]);
         message.warning('获取角色列表数据格式不正确');
@@ -63,32 +85,6 @@ const UserManagement: React.FC = () => {
       setRoles([]);
       message.error('获取角色列表失败');
     }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-    fetchRoles();
-  }, []);
-
-  // 添加或编辑用户
-  const handleAddOrEdit = (user?: User) => {
-    if (user) {
-      setModalTitle('编辑用户');
-      setCurrentUser(user);
-      form.setFieldsValue({
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        status: user.status === 1,
-        roleIds: user.roles?.map(role => roles.find(r => r.name === role)?.id).filter(Boolean),
-      });
-    } else {
-      setModalTitle('添加用户');
-      setCurrentUser(null);
-      form.resetFields();
-    }
-    setModalVisible(true);
   };
 
   // 保存用户
@@ -147,12 +143,22 @@ const UserManagement: React.FC = () => {
   };
 
   // 显示分配角色对话框
-  const showRoleModal = (user: User) => {
-    setCurrentUser(user);
-    const userRoleIds = user.roles?.map(role => roles.find(r => r.name === role)?.id).filter(Boolean) as number[];
-    setSelectedUserRoles(userRoleIds || []);
-    roleForm.setFieldsValue({ roleIds: userRoleIds });
-    setRoleModalVisible(true);
+  const showRoleModal = async (user: User) => {
+    try {
+      const result = await getRoles();
+      if (result && Array.isArray(result)) {
+        setRoles(result);
+        setCurrentUser(user);
+        const userRoleIds = user.roles?.map(role => result.find(r => r.name === role)?.id).filter(Boolean) as number[];
+        setSelectedUserRoles(userRoleIds || []);
+        roleForm.setFieldsValue({ roleIds: userRoleIds });
+        setRoleModalVisible(true);
+      } else {
+        message.warning('获取角色列表数据格式不正确');
+      }
+    } catch (error) {
+      message.error('获取角色列表失败');
+    }
   };
 
   // 保存用户角色
@@ -287,7 +293,7 @@ const UserManagement: React.FC = () => {
             <Input />
           </Form.Item>
           <Form.Item name="status" label="状态" valuePropName="checked">
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+            <Switch checkedChildren="启用" unCheckedChildren="禁用" defaultChecked />
           </Form.Item>
           <Form.Item name="roleIds" label="角色">
             <Select
