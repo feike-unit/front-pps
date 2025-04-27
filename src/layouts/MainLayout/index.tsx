@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Button, theme, Avatar, Space, Dropdown } from 'antd';
+import { Layout, Menu, Button, theme, Avatar, Space, Dropdown, message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   MenuFoldOutlined,
@@ -16,7 +16,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
 import { authService } from '../../services/auth';
 import { getUserInfo } from '../../services/user';
-import { TabProvider, useTab } from '../../contexts/TabContext';
+import { TabProvider, useTab, indexedDB } from '../../contexts/TabContext';
 import TabNavigation from '../../components/TabNavigation';
 
 interface UserInfo {
@@ -123,10 +123,15 @@ const MainLayoutContent: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      // 清除标签页存储
+      await indexedDB.clearAll();
+      // 执行登出
       await authService.logout();
+      // 重定向到登录页
       navigate('/login');
     } catch (error) {
-      navigate('/login');
+      console.error('登出失败:', error);
+      message.error('登出失败');
     }
   };
 
