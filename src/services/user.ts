@@ -142,3 +142,8 @@ export async function updateUserPassword(data: PasswordUpdateDto) {
   const response = await api.put<void>('/system/users/profile/password', data);
   return response;
 }
+
+// 更新用户角色
+export async function updateUserRoles(userId: number, roleIds: number[]): Promise<void> {
+  return api.put(`/system/users/${userId}/roles`, { roleIds });
+}

@@ -13,7 +13,7 @@ import {
   Popconfirm,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined } from '@ant-design/icons';
-import { User, getUsers, createUser, updateUser, deleteUser, resetPassword } from '../../../services/user';
+import { User, getUsers, createUser, updateUser, deleteUser, resetPassword, updateUserRoles } from '../../../services/user';
 import { Role, getRoles } from '../../../services/role';
 
 const UserManagement: React.FC = () => {
@@ -153,7 +153,7 @@ const UserManagement: React.FC = () => {
     try {
       const values = await roleForm.validateFields();
       if (currentUser) {
-        await updateUser({ id: currentUser.id, roleIds: values.roleIds });
+        await updateUserRoles(currentUser.id, values.roleIds);
         message.success('角色分配成功');
         setRoleModalVisible(false);
         fetchUsers();
