@@ -14,6 +14,8 @@ const ProjectManagement = lazy(() => import('./pages/ProjectManagement'));
 const SystemUserManagement = lazy(() => import('./pages/system/UserManagement'));
 const RoleManagement = lazy(() => import('./pages/system/RoleManagement'));
 const MenuManagement = lazy(() => import('./pages/system/MenuManagement'));
+// 个人信息页面
+const Profile = lazy(() => import('./pages/Profile'));
 
 // 路由配置数组
 export const routes: RouteObject[] = [
@@ -54,6 +56,11 @@ export const routes: RouteObject[] = [
       {
         path: 'system/menus',
         element: <MenuManagement />,
+      },
+      // 个人信息路由
+      {
+        path: 'profile',
+        element: <Profile />,
       },
     ],
   },

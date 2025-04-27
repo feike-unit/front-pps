@@ -1,0 +1,20 @@
+.profileCard {
+  max-width: 800px;
+  margin: 24px auto;
+}
+
+.form {
+  max-width: 500px;
+  margin: 24px auto;
+}
+
+/* 适配移动端 */
+@media screen and (max-width: 576px) {
+  .profileCard {
+    margin: 12px;
+  }
+  
+  .form {
+    margin: 12px;
+  }
+} 

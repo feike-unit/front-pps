@@ -3,7 +3,7 @@
 .logo {
   height: 32px;
   margin: 16px;
-  color: white;
+  color: #fff;
   font-size: 18px;
   font-weight: bold;
   /* 使用flex布局使Logo水平垂直居中 */
@@ -19,4 +19,16 @@
 .logoutButton {
   float: right;
   margin-right: 16px;
+}
+
+.userInfo {
+  height: 64px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.userInfo:hover {
+  background: rgba(0, 0, 0, 0.025);
 } 
