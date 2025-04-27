@@ -35,8 +35,14 @@ const UserManagement: React.FC = () => {
     setLoading(true);
     try {
       const result = await getUsers({ pageNum: 1, pageSize: 10 });
-      setUsers(result.list);
+      if (result && result.list && Array.isArray(result.list)) {
+        setUsers(result.list);
+      } else {
+        setUsers([]);
+        message.warning('获取用户列表数据格式不正确');
+      }
     } catch (error) {
+      setUsers([]);
       message.error('获取用户列表失败');
     } finally {
       setLoading(false);
@@ -47,8 +53,14 @@ const UserManagement: React.FC = () => {
   const fetchRoles = async () => {
     try {
       const result = await getRoles();
-      setRoles(result);
+      if (result && Array.isArray(result)) {
+        setRoles(result);
+      } else {
+        setRoles([]);
+        message.warning('获取角色列表数据格式不正确');
+      }
     } catch (error) {
+      setRoles([]);
       message.error('获取角色列表失败');
     }
   };

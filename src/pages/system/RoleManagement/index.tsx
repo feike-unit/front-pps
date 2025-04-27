@@ -11,6 +11,7 @@ import {
   Popconfirm,
   Tree,
 } from 'antd';
+import type { DataNode } from 'antd/es/tree';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MenuOutlined } from '@ant-design/icons';
 import { Role, getRoles, createRole, updateRole, deleteRole, getRoleMenuIds, assignMenusToRole } from '../../../services/role';
 import { Menu, getAllMenus } from '../../../services/menu';
@@ -21,6 +22,7 @@ const RoleManagement: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [menuLoading, setMenuLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [menuModalVisible, setMenuModalVisible] = useState<boolean>(false);
   const [modalTitle, setModalTitle] = useState<string>('添加角色');
@@ -33,8 +35,14 @@ const RoleManagement: React.FC = () => {
     setLoading(true);
     try {
       const result = await getRoles();
-      setRoles(result);
+      if (result && Array.isArray(result)) {
+        setRoles(result);
+      } else {
+        setRoles([]);
+        message.warning('获取角色列表数据格式不正确');
+      }
     } catch (error) {
+      setRoles([]);
       message.error('获取角色列表失败');
     } finally {
       setLoading(false);
@@ -136,6 +144,7 @@ const RoleManagement: React.FC = () => {
   // 显示分配菜单对话框
   const showMenuModal = async (role: Role) => {
     setCurrentRole(role);
+    setMenuLoading(true);
     try {
       // 获取角色已有的菜单ID列表
       const menuIds = await getRoleMenuIds(role.id);
@@ -143,34 +152,41 @@ const RoleManagement: React.FC = () => {
       setMenuModalVisible(true);
     } catch (error) {
       message.error('获取角色菜单失败');
+    } finally {
+      setMenuLoading(false);
     }
   };
 
   // 保存角色菜单
   const handleSaveRoleMenus = async () => {
+    if (!currentRole) {
+      message.error('未选择角色');
+      return;
+    }
+    setMenuLoading(true);
     try {
-      if (currentRole) {
-        await assignMenusToRole(currentRole.id, checkedMenuIds as number[]);
-        message.success('菜单分配成功');
-        setMenuModalVisible(false);
-      }
+      await assignMenusToRole(currentRole.id, checkedMenuIds as number[]);
+      message.success('菜单分配成功');
+      setMenuModalVisible(false);
     } catch (error) {
       message.error('菜单分配失败');
+    } finally {
+      setMenuLoading(false);
     }
   };
 
-  // 树形选择处理
-  const handleMenuCheck = (checkedKeys: React.Key[]) => {
-    setCheckedMenuIds(checkedKeys);
-  };
-
   // 将菜单数据转换为Tree组件所需的结构
-  const convertToTreeData = (menus: Menu[]) => {
+  const convertToTreeData = (menus: Menu[]): DataNode[] => {
     return menus.map(menu => ({
       key: menu.id,
       title: menu.name,
       children: menu.children && menu.children.length > 0 ? convertToTreeData(menu.children) : undefined,
     }));
+  };
+
+  // 树形选择处理
+  const handleMenuCheck = (checkedKeys: any, info: any) => {
+    setCheckedMenuIds(Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked);
   };
 
   const columns = [
@@ -216,22 +232,28 @@ const RoleManagement: React.FC = () => {
   ];
 
   return (
-    <Card
-      title="角色管理"
-      extra={
+    <Card>
+      <div style={{ marginBottom: 16 }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => handleAddOrEdit()}>
           添加角色
         </Button>
-      }
-    >
-      <Table rowKey="id" columns={columns} dataSource={roles} loading={loading} />
+      </div>
 
-      {/* 添加/编辑角色对话框 */}
+      <Table
+        loading={loading}
+        dataSource={roles}
+        columns={columns}
+        rowKey="id"
+        pagination={{ showSizeChanger: true }}
+      />
+
+      {/* 角色表单弹窗 */}
       <Modal
         title={modalTitle}
-        open={modalVisible}
+        visible={modalVisible}
         onOk={handleSaveRole}
         onCancel={() => setModalVisible(false)}
+        confirmLoading={loading}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -239,28 +261,32 @@ const RoleManagement: React.FC = () => {
             label="角色名称"
             rules={[{ required: true, message: '请输入角色名称' }]}
           >
-            <Input />
+            <Input placeholder="请输入角色名称" />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <TextArea rows={4} />
+          <Form.Item
+            name="description"
+            label="角色描述"
+          >
+            <TextArea rows={4} placeholder="请输入角色描述" />
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* 分配菜单对话框 */}
+      {/* 菜单分配弹窗 */}
       <Modal
         title="分配菜单"
-        open={menuModalVisible}
+        visible={menuModalVisible}
         onOk={handleSaveRoleMenus}
         onCancel={() => setMenuModalVisible(false)}
+        confirmLoading={menuLoading}
         width={600}
       >
         <Tree
           checkable
-          defaultExpandAll
           checkedKeys={checkedMenuIds}
           onCheck={handleMenuCheck}
           treeData={convertToTreeData(menus)}
+          disabled={menuLoading}
         />
       </Modal>
     </Card>

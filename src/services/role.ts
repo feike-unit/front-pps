@@ -22,7 +22,7 @@ export interface RoleUpdateParams {
 // 获取角色列表
 export const getRoles = async () => {
   const response = await api.get('/system/roles');
-  return response.data;
+  return response.data || [];
 };
 
 // 获取角色详情
@@ -52,7 +52,7 @@ export const deleteRole = async (id: number) => {
 // 获取角色的菜单ID列表
 export const getRoleMenuIds = async (id: number) => {
   const response = await api.get(`/system/roles/${id}/menus`);
-  return response.data;
+  return response.data || [];
 };
 
 // 为角色分配菜单
