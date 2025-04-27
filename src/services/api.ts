@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { refreshToken } from './auth';
+import { tokenDB } from '../utils/db';
 
 // 创建axios实例
 const api = axios.create({
@@ -9,10 +11,26 @@ const api = axios.create({
   },
 });
 
+// 标记是否正在刷新token
+let isRefreshing = false;
+// 存储等待token刷新的请求
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+// 执行被挂起的请求
+const onRefreshed = (token: string) => {
+  refreshSubscribers.map(cb => cb(token));
+  refreshSubscribers = [];
+};
+
+// 添加被挂起的请求
+const addRefreshSubscriber = (callback: (token: string) => void) => {
+  refreshSubscribers.push(callback);
+};
+
 // 请求拦截器
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
+  async (config) => {
+    const token = await tokenDB.getAccessToken();
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -35,12 +53,12 @@ api.interceptors.response.use(
     }
     return data;
   },
-  (error) => {
+  async (error) => {
     // 确保错误信息显示在控制台，方便调试
     console.log('API Error:', error);
 
     if (error.response) {
-      const { status, data } = error.response;
+      const { status, data, config } = error.response;
       
       // 获取服务器返回的错误信息
       let errorMessage = '未知错误';
@@ -54,14 +72,50 @@ api.interceptors.response.use(
           console.log('请求参数错误：', errorMessage);
           break;
         case 401:
-          // 如果是登录接口，则跳过token清除和重定向
-          if (error.config.url !== '/auth/login') {
-            console.log('未授权，请重新登录：', errorMessage);
-            // 未授权，清除token并跳转到登录页
-            localStorage.removeItem('token');
+          // 如果是登录或刷新token接口，则直接返回错误
+          if (config.url === '/auth/login' || config.url === '/auth/refresh') {
+            console.log('认证失败：', errorMessage);
+            await tokenDB.clearTokens();
             window.location.href = '/login';
+            return Promise.reject(error);
           }
-          break;
+
+          // 如果正在刷新token，则将请求添加到队列中
+          if (isRefreshing) {
+            return new Promise((resolve) => {
+              addRefreshSubscriber((token: string) => {
+                config.headers['Authorization'] = `Bearer ${token}`;
+                resolve(api(config));
+              });
+            });
+          }
+
+          isRefreshing = true;
+
+          try {
+            // 尝试刷新token
+            const refreshTokenStr = await tokenDB.getRefreshToken();
+            if (!refreshTokenStr) {
+              throw new Error('No refresh token available');
+            }
+
+            const response = await refreshToken({ refreshToken: refreshTokenStr });
+            const { accessToken } = response.data;
+
+            // 更新token后重试所有等待的请求
+            onRefreshed(accessToken);
+
+            // 重试当前请求
+            config.headers['Authorization'] = `Bearer ${accessToken}`;
+            return api(config);
+          } catch (refreshError) {
+            console.log('Token刷新失败：', refreshError);
+            await tokenDB.clearTokens();
+            window.location.href = '/login';
+            return Promise.reject(refreshError);
+          } finally {
+            isRefreshing = false;
+          }
         case 403:
           console.log('没有权限执行此操作：', errorMessage);
           break;

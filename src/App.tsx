@@ -22,7 +22,17 @@ const LoadingIndicator = () => (
 // 使用Suspense实现路由懒加载
 const App: React.FC = () => {
   return (
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        token: {
+          fontSize: 13, // 设置全局字体大小为 13px
+          fontSizeSM: 12, // 小号字体
+          fontSizeLG: 14, // 大号字体
+          fontSizeXL: 16, // 特大号字体
+        },
+      }}
+    >
       <Suspense fallback={<LoadingIndicator />}>
         <RouterProvider router={router} />
       </Suspense>

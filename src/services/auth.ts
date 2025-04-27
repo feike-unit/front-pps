@@ -1,4 +1,5 @@
 import api from './api';
+import { tokenDB } from '../utils/db';
 
 interface LoginParams {
   username: string;
@@ -21,30 +22,33 @@ export interface UserInfo {
 
 export const login = async (params: LoginParams) => {
   const response = await api.post('/auth/login', params);
-  // 保存token到localStorage
+  // 保存token到IndexedDB
   if (response.data && response.data.accessToken) {
-    localStorage.setItem('token', response.data.accessToken);
-    localStorage.setItem('refreshToken', response.data.refreshToken);
+    await tokenDB.setTokens({
+      accessToken: response.data.accessToken,
+      refreshToken: response.data.refreshToken
+    });
   }
-  return response.data;
+  return response;
 };
 
 export const logout = async () => {
   const response = await api.post('/auth/logout');
-  // 清除localStorage中的token
-  localStorage.removeItem('token');
-  localStorage.removeItem('refreshToken');
-  return response.data;
+  // 清除IndexedDB中的token
+  await tokenDB.clearTokens();
+  return response;
 };
 
 export const refreshToken = async (params: RefreshTokenParams) => {
   const response = await api.post('/auth/refresh', params);
-  // 更新localStorage中的token
+  // 更新IndexedDB中的token
   if (response.data && response.data.accessToken) {
-    localStorage.setItem('token', response.data.accessToken);
-    localStorage.setItem('refreshToken', response.data.refreshToken);
+    await tokenDB.setTokens({
+      accessToken: response.data.accessToken,
+      refreshToken: response.data.refreshToken
+    });
   }
-  return response.data;
+  return response;
 };
 
 export const getUserInfo = async () => {
