@@ -19,7 +19,8 @@ import {
   getUsers, 
   createUser, 
   updateUser, 
-  deleteUser, 
+  deleteUser,
+  deleteUsers,
   resetPassword, 
   updateUserRoles,
   updateUserStatus 
@@ -37,6 +38,7 @@ const UserManagement: React.FC = () => {
   const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
   const [roleModalVisible, setRoleModalVisible] = useState<boolean>(false);
   const [selectedUserRoles, setSelectedUserRoles] = useState<number[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 10,
@@ -204,6 +206,26 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  // 批量删除用户
+  const handleBatchDelete = async () => {
+    try {
+      await deleteUsers(selectedRowKeys.map(key => Number(key)));
+      message.success('批量删除成功');
+      setSelectedRowKeys([]);
+      fetchUsers();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.message || '批量删除失败');
+    }
+  };
+
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (newSelectedRowKeys: React.Key[]) => {
+      setSelectedRowKeys(newSelectedRowKeys);
+    },
+  };
+
   const columns = [
     {
       title: 'ID',
@@ -300,9 +322,23 @@ const UserManagement: React.FC = () => {
     <Card
       title="用户管理"
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleAddOrEdit()}>
-          添加用户
-        </Button>
+        <Space>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => handleAddOrEdit()}>
+            添加用户
+          </Button>
+          {selectedRowKeys.length > 0 && (
+            <Popconfirm
+              title="确定要删除选中的用户吗？"
+              onConfirm={handleBatchDelete}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button danger icon={<DeleteOutlined />}>
+                批量删除
+              </Button>
+            </Popconfirm>
+          )}
+        </Space>
       }
     >
       <Table 
@@ -312,6 +348,7 @@ const UserManagement: React.FC = () => {
         loading={loading}
         pagination={pagination}
         onChange={handleTableChange}
+        rowSelection={rowSelection}
       />
 
       {/* 添加/编辑用户对话框 */}

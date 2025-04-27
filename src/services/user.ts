@@ -94,6 +94,12 @@ export const deleteUser = async (id: number) => {
   return response.data;
 };
 
+// 批量删除用户
+export const deleteUsers = async (ids: number[]) => {
+  const response = await api.delete('/system/users/batch', { data: ids });
+  return response.data;
+};
+
 // 修改密码
 export const changePassword = async (oldPassword: string, newPassword: string) => {
   const response = await api.put('/system/users/password', { oldPassword, newPassword });
