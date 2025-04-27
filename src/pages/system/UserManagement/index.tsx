@@ -55,36 +55,23 @@ const UserManagement: React.FC = () => {
 
   // 添加或编辑用户
   const handleAddOrEdit = async (user?: User) => {
-    try {
-      const result = await getRoles();
-      if (result && Array.isArray(result)) {
-        setRoles(result);
-        if (user) {
-          setModalTitle('编辑用户');
-          setCurrentUser(user);
-          form.setFieldsValue({
-            username: user.username,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            status: user.status === 1,
-            roleIds: user.roles?.map(role => result.find(r => r.name === role)?.id).filter(Boolean),
-          });
-        } else {
-          setModalTitle('添加用户');
-          setCurrentUser(null);
-          form.resetFields();
-          form.setFieldsValue({ status: true });
-        }
-        setModalVisible(true);
-      } else {
-        setRoles([]);
-        message.warning('获取角色列表数据格式不正确');
-      }
-    } catch (error) {
-      setRoles([]);
-      message.error('获取角色列表失败');
+    if (user) {
+      setModalTitle('编辑用户');
+      setCurrentUser(user);
+      form.setFieldsValue({
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        status: user.status === 1,
+      });
+    } else {
+      setModalTitle('添加用户');
+      setCurrentUser(null);
+      form.resetFields();
+      form.setFieldsValue({ status: true });
     }
+    setModalVisible(true);
   };
 
   // 保存用户
@@ -294,13 +281,6 @@ const UserManagement: React.FC = () => {
           </Form.Item>
           <Form.Item name="status" label="状态" valuePropName="checked">
             <Switch checkedChildren="启用" unCheckedChildren="禁用" defaultChecked />
-          </Form.Item>
-          <Form.Item name="roleIds" label="角色">
-            <Select
-              mode="multiple"
-              placeholder="请选择角色"
-              options={roles.map(role => ({ label: role.name, value: role.id }))}
-            />
           </Form.Item>
         </Form>
       </Modal>

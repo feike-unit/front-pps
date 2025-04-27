@@ -97,7 +97,7 @@ export const changePassword = async (oldPassword: string, newPassword: string) =
 
 // 重置用户密码
 export const resetPassword = async (id: number, password: string) => {
-  const response = await api.put(`/system/users/${id}/password/reset`, { password });
+  const response = await api.put(`/system/users/${id}/password/reset`, { newPassword: password });
   return response.data;
 };
 
