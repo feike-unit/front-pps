@@ -1,0 +1,61 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+前端项目的具体配置：
+
+### 技术栈概览
+1. **核心框架**：
+   - React 18
+   - TypeScript
+   - Ant Design 5.x
+   - Ant Design Pro Components
+
+2. **状态管理**：
+   - Redux Toolkit
+   - React Redux
+
+3. **路由管理**：
+   - React Router DOM 7.x
+
+4. **HTTP 请求**：
+   - Axios
+
+5. **构建工具**：
+   - RSBuild（一个现代化的构建工具）
+
+### 项目特点
+1. **TypeScript 严格模式**：
+   - 启用了严格的类型检查
+   - 不允许未使用的局部变量和参数
+   - 使用最新的 ES2020 特性
+
+2. **模块化开发**：
+   - 支持 ESM 模块系统
+   - 支持 JSON 模块导入
+   - 使用 bundler 模式的模块解析
+
+3. **开发体验**：
+   - 提供了开发服务器（dev）
+   - 支持生产环境构建（build）
+   - 支持预览构建结果（preview）
+
+### 项目结构
+```
+front/
+├── src/                # 源代码目录
+├── tsconfig.json       # TypeScript 配置
+├── package.json        # 项目依赖和脚本
+├── rsbuild.config.ts   # RSBuild 构建配置
+└── README.md          # 项目文档
+```
+
+### 开发规范
+1. 使用 TypeScript 进行开发，确保类型安全
+2. 采用 Ant Design 组件库，保持 UI 风格统一
+3. 使用 React Router 进行路由管理
+4. 使用 Redux Toolkit 进行状态管理
+5. 使用 Axios 处理 HTTP 请求
+
+这个前端项目采用了现代化的技术栈和工具链，适合开发企业级的后台管理系统。项目配置完善，开发体验良好，并且通过 TypeScript 的严格模式来保证代码质量,后端的openapi-docs地址为: http://localhost:8080/v3/api-docs。
