@@ -29,6 +29,7 @@ const RoleManagement: React.FC = () => {
   const [modalTitle, setModalTitle] = useState<string>('添加角色');
   const [currentRole, setCurrentRole] = useState<Role | null>(null);
   const [checkedMenuIds, setCheckedMenuIds] = useState<React.Key[]>([]);
+  const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [form] = Form.useForm();
 
   // 获取角色列表
@@ -55,8 +56,13 @@ const RoleManagement: React.FC = () => {
     try {
       const result = await getAllMenus();
       // 将菜单列表转换为树形结构
-      const treeMenus = formatMenuTree(result);
-      setMenus(treeMenus);
+      if (result && Array.isArray(result)) {
+        const treeMenus = formatMenuTree(result);
+        setMenus(treeMenus);
+      } else {
+        setMenus([]);
+        message.warning('获取菜单列表数据格式不正确');
+      }
     } catch (error: unknown) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取菜单列表失败');
@@ -65,26 +71,36 @@ const RoleManagement: React.FC = () => {
 
   // 将菜单列表转换为树形结构
   const formatMenuTree = (menus: Menu[]): Menu[] => {
+    if (!Array.isArray(menus) || menus.length === 0) {
+      return [];
+    }
+
     const menuMap = new Map<number, Menu>();
     const result: Menu[] = [];
 
     // 先建立映射关系
     menus.forEach(menu => {
-      menu.children = [];
-      menuMap.set(menu.id, { ...menu });
+      if (menu && typeof menu === 'object') {
+        const menuCopy = { ...menu, children: [] };
+        menuMap.set(menu.id, menuCopy);
+      }
     });
 
     // 构建树形结构
     menus.forEach(menu => {
-      const currentMenu = menuMap.get(menu.id);
-      if (menu.parentId === 0) {
-        // 根节点
-        result.push(currentMenu as Menu);
-      } else {
-        // 子节点，添加到父节点的children中
-        const parentMenu = menuMap.get(menu.parentId);
-        if (parentMenu) {
-          parentMenu.children?.push(currentMenu as Menu);
+      if (menu && typeof menu === 'object') {
+        const currentMenu = menuMap.get(menu.id);
+        if (currentMenu) {
+          if (menu.parentId === 0) {
+            // 根节点
+            result.push(currentMenu);
+          } else {
+            // 子节点，添加到父节点的children中
+            const parentMenu = menuMap.get(menu.parentId);
+            if (parentMenu && Array.isArray(parentMenu.children)) {
+              parentMenu.children.push(currentMenu);
+            }
+          }
         }
       }
     });
@@ -94,7 +110,6 @@ const RoleManagement: React.FC = () => {
 
   useEffect(() => {
     fetchRoles();
-    fetchMenus();
   }, []);
 
   // 添加或编辑角色
@@ -150,9 +165,18 @@ const RoleManagement: React.FC = () => {
     setCurrentRole(role);
     setMenuLoading(true);
     try {
+      // 如果菜单列表为空，先获取菜单列表
+      if (menus.length === 0) {
+        await fetchMenus();
+      }
       // 获取角色已有的菜单ID列表
       const menuIds = await getRoleMenuIds(role.id);
       setCheckedMenuIds(menuIds);
+      // 设置默认展开的一级菜单
+      const firstLevelKeys = menus
+        .filter(menu => menu.parentId === 0)
+        .map(menu => menu.id);
+      setExpandedKeys(firstLevelKeys);
       setMenuModalVisible(true);
     } catch (error: unknown) {
       const apiError = error as ApiError;
@@ -193,6 +217,11 @@ const RoleManagement: React.FC = () => {
   // 树形选择处理
   const handleMenuCheck = (checkedKeys: any, info: any) => {
     setCheckedMenuIds(Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked);
+  };
+
+  // 处理展开/收起
+  const handleExpand = (newExpandedKeys: React.Key[]) => {
+    setExpandedKeys(newExpandedKeys);
   };
 
   const columns = [
@@ -256,7 +285,7 @@ const RoleManagement: React.FC = () => {
       {/* 角色表单弹窗 */}
       <Modal
         title={modalTitle}
-        visible={modalVisible}
+        open={modalVisible}
         onOk={handleSaveRole}
         onCancel={() => setModalVisible(false)}
         confirmLoading={loading}
@@ -281,7 +310,7 @@ const RoleManagement: React.FC = () => {
       {/* 菜单分配弹窗 */}
       <Modal
         title="分配菜单"
-        visible={menuModalVisible}
+        open={menuModalVisible}
         onOk={handleSaveRoleMenus}
         onCancel={() => setMenuModalVisible(false)}
         confirmLoading={menuLoading}
@@ -293,6 +322,8 @@ const RoleManagement: React.FC = () => {
           onCheck={handleMenuCheck}
           treeData={convertToTreeData(menus)}
           disabled={menuLoading}
+          expandedKeys={expandedKeys}
+          onExpand={handleExpand}
         />
       </Modal>
     </Card>

@@ -69,7 +69,7 @@ const UserManagement: React.FC = () => {
       });
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || '获取用户列表失败');
+      message.error(apiError.response?.data?.message || apiError.message || '获取用户列表失败');
     } finally {
       setLoading(false);
     }
@@ -170,7 +170,7 @@ const UserManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || '保存用户失败');
+      message.error(apiError.response?.data?.message || apiError.message || '保存用户失败');
     }
   };
 
@@ -182,7 +182,7 @@ const UserManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || '删除用户失败');
+      message.error(apiError.response?.data?.message || apiError.message || '删除用户失败');
     }
   };
 
@@ -204,7 +204,7 @@ const UserManagement: React.FC = () => {
       }
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || '重置密码失败');
+      message.error(apiError.response?.data?.message || apiError.message || '重置密码失败');
     }
   };
 
@@ -239,7 +239,7 @@ const UserManagement: React.FC = () => {
       }
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || '保存用户角色失败');
+      message.error(apiError.response?.data?.message || apiError.message || '保存用户角色失败');
     }
   };
 
@@ -251,7 +251,7 @@ const UserManagement: React.FC = () => {
       fetchUsers(pagination.current, pagination.pageSize);
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || '用户状态更新失败');
+      message.error(apiError.response?.data?.message || apiError.message || '用户状态更新失败');
     }
   };
 
@@ -264,7 +264,7 @@ const UserManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || '批量删除失败');
+      message.error(apiError.response?.data?.message || apiError.message || '批量删除失败');
     }
   };
 
@@ -295,7 +295,7 @@ const UserManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || '批量分配角色失败');
+      message.error(apiError.response?.data?.message || apiError.message || '批量分配角色失败');
     }
   };
 
