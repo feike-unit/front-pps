@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Button,
@@ -53,6 +53,7 @@ const UserManagement: React.FC = () => {
   const [passwordForm] = Form.useForm();
   const [roleForm] = Form.useForm();
   const [keyword, setKeyword] = useState<string>('');
+  const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
 
   // 获取用户列表
   const fetchUsers = async (page = pagination.current || 1, pageSize = pagination.pageSize || 10, searchKeyword = keyword) => {
@@ -74,6 +75,21 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  // 使用useCallback包装延迟搜索函数，避免重复创建
+  const delayedSearch = useCallback((value: string) => {
+    // 如果已经有定时器在运行，先清除它
+    if (searchTimer) {
+      clearTimeout(searchTimer);
+    }
+
+    // 设置新的定时器
+    const timer = setTimeout(() => {
+      fetchUsers(1, pagination.pageSize, value);
+    }, 200);
+
+    setSearchTimer(timer);
+  }, [pagination.pageSize, searchTimer]);
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -86,9 +102,8 @@ const UserManagement: React.FC = () => {
 
   // 处理搜索
   const handleSearch = () => {
-    if (keyword.trim() !== '') {
-      fetchUsers(1, pagination.pageSize, keyword);
-    }
+    // 无论搜索关键字是否为空都触发查询
+    fetchUsers(1, pagination.pageSize, keyword);
   };
 
   // 处理搜索框回车
@@ -97,6 +112,22 @@ const UserManagement: React.FC = () => {
       handleSearch();
     }
   };
+
+  // 处理搜索框值变化
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setKeyword(value);
+    delayedSearch(value);
+  };
+
+  // 在组件卸载时清除定时器
+  useEffect(() => {
+    return () => {
+      if (searchTimer) {
+        clearTimeout(searchTimer);
+      }
+    };
+  }, [searchTimer]);
 
   // 添加或编辑用户
   const handleAddOrEdit = async (user?: User) => {
@@ -414,7 +445,7 @@ const UserManagement: React.FC = () => {
           <Input
             placeholder="搜索用户"
             value={keyword}
-            onChange={e => setKeyword(e.target.value)}
+            onChange={handleSearchChange}
             onKeyPress={handleSearchKeyPress}
             style={{ width: 200 }}
             suffix={
