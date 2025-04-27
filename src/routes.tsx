@@ -8,8 +8,6 @@ const Login = lazy(() => import('./pages/Login'));
 const MainLayout = lazy(() => import('./layouts/MainLayout'));
 // 仪表盘页面
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-// 项目管理页面
-const ProjectManagement = lazy(() => import('./pages/ProjectManagement'));
 // 系统管理相关页面
 const SystemUserManagement = lazy(() => import('./pages/system/UserManagement'));
 const RoleManagement = lazy(() => import('./pages/system/RoleManagement'));
@@ -38,11 +36,6 @@ export const routes: RouteObject[] = [
       {
         path: 'dashboard',
         element: <Dashboard />,
-      },
-      // 项目管理路由
-      {
-        path: 'projects',
-        element: <ProjectManagement />,
       },
       // 系统管理模块路由
       {

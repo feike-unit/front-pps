@@ -6,7 +6,6 @@ import {
   MenuUnfoldOutlined,
   DashboardOutlined,
   UserOutlined,
-  ProjectOutlined,
   LogoutOutlined,
   SettingOutlined,
   TeamOutlined,
@@ -65,11 +64,6 @@ const MainLayoutContent: React.FC = () => {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: '仪表盘',
-    },
-    {
-      key: '/projects',
-      icon: <ProjectOutlined />,
-      label: '项目管理',
     },
     {
       key: 'system',

@@ -8,7 +8,6 @@ const routeToTabMap: Record<string, { label: string; closable?: boolean }> = {
   '/system/users': { label: '用户管理', closable: true },
   '/system/roles': { label: '角色管理', closable: true },
   '/system/menus': { label: '菜单管理', closable: true },
-  '/projects': { label: '项目管理', closable: true },
   '/profile': { label: '个人信息', closable: true },
   // 在这里添加其他路由映射
 };
