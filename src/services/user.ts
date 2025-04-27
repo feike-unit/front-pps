@@ -34,8 +34,13 @@ export interface UserUpdateParams {
 }
 
 export interface PageResponse<T> {
+  pageNum: number;
+  pageSize: number;
   total: number;
+  pages: number;
   list: T[];
+  first: boolean;
+  last: boolean;
 }
 
 export interface UserInfo {
@@ -60,8 +65,8 @@ export interface PasswordUpdateDto {
 }
 
 // 获取用户列表（分页）
-export const getUsers = async (params: { pageNum: number; pageSize: number }) => {
-  const response = await api.get<PageResponse<User>>('/system/users', { params });
+export const getUsers = async (params: { pageNum: number; pageSize: number }): Promise<ApiResponse<PageResponse<User>>> => {
+  const response = await api.get<ApiResponse<PageResponse<User>>>('/system/users', { params });
   return response.data;
 };
 

@@ -11,6 +11,7 @@ import {
   Switch,
   message,
   Popconfirm,
+  TablePaginationConfig,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { User, getUsers, createUser, updateUser, deleteUser, resetPassword, updateUserRoles } from '../../../services/user';
@@ -26,21 +27,30 @@ const UserManagement: React.FC = () => {
   const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
   const [roleModalVisible, setRoleModalVisible] = useState<boolean>(false);
   const [selectedUserRoles, setSelectedUserRoles] = useState<number[]>([]);
+  const [pagination, setPagination] = useState<TablePaginationConfig>({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+    showTotal: (total: number) => `共 ${total} 条记录`,
+    showSizeChanger: true,
+    showQuickJumper: true,
+  });
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
   const [roleForm] = Form.useForm();
 
   // 获取用户列表
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = pagination.current || 1, pageSize = pagination.pageSize || 10) => {
     setLoading(true);
     try {
-      const result = await getUsers({ pageNum: 1, pageSize: 10 });
-      if (result && result.list && Array.isArray(result.list)) {
-        setUsers(result.list);
-      } else {
-        setUsers([]);
-        message.warning('获取用户列表数据格式不正确');
-      }
+      const result = await getUsers({ pageNum: page, pageSize });
+      setUsers(result.list);
+      setPagination({
+        ...pagination,
+        current: result.pageNum,
+        pageSize: result.pageSize,
+        total: result.total,
+      });
     } catch (error) {
       setUsers([]);
       message.error('获取用户列表失败');
@@ -52,6 +62,12 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // 处理表格分页变化
+  const handleTableChange = (newPagination: TablePaginationConfig) => {
+    const { current = 1, pageSize = 10 } = newPagination;
+    fetchUsers(current, pageSize);
+  };
 
   // 添加或编辑用户
   const handleAddOrEdit = async (user?: User) => {
@@ -239,7 +255,14 @@ const UserManagement: React.FC = () => {
         </Button>
       }
     >
-      <Table rowKey="id" columns={columns} dataSource={users} loading={loading} />
+      <Table 
+        rowKey="id" 
+        columns={columns} 
+        dataSource={users} 
+        loading={loading}
+        pagination={pagination}
+        onChange={handleTableChange}
+      />
 
       {/* 添加/编辑用户对话框 */}
       <Modal
