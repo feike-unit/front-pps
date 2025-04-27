@@ -14,7 +14,7 @@ import {
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
-import { logout } from '../../services/auth';
+import { authService } from '../../services/auth';
 import { getUserInfo } from '../../services/user';
 
 interface UserInfo {
@@ -98,7 +98,7 @@ const MainLayout: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await authService.logout();
       navigate('/login');
     } catch (error) {
       navigate('/login');

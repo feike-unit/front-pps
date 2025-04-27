@@ -69,14 +69,13 @@ const handleErrorResponse = (error: AxiosError<ApiErrorResponse>) => {
 };
 
 // 处理未授权错误
-const handleUnauthorizedError = async (error: AxiosError) => {
-  const { config } = error.response!;
+const handleUnauthorizedError = async (error: AxiosError<ApiErrorResponse>) => {
+  const { config, data } = error.response!;
 
   // 如果是登录或刷新token接口，则直接返回错误
   if (config.url === '/auth/login' || config.url === '/auth/refresh') {
-    console.log('认证失败');
-    await tokenStore.clearTokens();
-    window.location.href = '/login';
+    const errorMessage = data?.message || '认证失败';
+    console.log(errorMessage);
     return Promise.reject(error);
   }
 
@@ -107,8 +106,9 @@ const handleUnauthorizedError = async (error: AxiosError) => {
     // 重试当前请求
     config.headers['Authorization'] = `Bearer ${accessToken}`;
     return api(config);
-  } catch (refreshError) {
-    console.log('Token刷新失败：', refreshError);
+  } catch (refreshError: any) {
+    const errorMessage = refreshError.response?.data?.message || 'Token刷新失败';
+    console.log(errorMessage);
     await tokenStore.clearTokens();
     window.location.href = '/login';
     return Promise.reject(refreshError);
