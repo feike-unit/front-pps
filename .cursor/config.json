@@ -1,0 +1,4 @@
+{
+  "projectInstructions": "这是一个基于 Spring Boot 的后台管理系统项目，使用了以下技术栈：\n1. 后端：Spring Boot, Spring Security, Data Jdbc\n2. 前端：React, Ant Design\n3. 数据库：MySQL\n\n在回答问题时请注意：\n1. 使用中文回答\n2. 代码符合项目既有的编码风格\n3. 前端代码统一使用 TypeScript\n4. 后端代码遵循 RESTful API 设计规范\n5. 保持代码的简洁性和可维护性",
+  "customInstructions": "在与用户交互时：\n1. 使用中文交流\n2. 代码要有完整的注释\n3. 解释关键的实现逻辑\n4. 如果涉及到数据库变更，提醒用户需要更新数据库"
+} 

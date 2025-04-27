@@ -1,4 +1,5 @@
 import api from './api';
+import { ApiResponse } from '@/types/api';
 
 export interface User {
   id: number;
@@ -35,6 +36,27 @@ export interface UserUpdateParams {
 export interface PageResponse<T> {
   total: number;
   list: T[];
+}
+
+export interface UserInfo {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  phone: string;
+  status: number;
+  roles: string[];
+}
+
+export interface UserProfileUpdateDto {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export interface PasswordUpdateDto {
+  oldPassword: string;
+  newPassword: string;
 }
 
 // 获取用户列表（分页）
@@ -96,3 +118,27 @@ export const assignRolesToUser = async (id: number, roleIds: number[]) => {
   const response = await api.post<string[]>(`/system/users/${id}/roles`, { roleIds });
   return response.data;
 };
+
+/**
+ * 获取当前用户个人信息
+ */
+export async function getUserInfo() {
+  const response = await api.get<UserInfo>('/system/users/profile');
+  return response;
+}
+
+/**
+ * 更新当前用户个人信息
+ */
+export async function updateUserProfile(data: UserProfileUpdateDto) {
+  const response = await api.put<UserInfo>('/system/users/profile', data);
+  return response;
+}
+
+/**
+ * 修改当前用户密码
+ */
+export async function updateUserPassword(data: PasswordUpdateDto) {
+  const response = await api.put<void>('/system/users/profile/password', data);
+  return response;
+}
