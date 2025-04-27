@@ -399,6 +399,7 @@ const UserManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
+      width: 360,
       render: (_: any, record: User) => (
         <Space>
           <Button

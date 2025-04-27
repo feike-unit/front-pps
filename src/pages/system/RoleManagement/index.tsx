@@ -243,6 +243,7 @@ const RoleManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
+      width: 280,
       render: (_: any, record: Role) => (
         <Space size="middle">
           <Button type="link" icon={<EditOutlined />} onClick={() => handleAddOrEdit(record)}>

@@ -205,6 +205,7 @@ const MenuManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
+      width: 180,
       render: (_: any, record: Menu) => (
         <Space size="middle">
           <Button type="link" icon={<EditOutlined />} onClick={() => handleAddOrEdit(record)}>
