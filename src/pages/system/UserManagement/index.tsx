@@ -25,6 +25,7 @@ import {
   updateUserStatus 
 } from '../../../services/user';
 import { Role, getRoles } from '../../../services/role';
+import { ApiError } from '@/types/api';
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -61,8 +62,8 @@ const UserManagement: React.FC = () => {
         total: result.total,
       });
     } catch (error) {
-      setUsers([]);
-      message.error('获取用户列表失败');
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取用户列表失败');
     } finally {
       setLoading(false);
     }
@@ -118,7 +119,8 @@ const UserManagement: React.FC = () => {
       setModalVisible(false);
       fetchUsers();
     } catch (error) {
-      message.error('操作失败');
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '保存用户失败');
     }
   };
 
@@ -129,7 +131,8 @@ const UserManagement: React.FC = () => {
       message.success('用户删除成功');
       fetchUsers();
     } catch (error) {
-      message.error('删除失败');
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '删除用户失败');
     }
   };
 
@@ -150,7 +153,8 @@ const UserManagement: React.FC = () => {
         setPasswordModalVisible(false);
       }
     } catch (error) {
-      message.error('密码重置失败');
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '重置密码失败');
     }
   };
 
@@ -184,7 +188,8 @@ const UserManagement: React.FC = () => {
         fetchUsers();
       }
     } catch (error) {
-      message.error('角色分配失败');
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '保存用户角色失败');
     }
   };
 

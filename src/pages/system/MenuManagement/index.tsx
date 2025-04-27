@@ -16,6 +16,7 @@ import {
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Menu, getAllMenus, createMenu, updateMenu, deleteMenu } from '../../../services/menu';
+import { ApiError } from '../../../types/api';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -45,10 +46,11 @@ const MenuManagement: React.FC = () => {
         setTreeData([{ title: '根菜单', value: 0, key: 0 }]);
         message.warning('获取菜单列表数据格式不正确');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       setMenus([]);
       setTreeData([{ title: '根菜单', value: 0, key: 0 }]);
-      message.error('获取菜单列表失败');
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取菜单列表失败');
     } finally {
       setLoading(false);
     }
@@ -113,8 +115,12 @@ const MenuManagement: React.FC = () => {
       }
       setModalVisible(false);
       fetchMenus();
-    } catch (error) {
-      message.error('操作失败');
+    } catch (error: unknown) {
+      if ('errorFields' in error) {
+        return; // 表单验证错误，不需要显示错误消息
+      }
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '操作失败');
     }
   };
 
@@ -124,8 +130,9 @@ const MenuManagement: React.FC = () => {
       await deleteMenu(id);
       message.success('菜单删除成功');
       fetchMenus();
-    } catch (error) {
-      message.error('删除失败');
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '删除失败');
     }
   };
 

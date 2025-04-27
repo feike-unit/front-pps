@@ -15,6 +15,7 @@ import type { DataNode } from 'antd/es/tree';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MenuOutlined } from '@ant-design/icons';
 import { Role, getRoles, createRole, updateRole, deleteRole, getRoleMenuIds, assignMenusToRole } from '../../../services/role';
 import { Menu, getAllMenus } from '../../../services/menu';
+import { ApiError } from '../../../types/api';
 
 const { TextArea } = Input;
 
@@ -41,9 +42,10 @@ const RoleManagement: React.FC = () => {
         setRoles([]);
         message.warning('获取角色列表数据格式不正确');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       setRoles([]);
-      message.error('获取角色列表失败');
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取角色列表失败');
     } finally {
       setLoading(false);
     }
@@ -56,8 +58,9 @@ const RoleManagement: React.FC = () => {
       // 将菜单列表转换为树形结构
       const treeMenus = formatMenuTree(result);
       setMenus(treeMenus);
-    } catch (error) {
-      message.error('获取菜单列表失败');
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取菜单列表失败');
     }
   };
 
@@ -125,8 +128,12 @@ const RoleManagement: React.FC = () => {
       }
       setModalVisible(false);
       fetchRoles();
-    } catch (error) {
-      message.error('操作失败');
+    } catch (error: unknown) {
+      if ('errorFields' in error) {
+        return; // 表单验证错误，不需要显示错误消息
+      }
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '操作失败');
     }
   };
 
@@ -136,8 +143,9 @@ const RoleManagement: React.FC = () => {
       await deleteRole(id);
       message.success('角色删除成功');
       fetchRoles();
-    } catch (error) {
-      message.error('删除失败');
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '删除失败');
     }
   };
 
@@ -150,8 +158,9 @@ const RoleManagement: React.FC = () => {
       const menuIds = await getRoleMenuIds(role.id);
       setCheckedMenuIds(menuIds);
       setMenuModalVisible(true);
-    } catch (error) {
-      message.error('获取角色菜单失败');
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取角色菜单失败');
     } finally {
       setMenuLoading(false);
     }
@@ -168,8 +177,9 @@ const RoleManagement: React.FC = () => {
       await assignMenusToRole(currentRole.id, checkedMenuIds as number[]);
       message.success('菜单分配成功');
       setMenuModalVisible(false);
-    } catch (error) {
-      message.error('菜单分配失败');
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '菜单分配失败');
     } finally {
       setMenuLoading(false);
     }
