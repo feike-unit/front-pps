@@ -4,8 +4,14 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 
-export interface ApiError {
-  code: number;
+export interface ApiError extends Error {
+  response?: {
+    data?: {
+      message?: string;
+      code?: number;
+    };
+    status?: number;
+  };
   message: string;
 }
 

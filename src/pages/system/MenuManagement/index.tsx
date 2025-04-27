@@ -46,9 +46,7 @@ const MenuManagement: React.FC = () => {
         setTreeData([{ title: '根菜单', value: 0, key: 0 }]);
         message.warning('获取菜单列表数据格式不正确');
       }
-    } catch (error: unknown) {
-      setMenus([]);
-      setTreeData([{ title: '根菜单', value: 0, key: 0 }]);
+    } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取菜单列表失败');
     } finally {
@@ -115,12 +113,9 @@ const MenuManagement: React.FC = () => {
       }
       setModalVisible(false);
       fetchMenus();
-    } catch (error: unknown) {
-      if ('errorFields' in error) {
-        return; // 表单验证错误，不需要显示错误消息
-      }
+    } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '操作失败');
+      message.error(apiError.response?.data?.message || apiError.message || '保存菜单失败');
     }
   };
 
@@ -130,9 +125,9 @@ const MenuManagement: React.FC = () => {
       await deleteMenu(id);
       message.success('菜单删除成功');
       fetchMenus();
-    } catch (error: unknown) {
+    } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '删除失败');
+      message.error(apiError.response?.data?.message || apiError.message || '删除菜单失败');
     }
   };
 

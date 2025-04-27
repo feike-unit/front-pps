@@ -42,8 +42,7 @@ const RoleManagement: React.FC = () => {
         setRoles([]);
         message.warning('获取角色列表数据格式不正确');
       }
-    } catch (error: unknown) {
-      setRoles([]);
+    } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取角色列表失败');
     } finally {
@@ -128,12 +127,9 @@ const RoleManagement: React.FC = () => {
       }
       setModalVisible(false);
       fetchRoles();
-    } catch (error: unknown) {
-      if ('errorFields' in error) {
-        return; // 表单验证错误，不需要显示错误消息
-      }
+    } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '操作失败');
+      message.error(apiError.response?.data?.message || apiError.message || '保存角色失败');
     }
   };
 
@@ -143,9 +139,9 @@ const RoleManagement: React.FC = () => {
       await deleteRole(id);
       message.success('角色删除成功');
       fetchRoles();
-    } catch (error: unknown) {
+    } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '删除失败');
+      message.error(apiError.response?.data?.message || apiError.message || '删除角色失败');
     }
   };
 
@@ -177,9 +173,9 @@ const RoleManagement: React.FC = () => {
       await assignMenusToRole(currentRole.id, checkedMenuIds as number[]);
       message.success('菜单分配成功');
       setMenuModalVisible(false);
-    } catch (error: unknown) {
+    } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '菜单分配失败');
+      message.error(apiError.response?.data?.message || apiError.message || '保存角色菜单失败');
     } finally {
       setMenuLoading(false);
     }

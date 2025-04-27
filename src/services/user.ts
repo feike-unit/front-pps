@@ -158,3 +158,8 @@ export async function updateUserPassword(data: PasswordUpdateDto) {
 export async function updateUserRoles(userId: number, roleIds: number[]): Promise<void> {
   return api.put(`/system/users/${userId}/roles`, { roleIds });
 }
+
+// 批量分配角色
+export async function assignRolesBatch(userIds: number[], roleIds: number[]): Promise<void> {
+  return api.put('/system/users/batch/roles', { userIds, roleIds });
+}

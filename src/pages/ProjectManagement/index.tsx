@@ -28,7 +28,7 @@ const ProjectManagement: React.FC = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   // 模拟项目数据
-  const [projects] = useState<Project[]>([
+  const [projects, setProjects] = useState<Project[]>([
     {
       id: 1,
       name: '企业管理系统开发',
@@ -118,7 +118,14 @@ const ProjectManagement: React.FC = () => {
       title: '确认删除',
       content: `确定要删除项目 ${project.name} 吗？`,
       onOk() {
-        message.success('删除成功');
+        try {
+          // 模拟删除操作
+          setProjects(projects.filter((p) => p.id !== project.id));
+          message.success('删除成功');
+        } catch (error) {
+          const apiError = error as ApiError;
+          message.error(apiError.response?.data?.message || apiError.message || '删除项目失败');
+        }
       },
     });
   };
@@ -142,8 +149,22 @@ const ProjectManagement: React.FC = () => {
       };
       delete projectData.dates;
 
-      message.success(editingProject ? '更新成功' : '添加成功');
-      setIsModalVisible(false);
+      try {
+        // 模拟保存操作
+        if (editingProject) {
+          setProjects(projects.map((p) =>
+            p.id === editingProject.id ? { ...p, ...projectData } : p
+          ));
+          message.success('更新成功');
+        } else {
+          setProjects([...projects, projectData]);
+          message.success('添加成功');
+        }
+        setIsModalVisible(false);
+      } catch (error) {
+        const apiError = error as ApiError;
+        message.error(apiError.response?.data?.message || apiError.message || '保存项目失败');
+      }
     });
   };
 

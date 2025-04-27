@@ -23,7 +23,8 @@ import {
   deleteUsers,
   resetPassword, 
   updateUserRoles,
-  updateUserStatus 
+  updateUserStatus,
+  assignRolesBatch,
 } from '../../../services/user';
 import { Role, getRoles } from '../../../services/role';
 import { ApiError } from '@/types/api';
@@ -39,6 +40,7 @@ const UserManagement: React.FC = () => {
   const [roleModalVisible, setRoleModalVisible] = useState<boolean>(false);
   const [selectedUserRoles, setSelectedUserRoles] = useState<number[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [lastSelectedKey, setLastSelectedKey] = useState<React.Key | null>(null);
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 10,
@@ -65,7 +67,7 @@ const UserManagement: React.FC = () => {
       });
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '获取用户列表失败');
+      message.error(apiError.response?.data?.message || '获取用户列表失败');
     } finally {
       setLoading(false);
     }
@@ -122,7 +124,7 @@ const UserManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '保存用户失败');
+      message.error(apiError.response?.data?.message || '保存用户失败');
     }
   };
 
@@ -134,7 +136,7 @@ const UserManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '删除用户失败');
+      message.error(apiError.response?.data?.message || '删除用户失败');
     }
   };
 
@@ -156,7 +158,7 @@ const UserManagement: React.FC = () => {
       }
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '重置密码失败');
+      message.error(apiError.response?.data?.message || '重置密码失败');
     }
   };
 
@@ -191,7 +193,7 @@ const UserManagement: React.FC = () => {
       }
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '保存用户角色失败');
+      message.error(apiError.response?.data?.message || '保存用户角色失败');
     }
   };
 
@@ -202,7 +204,8 @@ const UserManagement: React.FC = () => {
       message.success('用户状态更新成功');
       fetchUsers(pagination.current, pagination.pageSize);
     } catch (error) {
-      message.error(error.response?.data?.message || '用户状态更新失败');
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || '用户状态更新失败');
     }
   };
 
@@ -215,14 +218,84 @@ const UserManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.message || '批量删除失败');
+      message.error(apiError.response?.data?.message || '批量删除失败');
     }
   };
+
+  // 显示批量分配角色对话框
+  const showBatchRoleModal = async () => {
+    try {
+      const result = await getRoles();
+      if (result && Array.isArray(result)) {
+        setRoles(result);
+        roleForm.resetFields();
+        setRoleModalVisible(true);
+      } else {
+        message.warning('获取角色列表数据格式不正确');
+      }
+    } catch (error) {
+      message.error('获取角色列表失败');
+    }
+  };
+
+  // 保存批量分配的角色
+  const handleSaveBatchRoles = async () => {
+    try {
+      const values = await roleForm.validateFields();
+      await assignRolesBatch(selectedRowKeys.map(key => Number(key)), values.roleIds);
+      message.success('批量分配角色成功');
+      setRoleModalVisible(false);
+      setSelectedRowKeys([]);
+      fetchUsers();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || '批量分配角色失败');
+    }
+  };
+
+  // 添加行点击事件处理
+  const onRow = (record: User) => ({
+    onClick: (event: React.MouseEvent) => {
+      const key = record.id;
+      
+      // Shift + 点击：选择范围
+      if (event.shiftKey && lastSelectedKey !== null) {
+        const currentIndex = users.findIndex(user => user.id === key);
+        const lastIndex = users.findIndex(user => user.id === lastSelectedKey);
+        if (currentIndex !== -1 && lastIndex !== -1) {
+          const start = Math.min(currentIndex, lastIndex);
+          const end = Math.max(currentIndex, lastIndex);
+          const keysInRange = users
+            .slice(start, end + 1)
+            .map(user => user.id);
+          setSelectedRowKeys(keysInRange);
+        }
+      }
+      // Ctrl/Command + 点击：切换选中状态
+      else if (event.ctrlKey || event.metaKey) {
+        const newSelectedRowKeys = selectedRowKeys.includes(key)
+          ? selectedRowKeys.filter(k => k !== key)
+          : [...selectedRowKeys, key];
+        setSelectedRowKeys(newSelectedRowKeys);
+      }
+      // 普通点击：只选中当前行
+      else {
+        setSelectedRowKeys([key]);
+      }
+      
+      setLastSelectedKey(key);
+    }
+  });
 
   const rowSelection = {
     selectedRowKeys,
     onChange: (newSelectedRowKeys: React.Key[]) => {
       setSelectedRowKeys(newSelectedRowKeys);
+      if (newSelectedRowKeys.length > 0) {
+        setLastSelectedKey(newSelectedRowKeys[newSelectedRowKeys.length - 1]);
+      } else {
+        setLastSelectedKey(null);
+      }
     },
   };
 
@@ -327,16 +400,24 @@ const UserManagement: React.FC = () => {
             添加用户
           </Button>
           {selectedRowKeys.length > 0 && (
-            <Popconfirm
-              title="确定要删除选中的用户吗？"
-              onConfirm={handleBatchDelete}
-              okText="确定"
-              cancelText="取消"
-            >
-              <Button danger icon={<DeleteOutlined />}>
-                批量删除
+            <>
+              <Button
+                icon={<UserSwitchOutlined />}
+                onClick={showBatchRoleModal}
+              >
+                批量分配角色
               </Button>
-            </Popconfirm>
+              <Popconfirm
+                title="确定要删除选中的用户吗？"
+                onConfirm={handleBatchDelete}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button danger icon={<DeleteOutlined />}>
+                  批量删除
+                </Button>
+              </Popconfirm>
+            </>
           )}
         </Space>
       }
@@ -349,6 +430,7 @@ const UserManagement: React.FC = () => {
         pagination={pagination}
         onChange={handleTableChange}
         rowSelection={rowSelection}
+        onRow={onRow}
       />
 
       {/* 添加/编辑用户对话框 */}
@@ -429,13 +511,20 @@ const UserManagement: React.FC = () => {
 
       {/* 分配角色对话框 */}
       <Modal
-        title="分配角色"
+        title={currentUser ? "分配角色" : "批量分配角色"}
         open={roleModalVisible}
-        onOk={handleSaveUserRoles}
-        onCancel={() => setRoleModalVisible(false)}
+        onOk={currentUser ? handleSaveUserRoles : handleSaveBatchRoles}
+        onCancel={() => {
+          setRoleModalVisible(false);
+          setCurrentUser(null);
+        }}
       >
         <Form form={roleForm} layout="vertical">
-          <Form.Item name="roleIds" label="角色">
+          <Form.Item
+            name="roleIds"
+            label="角色"
+            rules={[{ required: true, message: '请选择角色' }]}
+          >
             <Select
               mode="multiple"
               placeholder="请选择角色"
