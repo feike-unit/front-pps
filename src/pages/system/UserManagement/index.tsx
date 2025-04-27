@@ -13,7 +13,7 @@ import {
   Popconfirm,
   TablePaginationConfig,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, SearchOutlined } from '@ant-design/icons';
 import { 
   User, 
   getUsers, 
@@ -52,12 +52,13 @@ const UserManagement: React.FC = () => {
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
   const [roleForm] = Form.useForm();
+  const [keyword, setKeyword] = useState<string>('');
 
   // 获取用户列表
   const fetchUsers = async (page = pagination.current || 1, pageSize = pagination.pageSize || 10) => {
     setLoading(true);
     try {
-      const result = await getUsers({ pageNum: page, pageSize });
+      const result = await getUsers({ pageNum: page, pageSize, keyword });
       setUsers(result.list);
       setPagination({
         ...pagination,
@@ -81,6 +82,18 @@ const UserManagement: React.FC = () => {
   const handleTableChange = (newPagination: TablePaginationConfig) => {
     const { current = 1, pageSize = 10 } = newPagination;
     fetchUsers(current, pageSize);
+  };
+
+  // 处理搜索
+  const handleSearch = () => {
+    fetchUsers(1);
+  };
+
+  // 处理搜索框回车
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   // 添加或编辑用户
@@ -396,6 +409,16 @@ const UserManagement: React.FC = () => {
       title="用户管理"
       extra={
         <Space>
+          <Input
+            placeholder="搜索用户"
+            value={keyword}
+            onChange={e => setKeyword(e.target.value)}
+            onKeyPress={handleSearchKeyPress}
+            style={{ width: 200 }}
+            suffix={
+              <Button type="text" icon={<SearchOutlined />} onClick={handleSearch} />
+            }
+          />
           <Button type="primary" icon={<PlusOutlined />} onClick={() => handleAddOrEdit()}>
             添加用户
           </Button>

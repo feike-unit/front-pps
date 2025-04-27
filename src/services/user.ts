@@ -65,7 +65,7 @@ export interface PasswordUpdateDto {
 }
 
 // 获取用户列表（分页）
-export const getUsers = async (params: { pageNum: number; pageSize: number }): Promise<ApiResponse<PageResponse<User>>> => {
+export const getUsers = async (params: { pageNum: number; pageSize: number; keyword?: string }): Promise<ApiResponse<PageResponse<User>>> => {
   const response = await api.get<ApiResponse<PageResponse<User>>>('/system/users', { params });
   return response.data;
 };

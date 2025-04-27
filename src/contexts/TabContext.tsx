@@ -105,10 +105,10 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         await dbInitPromise;
         console.log('Current location:', location.pathname); // 调试日志
         
-        const [storedTabs, storedActiveTab] = await Promise.all([
-          getStoredTabs(),
-          getStoredActiveTab()
-        ]);
+      const [storedTabs, storedActiveTab] = await Promise.all([
+        getStoredTabs(),
+        getStoredActiveTab()
+      ]);
 
         console.log('Stored tabs:', storedTabs); // 调试日志
         console.log('Stored active tab:', storedActiveTab); // 调试日志
@@ -131,7 +131,7 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setActiveTab(currentPath);
         } else if (storedTabs && storedTabs.length > 0) {
           // 如果当前路由没有对应的标签页配置，但有存储的标签页
-          setTabs(storedTabs);
+      setTabs(storedTabs);
           // 确保要设置的 activeTab 存在于 tabs 中
           const validActiveTab = storedTabs.find(tab => tab.key === storedActiveTab)
             ? storedActiveTab
@@ -144,7 +144,7 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } catch (error) {
         console.error('Error initializing tabs:', error);
       } finally {
-        setIsInitialized(true);
+      setIsInitialized(true);
         setIsLoading(false);
       }
     };
