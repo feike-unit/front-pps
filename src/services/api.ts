@@ -54,10 +54,13 @@ api.interceptors.response.use(
           console.log('请求参数错误：', errorMessage);
           break;
         case 401:
-          console.log('未授权，请重新登录：', errorMessage);
-          // 未授权，清除token并跳转到登录页
-          localStorage.removeItem('token');
-          window.location.href = '/login';
+          // 如果是登录接口，则跳过token清除和重定向
+          if (error.config.url !== '/auth/login') {
+            console.log('未授权，请重新登录：', errorMessage);
+            // 未授权，清除token并跳转到登录页
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+          }
           break;
         case 403:
           console.log('没有权限执行此操作：', errorMessage);
