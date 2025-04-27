@@ -1,5 +1,5 @@
 import api from './api';
-import { ApiResponse } from '@/types/api';
+import { ApiResponse } from '../types/api';
 
 export interface User {
   id: number;

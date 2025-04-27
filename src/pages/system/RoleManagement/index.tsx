@@ -13,7 +13,7 @@ import {
 } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MenuOutlined } from '@ant-design/icons';
-import { Role, getRoles, createRole, updateRole, deleteRole, getRoleMenuIds, assignMenusToRole } from '../../../services/role';
+import { Role, getRolePage, createRole, updateRole, deleteRole, getRoleMenuIds, assignMenusToRole } from '../../../services/role';
 import { Menu, getAllMenus } from '../../../services/menu';
 import { ApiError } from '../../../types/api';
 
@@ -31,14 +31,34 @@ const RoleManagement: React.FC = () => {
   const [checkedMenuIds, setCheckedMenuIds] = useState<React.Key[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [form] = Form.useForm();
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [sortField, setSortField] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<string>('');
+
+  useEffect(() => {
+    fetchRoles();
+  }, [pagination.current, pagination.pageSize, sortField, sortOrder]);
 
   // 获取角色列表
   const fetchRoles = async () => {
     setLoading(true);
     try {
-      const result = await getRoles();
-      if (result && Array.isArray(result)) {
-        setRoles(result);
+      const result = await getRolePage({
+        pageNum: pagination.current,
+        pageSize: pagination.pageSize,
+        sortField,
+        sortOrder,
+      });
+      if (result) {
+        setRoles(result.list);
+        setPagination({
+          ...pagination,
+          total: result.total,
+        });
       } else {
         setRoles([]);
         message.warning('获取角色列表数据格式不正确');
@@ -108,132 +128,118 @@ const RoleManagement: React.FC = () => {
     return result;
   };
 
-  useEffect(() => {
-    fetchRoles();
-  }, []);
-
-  // 添加或编辑角色
-  const handleAddOrEdit = (role?: Role) => {
-    if (role) {
-      setModalTitle('编辑角色');
-      setCurrentRole(role);
-      form.setFieldsValue({
-        name: role.name,
-        description: role.description,
-      });
+  // 处理表格变化
+  const handleTableChange = (newPagination: any, filters: any, sorter: any) => {
+    setPagination({
+      ...pagination,
+      current: newPagination.current,
+      pageSize: newPagination.pageSize,
+    });
+    if (sorter.field) {
+      setSortField(sorter.field);
+      setSortOrder(sorter.order === 'descend' ? 'desc' : 'asc');
     } else {
-      setModalTitle('添加角色');
-      setCurrentRole(null);
-      form.resetFields();
+      setSortField('');
+      setSortOrder('');
     }
+  };
+
+  // 添加角色
+  const handleAdd = () => {
+    setModalTitle('添加角色');
+    setCurrentRole(null);
+    form.resetFields();
     setModalVisible(true);
   };
 
-  // 保存角色
-  const handleSaveRole = async () => {
-    try {
-      const values = await form.validateFields();
-      if (currentRole) {
-        await updateRole({ id: currentRole.id, ...values });
-        message.success('角色更新成功');
-      } else {
-        await createRole(values);
-        message.success('角色创建成功');
-      }
-      setModalVisible(false);
-      fetchRoles();
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '保存角色失败');
-    }
+  // 编辑角色
+  const handleEdit = (record: Role) => {
+    setModalTitle('编辑角色');
+    setCurrentRole(record);
+    form.setFieldsValue(record);
+    setModalVisible(true);
   };
 
   // 删除角色
   const handleDelete = async (id: number) => {
     try {
       await deleteRole(id);
-      message.success('角色删除成功');
+      message.success('删除成功');
       fetchRoles();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '删除角色失败');
+      message.error(apiError.response?.data?.message || apiError.message || '删除失败');
     }
   };
 
-  // 显示分配菜单对话框
-  const showMenuModal = async (role: Role) => {
-    setCurrentRole(role);
+  // 处理菜单设置
+  const handleMenuSetting = async (record: Role) => {
+    setCurrentRole(record);
     setMenuLoading(true);
     try {
-      // 如果菜单列表为空，先获取菜单列表
-      if (menus.length === 0) {
-        await fetchMenus();
-      }
-      // 获取角色已有的菜单ID列表
-      const menuIds = await getRoleMenuIds(role.id);
-      setCheckedMenuIds(menuIds);
-      // 设置默认展开的一级菜单
-      const firstLevelKeys = menus
-        .filter(menu => menu.parentId === 0)
-        .map(menu => menu.id);
-      setExpandedKeys(firstLevelKeys);
+      const [menuList, roleMenuIds] = await Promise.all([
+        getAllMenus(),
+        getRoleMenuIds(record.id),
+      ]);
+      setMenus(menuList);
+      setCheckedMenuIds(roleMenuIds);
       setMenuModalVisible(true);
-    } catch (error: unknown) {
+    } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '获取角色菜单失败');
+      message.error(apiError.response?.data?.message || apiError.message || '获取菜单数据失败');
     } finally {
       setMenuLoading(false);
     }
   };
 
-  // 保存角色菜单
-  const handleSaveRoleMenus = async () => {
-    if (!currentRole) {
-      message.error('未选择角色');
-      return;
-    }
-    setMenuLoading(true);
+  // 处理表单提交
+  const handleModalOk = async () => {
     try {
-      await assignMenusToRole(currentRole.id, checkedMenuIds as number[]);
-      message.success('菜单分配成功');
+      const values = await form.validateFields();
+      if (currentRole) {
+        await updateRole({ ...values, id: currentRole.id });
+        message.success('更新成功');
+      } else {
+        await createRole(values);
+        message.success('创建成功');
+      }
+      setModalVisible(false);
+      fetchRoles();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '操作失败');
+    }
+  };
+
+  // 处理菜单权限保存
+  const handleMenuModalOk = async () => {
+    if (!currentRole) return;
+    try {
+      await assignMenusToRole(currentRole.id, checkedMenuIds.map(key => Number(key)));
+      message.success('菜单权限设置成功');
       setMenuModalVisible(false);
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '保存角色菜单失败');
-    } finally {
-      setMenuLoading(false);
+      message.error(apiError.response?.data?.message || apiError.message || '菜单权限设置失败');
     }
   };
 
-  // 将菜单数据转换为Tree组件所需的结构
-  const convertToTreeData = (menus: Menu[]): DataNode[] => {
-    return menus.map(menu => ({
-      key: menu.id,
-      title: menu.name,
-      children: menu.children && menu.children.length > 0 ? convertToTreeData(menu.children) : undefined,
-    }));
+  const handleModalCancel = () => {
+    setModalVisible(false);
+    form.resetFields();
   };
 
-  // 树形选择处理
-  const handleMenuCheck = (checkedKeys: any, info: any) => {
-    setCheckedMenuIds(Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked);
-  };
-
-  // 处理展开/收起
-  const handleExpand = (newExpandedKeys: React.Key[]) => {
-    setExpandedKeys(newExpandedKeys);
+  const handleMenuModalCancel = () => {
+    setMenuModalVisible(false);
+    setCheckedMenuIds([]);
   };
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
       title: '角色名称',
       dataIndex: 'name',
       key: 'name',
+      sorter: true,
     },
     {
       title: '描述',
@@ -241,27 +247,48 @@ const RoleManagement: React.FC = () => {
       key: 'description',
     },
     {
+      title: '创建时间',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      sorter: true,
+    },
+    {
+      title: '更新时间',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
+      sorter: true,
+    },
+    {
       title: '操作',
       key: 'action',
-      width: 280,
-      render: (_: any, record: Role) => (
+      render: (text: string, record: Role) => (
         <Space size="middle">
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleAddOrEdit(record)}>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
             编辑
           </Button>
-          <Button type="link" icon={<MenuOutlined />} onClick={() => showMenuModal(record)}>
-            分配菜单
-          </Button>
-          <Popconfirm
-            title="确定要删除这个角色吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
+          <Button
+            type="link"
+            icon={<MenuOutlined />}
+            onClick={() => handleMenuSetting(record)}
           >
-            <Button type="link" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
+            菜单权限
+          </Button>
+          {record.name.toLowerCase() !== 'admin' && (
+            <Popconfirm
+              title="确定要删除这个角色吗？"
+              onConfirm={() => handleDelete(record.id)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="link" danger icon={<DeleteOutlined />}>
+                删除
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -270,61 +297,62 @@ const RoleManagement: React.FC = () => {
   return (
     <Card>
       <div style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleAddOrEdit()}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleAdd}
+        >
           添加角色
         </Button>
       </div>
-
       <Table
-        loading={loading}
-        dataSource={roles}
         columns={columns}
+        dataSource={roles}
         rowKey="id"
-        pagination={{ showSizeChanger: true }}
+        loading={loading}
+        pagination={pagination}
+        onChange={handleTableChange}
       />
-
-      {/* 角色表单弹窗 */}
       <Modal
         title={modalTitle}
         open={modalVisible}
-        onOk={handleSaveRole}
-        onCancel={() => setModalVisible(false)}
-        confirmLoading={loading}
+        onOk={handleModalOk}
+        onCancel={handleModalCancel}
+        destroyOnClose
       >
-        <Form form={form} layout="vertical">
+        <Form
+          form={form}
+          labelCol={{ span: 6 }}
+          wrapperCol={{ span: 16 }}
+          initialValues={currentRole || {}}
+        >
           <Form.Item
             name="name"
             label="角色名称"
             rules={[{ required: true, message: '请输入角色名称' }]}
           >
-            <Input placeholder="请输入角色名称" />
+            <Input />
           </Form.Item>
-          <Form.Item
-            name="description"
-            label="角色描述"
-          >
-            <TextArea rows={4} placeholder="请输入角色描述" />
+          <Form.Item name="description" label="角色描述">
+            <TextArea rows={4} />
           </Form.Item>
         </Form>
       </Modal>
-
-      {/* 菜单分配弹窗 */}
       <Modal
-        title="分配菜单"
+        title="设置菜单权限"
         open={menuModalVisible}
-        onOk={handleSaveRoleMenus}
-        onCancel={() => setMenuModalVisible(false)}
-        confirmLoading={menuLoading}
+        onOk={handleMenuModalOk}
+        onCancel={handleMenuModalCancel}
         width={600}
+        destroyOnClose
       >
         <Tree
           checkable
           checkedKeys={checkedMenuIds}
-          onCheck={handleMenuCheck}
-          treeData={convertToTreeData(menus)}
-          disabled={menuLoading}
+          onCheck={(checked) => setCheckedMenuIds(checked as React.Key[])}
+          treeData={menus}
           expandedKeys={expandedKeys}
-          onExpand={handleExpand}
+          onExpand={(expanded) => setExpandedKeys(expanded)}
         />
       </Modal>
     </Card>
