@@ -14,7 +14,16 @@ import {
   TablePaginationConfig,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined } from '@ant-design/icons';
-import { User, getUsers, createUser, updateUser, deleteUser, resetPassword, updateUserRoles } from '../../../services/user';
+import { 
+  User, 
+  getUsers, 
+  createUser, 
+  updateUser, 
+  deleteUser, 
+  resetPassword, 
+  updateUserRoles,
+  updateUserStatus 
+} from '../../../services/user';
 import { Role, getRoles } from '../../../services/role';
 
 const UserManagement: React.FC = () => {
@@ -179,6 +188,17 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  // 处理用户状态变更
+  const handleStatusChange = async (checked: boolean, user: User) => {
+    try {
+      await updateUserStatus(user.id, checked ? 1 : 0);
+      message.success('用户状态更新成功');
+      fetchUsers(pagination.current, pagination.pageSize);
+    } catch (error) {
+      message.error(error.response?.data?.message || '用户状态更新失败');
+    }
+  };
+
   const columns = [
     {
       title: 'ID',
@@ -201,7 +221,7 @@ const UserManagement: React.FC = () => {
       key: 'email',
     },
     {
-      title: '手机号',
+      title: '电话',
       dataIndex: 'phone',
       key: 'phone',
     },
@@ -209,7 +229,20 @@ const UserManagement: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: number) => (status === 1 ? '启用' : '禁用'),
+      render: (status: number, record: User) => (
+        <Popconfirm
+          title={`确定要${status === 1 ? '禁用' : '启用'}该用户吗？`}
+          onConfirm={() => handleStatusChange(status === 0, record)}
+          okText="确定"
+          cancelText="取消"
+        >
+          <Switch
+            checked={status === 1}
+            checkedChildren="启用"
+            unCheckedChildren="禁用"
+          />
+        </Popconfirm>
+      ),
     },
     {
       title: '角色',
@@ -221,18 +254,30 @@ const UserManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       render: (_: any, record: User) => (
-        <Space size="middle">
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleAddOrEdit(record)}>
+        <Space>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleAddOrEdit(record)}
+          >
             编辑
           </Button>
-          <Button type="link" icon={<KeyOutlined />} onClick={() => showPasswordModal(record)}>
+          <Button
+            type="link"
+            icon={<KeyOutlined />}
+            onClick={() => showPasswordModal(record)}
+          >
             重置密码
           </Button>
-          <Button type="link" icon={<UserSwitchOutlined />} onClick={() => showRoleModal(record)}>
+          <Button
+            type="link"
+            icon={<UserSwitchOutlined />}
+            onClick={() => showRoleModal(record)}
+          >
             分配角色
           </Button>
           <Popconfirm
-            title="确定要删除这个用户吗？"
+            title="确定要删除该用户吗？"
             onConfirm={() => handleDelete(record.id)}
             okText="确定"
             cancelText="取消"
