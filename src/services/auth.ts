@@ -1,5 +1,5 @@
 import api from './api';
-import { tokenDB } from '../utils/db';
+import { tokenStore } from '../utils/db';
 
 interface LoginParams {
   username: string;
@@ -20,38 +20,56 @@ export interface UserInfo {
   roles: string[];
 }
 
-export const login = async (params: LoginParams) => {
-  const response = await api.post('/auth/login', params);
-  // 保存token到IndexedDB
-  if (response.data && response.data.accessToken) {
-    await tokenDB.setTokens({
-      accessToken: response.data.accessToken,
-      refreshToken: response.data.refreshToken
-    });
+interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  accessTokenExpiry: string;
+  refreshTokenExpiry: string;
+}
+
+class AuthService {
+  async login(params: LoginParams): Promise<AuthResponse> {
+    try {
+      const { data } = await api.post<AuthResponse>('/auth/login', params);
+      await tokenStore.setTokens({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+      });
+      return data;
+    } catch (error) {
+      console.error('登录失败:', error);
+      throw error;
+    }
   }
-  return response;
-};
 
-export const logout = async () => {
-  const response = await api.post('/auth/logout');
-  // 清除IndexedDB中的token
-  await tokenDB.clearTokens();
-  return response;
-};
-
-export const refreshToken = async (params: RefreshTokenParams) => {
-  const response = await api.post('/auth/refresh', params);
-  // 更新IndexedDB中的token
-  if (response.data && response.data.accessToken) {
-    await tokenDB.setTokens({
-      accessToken: response.data.accessToken,
-      refreshToken: response.data.refreshToken
-    });
+  async logout(): Promise<void> {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      // 无论请求是否成功，都清除本地token
+      await tokenStore.clearTokens();
+    }
   }
-  return response;
-};
 
-export const getUserInfo = async () => {
-  const response = await api.get('/auth/userinfo');
-  return response.data;
-}; 
+  async refreshToken(params: RefreshTokenParams): Promise<AuthResponse> {
+    try {
+      const { data } = await api.post<AuthResponse>('/auth/refresh', params);
+      await tokenStore.setTokens({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+      });
+      return data;
+    } catch (error) {
+      console.error('刷新token失败:', error);
+      throw error;
+    }
+  }
+
+  async getUserInfo(): Promise<UserInfo> {
+    const { data } = await api.get<UserInfo>('/auth/userinfo');
+    return data;
+  }
+}
+
+export const authService = new AuthService(); 

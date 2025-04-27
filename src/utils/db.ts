@@ -1,118 +1,66 @@
+import { openDB, DBSchema, IDBPDatabase } from 'idb';
+
+interface TokenDBSchema extends DBSchema {
+  tokens: {
+    key: string;
+    value: string;
+  };
+}
+
 interface TokenData {
   accessToken: string;
   refreshToken: string;
 }
 
-class TokenDB {
+class TokenStore {
   private dbName = 'ppsDB';
-  private storeName = 'tokens';
   private version = 1;
-  private db: IDBDatabase | null = null;
+  private db: IDBPDatabase<TokenDBSchema> | null = null;
 
-  // 初始化数据库
-  async init(): Promise<void> {
-    if (this.db) {
-      return;
+  private async getDB() {
+    if (!this.db) {
+      this.db = await openDB<TokenDBSchema>(this.dbName, this.version, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains('tokens')) {
+            db.createObjectStore('tokens');
+          }
+        },
+      });
     }
-
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.version);
-
-      request.onerror = () => {
-        console.error('数据库打开失败');
-        reject(request.error);
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          db.createObjectStore(this.storeName);
-        }
-      };
-    });
+    return this.db;
   }
 
-  // 保存 token
-  async setTokens(tokens: TokenData): Promise<void> {
-    await this.init();
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('数据库未初始化'));
-        return;
-      }
-
-      const transaction = this.db.transaction(this.storeName, 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-
-      // 分别存储 accessToken 和 refreshToken
-      store.put(tokens.accessToken, 'accessToken');
-      store.put(tokens.refreshToken, 'refreshToken');
-
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-    });
+  async setTokens({ accessToken, refreshToken }: TokenData): Promise<void> {
+    const db = await this.getDB();
+    const tx = db.transaction('tokens', 'readwrite');
+    await Promise.all([
+      tx.store.put(accessToken, 'accessToken'),
+      tx.store.put(refreshToken, 'refreshToken'),
+      tx.done,
+    ]);
   }
 
-  // 获取 access token
   async getAccessToken(): Promise<string | null> {
-    await this.init();
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('数据库未初始化'));
-        return;
-      }
-
-      const transaction = this.db.transaction(this.storeName, 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      const request = store.get('accessToken');
-
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
-    });
+    const db = await this.getDB();
+    const token = await db.get('tokens', 'accessToken');
+    return token ?? null;
   }
 
-  // 获取 refresh token
   async getRefreshToken(): Promise<string | null> {
-    await this.init();
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('数据库未初始化'));
-        return;
-      }
-
-      const transaction = this.db.transaction(this.storeName, 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      const request = store.get('refreshToken');
-
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
-    });
+    const db = await this.getDB();
+    const token = await db.get('tokens', 'refreshToken');
+    return token ?? null;
   }
 
-  // 清除所有 token
   async clearTokens(): Promise<void> {
-    await this.init();
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('数据库未初始化'));
-        return;
-      }
-
-      const transaction = this.db.transaction(this.storeName, 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-
-      store.delete('accessToken');
-      store.delete('refreshToken');
-
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-    });
+    const db = await this.getDB();
+    const tx = db.transaction('tokens', 'readwrite');
+    await Promise.all([
+      tx.store.delete('accessToken'),
+      tx.store.delete('refreshToken'),
+      tx.done,
+    ]);
   }
 }
 
-export const tokenDB = new TokenDB(); 
+export const tokenStore = new TokenStore(); 
