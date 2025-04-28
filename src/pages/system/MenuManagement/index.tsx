@@ -37,7 +37,7 @@ const MenuManagement: React.FC = () => {
       const result = await getAllMenus();
       if (result && Array.isArray(result)) {
         setMenus(result);
-        
+
         // 构建树形选择数据
         const treeSelectData = formatTreeSelectData([{ id: 0, name: '根菜单', parentId: -1 } as Menu, ...result]);
         setTreeData(treeSelectData);

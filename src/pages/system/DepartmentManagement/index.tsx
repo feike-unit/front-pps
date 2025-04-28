@@ -12,38 +12,39 @@ import {
   message,
   Popconfirm,
   TreeSelect,
-  Select,
-  Spin,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserSwitchOutlined } from '@ant-design/icons';
-import { Department, getDepartmentTree, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus, assignUsersToDepartment } from '../../../services/department';
-import { getUsers, User } from '../../../services/user';
-import { ApiError } from '../../../types/api';
-
-interface User {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-}
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment } from '../../../services/department';
+import { ApiError } from '../../../services/api';
+import type { ColumnsType } from 'antd/es/table';
 
 const DepartmentManagement: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [treeData, setTreeData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [userModalVisible, setUserModalVisible] = useState<boolean>(false);
   const [modalTitle, setModalTitle] = useState<string>('添加部门');
   const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
   const [form] = Form.useForm();
-  const [userForm] = Form.useForm();
-  const [users, setUsers] = useState<User[]>([]);
 
-  // 获取部门树结构
+  // 获取部门列表
   const fetchDepartments = async () => {
     setLoading(true);
     try {
-      const result = await getDepartmentTree();
-      setDepartments(result.data);
+      const result = await getAllDepartments();
+      if (result && Array.isArray(result)) {
+        setDepartments(result);
+        // 构建树形选择数据
+        const treeSelectData = formatTreeSelectData([
+          { id: 0, name: '根部门', parentId: -1 } as Department,
+          ...result
+        ]);
+        setTreeData(treeSelectData);
+      } else {
+        setDepartments([]);
+        setTreeData([{ title: '根部门', value: 0, key: 0 }]);
+        message.warning('获取部门列表数据格式不正确');
+      }
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取部门列表失败');
@@ -52,23 +53,46 @@ const DepartmentManagement: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
+  // 将部门列表转换为TreeSelect需要的数据格式
+  const formatTreeSelectData = (data: Department[]): any[] => {
+    return data.map(item => ({
+      title: item.name,
+      value: item.id,
+      key: item.id,
+      children: item.children && item.children.length > 0 ? formatTreeSelectData(item.children) : undefined,
+    }));
+  };
 
-  // 获取用户列表
-  const fetchUsers = async () => {
-    try {
-      const result = await getUsers();
-      setUsers(result.data);
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '获取用户列表失败');
+  // 递归处理部门数据，用于表格展示
+  const processDepartmentData = (data: Department[]): Department[] => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return [];
     }
+    
+    return data
+      .filter(dept => dept && dept.parentId === 0)
+      .map(dept => ({
+        ...dept,
+        children: getChildren(data, dept.id),
+      }));
+  };
+
+  // 获取子部门
+  const getChildren = (data: Department[], parentId: number): Department[] => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return [];
+    }
+    
+    return data
+      .filter(dept => dept && dept.parentId === parentId)
+      .map(dept => ({
+        ...dept,
+        children: getChildren(data, dept.id),
+      }));
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchDepartments();
   }, []);
 
   // 添加或编辑部门
@@ -86,7 +110,7 @@ const DepartmentManagement: React.FC = () => {
       setModalTitle('添加部门');
       setCurrentDepartment(null);
       form.resetFields();
-      form.setFieldsValue({ status: true });
+      form.setFieldsValue({ parentId: 0, sort: 0, status: true });
     }
     setModalVisible(true);
   };
@@ -99,7 +123,7 @@ const DepartmentManagement: React.FC = () => {
         ...values,
         status: values.status ? 1 : 0,
       };
-
+      
       if (currentDepartment) {
         await updateDepartment(currentDepartment.id, params);
         message.success('部门更新成功');
@@ -127,55 +151,7 @@ const DepartmentManagement: React.FC = () => {
     }
   };
 
-  // 处理部门状态变更
-  const handleStatusChange = async (checked: boolean, department: Department) => {
-    try {
-      await updateDepartmentStatus(department.id, checked ? 1 : 0);
-      message.success('部门状态更新成功');
-      fetchDepartments();
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '部门状态更新失败');
-    }
-  };
-
-  // 显示分配用户对话框
-  const showUserModal = async (department: Department) => {
-    try {
-      setCurrentDepartment(department);
-      userForm.resetFields();
-      setUserModalVisible(true);
-    } catch (error) {
-      message.error('获取用户列表失败');
-    }
-  };
-
-  // 保存用户分配
-  const handleSaveUsers = async (selectedUserIds: number[]) => {
-    if (!currentDepartment) return;
-    
-    try {
-      await assignUsersToDepartment(currentDepartment.id, selectedUserIds);
-      message.success('用户分配成功');
-      setUserModalVisible(false);
-      fetchDepartments(); // 刷新部门列表
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '用户分配失败');
-    }
-  };
-
-  // 将部门列表转换为TreeSelect的数据格式
-  const transformToTreeData = (departments: Department[]): any[] => {
-    if (!departments) return [];
-    return departments.map(dept => ({
-      title: dept.name,
-      value: dept.id,
-      children: dept.children ? transformToTreeData(dept.children) : undefined,
-    }));
-  };
-
-  const columns = [
+  const columns: ColumnsType<Department> = [
     {
       title: '部门名称',
       dataIndex: 'name',
@@ -191,21 +167,8 @@ const DepartmentManagement: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 120,
-      render: (status: number, record: Department) => (
-        <Popconfirm
-          title={`确定要${status === 1 ? '禁用' : '启用'}该部门吗？`}
-          onConfirm={() => handleStatusChange(status === 0, record)}
-          okText="确定"
-          cancelText="取消"
-        >
-          <Switch
-            checked={status === 1}
-            checkedChildren="启用"
-            unCheckedChildren="禁用"
-          />
-        </Popconfirm>
-      ),
+      width: 100,
+      render: (status: number) => (status === 1 ? '启用' : '禁用'),
     },
     {
       title: '创建时间',
@@ -216,25 +179,15 @@ const DepartmentManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 280,
+      width: 180,
       render: (_: any, record: Department) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleAddOrEdit(record)}
-          >
+        <Space size="middle">
+          <Button type="link" icon={<EditOutlined />} onClick={() => handleAddOrEdit(record)}>
             编辑
           </Button>
-          <Button
-            type="link"
-            icon={<UserSwitchOutlined />}
-            onClick={() => showUserModal(record)}
-          >
-            分配用户
-          </Button>
           <Popconfirm
-            title="确定要删除该部门吗？"
+            title="确定要删除这个部门吗？"
+            description="删除后将无法恢复，如果有子部门，请先删除子部门。"
             onConfirm={() => handleDelete(record.id)}
             okText="确定"
             cancelText="取消"
@@ -248,80 +201,6 @@ const DepartmentManagement: React.FC = () => {
     },
   ];
 
-  const AssignUsersModal: React.FC<{
-    open: boolean;
-    onCancel: () => void;
-    onOk: (selectedUserIds: number[]) => void;
-    departmentId: number;
-  }> = ({ open, onCancel, onOk, departmentId }) => {
-    const [users, setUsers] = useState<User[]>([]);
-    const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-      const fetchUsers = async () => {
-        setLoading(true);
-        try {
-          const response = await getUsers();
-          setUsers(response);
-        } catch (error) {
-          const apiError = error as ApiError;
-          message.error(apiError.response?.data?.message || apiError.message || '获取用户列表失败');
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      if (open) {
-        fetchUsers();
-      }
-    }, [open]);
-
-    const handleOk = () => {
-      onOk(selectedUserIds);
-    };
-
-    return (
-      <Modal
-        title="分配用户"
-        open={open}
-        onCancel={onCancel}
-        onOk={handleOk}
-        width={600}
-      >
-        <Spin spinning={loading}>
-          <Table
-            rowSelection={{
-              type: 'checkbox',
-              onChange: (selectedRowKeys) => {
-                setSelectedUserIds(selectedRowKeys as number[]);
-              },
-            }}
-            dataSource={users}
-            columns={[
-              {
-                title: '用户名',
-                dataIndex: 'username',
-                key: 'username',
-              },
-              {
-                title: '姓名',
-                dataIndex: 'name',
-                key: 'name',
-              },
-              {
-                title: '邮箱',
-                dataIndex: 'email',
-                key: 'email',
-              },
-            ]}
-            rowKey="id"
-          />
-        </Spin>
-      </Modal>
-    );
-  };
-
   return (
     <Card
       title="部门管理"
@@ -333,13 +212,10 @@ const DepartmentManagement: React.FC = () => {
     >
       <Table
         columns={columns}
-        dataSource={departments}
+        dataSource={processDepartmentData(departments)}
         rowKey="id"
         loading={loading}
         pagination={false}
-        expandable={{
-          defaultExpandAllRows: true,
-        }}
       />
 
       {/* 添加/编辑部门对话框 */}
@@ -364,16 +240,18 @@ const DepartmentManagement: React.FC = () => {
             rules={[{ required: true, message: '请选择上级部门' }]}
           >
             <TreeSelect
-              treeData={[
-                { title: '总公司', value: 0 },
-                ...(departments ? transformToTreeData(departments) : []),
-              ]}
+              treeData={treeData}
               placeholder="请选择上级部门"
               treeDefaultExpandAll
               disabled={currentDepartment?.id === 1}
             />
           </Form.Item>
-          <Form.Item name="sort" label="排序" initialValue={0}>
+          <Form.Item
+            name="sort"
+            label="排序"
+            rules={[{ required: true, message: '请输入排序值' }]}
+            initialValue={0}
+          >
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="status" label="状态" valuePropName="checked">
@@ -381,14 +259,6 @@ const DepartmentManagement: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-
-      {/* 用户分配对话框 */}
-      <AssignUsersModal
-        open={userModalVisible}
-        onCancel={() => setUserModalVisible(false)}
-        onOk={handleSaveUsers}
-        departmentId={currentDepartment?.id}
-      />
     </Card>
   );
 };

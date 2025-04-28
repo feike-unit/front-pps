@@ -1,5 +1,5 @@
 import api from './api';
-import { ApiResponse } from '../types/api';
+import type { ApiResponse } from './api';
 
 export interface Department {
   id: number;
@@ -7,58 +7,63 @@ export interface Department {
   parentId: number;
   sort: number;
   status: number; // 0-禁用，1-启用
-  children?: Department[];
   createdAt?: string;
   updatedAt?: string;
+  children?: Department[];
 }
 
-export interface DepartmentCreateParams {
+export interface DepartmentCreateDto {
   name: string;
   parentId: number;
-  sort?: number;
+  sort: number;
   status: number;
 }
 
-export interface DepartmentUpdateParams {
-  id: number;
-  name: string;
+export interface DepartmentUpdateDto {
+  name?: string;
   parentId?: number;
   sort?: number;
   status?: number;
 }
 
-// 获取部门树结构
-export const getDepartmentTree = async () => {
-  const response = await api.get<ApiResponse<Department[]>>('/system/departments/tree');
+// 获取所有部门（平铺结构）
+export const getAllDepartments = async (): Promise<Department[]> => {
+  const response = await api.get<Department[]>('/system/departments');
+  return response.data;
+};
+
+// 根据ID获取部门
+export const getDepartmentById = async (id: number): Promise<Department> => {
+  const response = await api.get<Department>(`/system/departments/${id}`);
   return response.data;
 };
 
 // 创建部门
-export const createDepartment = async (params: DepartmentCreateParams) => {
-  const response = await api.post<ApiResponse<Department>>('/system/departments', params);
+export const createDepartment = async (params: DepartmentCreateDto): Promise<Department> => {
+  const response = await api.post<Department>('/system/departments', params);
   return response.data;
 };
 
 // 更新部门
-export const updateDepartment = async (id: number, params: DepartmentUpdateParams) => {
-  const response = await api.put<ApiResponse<Department>>(`/system/departments/${id}`, params);
+export const updateDepartment = async (id: number, params: DepartmentUpdateDto): Promise<Department> => {
+  const response = await api.put<Department>(`/system/departments/${id}`, params);
   return response.data;
 };
 
 // 删除部门
-export const deleteDepartment = async (id: number) => {
-  const response = await api.delete<ApiResponse<void>>(`/system/departments/${id}`);
+export const deleteDepartment = async (id: number): Promise<string> => {
+  const response = await api.delete<string>(`/system/departments/${id}`);
   return response.data;
 };
 
 // 更新部门状态
-export const updateDepartmentStatus = async (id: number, status: number) => {
-  const response = await api.put<ApiResponse<Department>>(`/system/departments/${id}/status`, { status });
+export const updateDepartmentStatus = async (id: number, status: number): Promise<Department> => {
+  const response = await api.put<Department>(`/system/departments/${id}/status`, { status });
   return response.data;
 };
 
 // 分配用户到部门
-export const assignUsersToDepartment = async (departmentId: number, userIds: number[]) => {
-  const response = await api.put<ApiResponse<void>>(`/system/departments/${departmentId}/users`, { userIds });
+export const assignUsersToDepartment = async (id: number, userIds: number[]): Promise<void> => {
+  const response = await api.put<void>(`/system/departments/${id}/users`, userIds);
   return response.data;
 }; 
