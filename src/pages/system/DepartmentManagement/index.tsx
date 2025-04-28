@@ -14,7 +14,7 @@ import {
   TreeSelect,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment } from '../../../services/department';
+import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus } from '../../../services/department';
 import { ApiError } from '../../../services/api';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -151,6 +151,20 @@ const DepartmentManagement: React.FC = () => {
     }
   };
 
+  // 更新部门状态
+  const handleStatusChange = async (id: number, checked: boolean) => {
+    try {
+      const status = checked ? 1 : 0;
+      const statusText = status === 1 ? '启用' : '禁用';
+      await updateDepartmentStatus(id, status);
+      message.success(`部门${statusText}成功，已同步更新所有子部门状态`);
+      fetchDepartments();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '状态更新失败');
+    }
+  };
+
   const columns: ColumnsType<Department> = [
     {
       title: '部门名称',
@@ -168,7 +182,14 @@ const DepartmentManagement: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: number) => (status === 1 ? '启用' : '禁用'),
+      render: (status: number, record: Department) => (
+        <Switch
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+          checked={status === 1}
+          onChange={(checked) => handleStatusChange(record.id, checked)}
+        />
+      ),
     },
     {
       title: '创建时间',
