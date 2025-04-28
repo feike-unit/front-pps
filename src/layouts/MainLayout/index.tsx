@@ -10,6 +10,7 @@ import {
   SettingOutlined,
   TeamOutlined,
   MenuOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
@@ -70,6 +71,11 @@ const MainLayoutContent: React.FC = () => {
       icon: <SettingOutlined />,
       label: '系统管理',
       children: [
+        {
+          key: '/system/departments',
+          icon: <ApartmentOutlined />,
+          label: '部门管理',
+        },
         {
           key: '/system/users',
           icon: <UserOutlined />,

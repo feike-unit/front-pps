@@ -9,6 +9,7 @@ const routeToTabMap: Record<string, { label: string; closable?: boolean }> = {
   '/system/users': { label: '用户管理', closable: true },
   '/system/roles': { label: '角色管理', closable: true },
   '/system/menus': { label: '菜单管理', closable: true },
+  '/system/departments': { label: '部门管理', closable: true },
   '/profile': { label: '个人信息', closable: true },
   // 在这里添加其他路由映射
 };
@@ -80,44 +81,59 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [tabs, setTabs] = useState<TabItem[]>([DEFAULT_TAB]);
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB.key);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // 初始化加载
   useEffect(() => {
     const init = async () => {
       try {
+        setIsLoading(true);
         await dbInitPromise;
-        const storedTabs = await indexedDB.get<TabItem[]>('tabs', TAB_STORAGE_KEY);
-        const storedActiveTab = await indexedDB.get<string>('tabs', ACTIVE_TAB_STORAGE_KEY);
+        const storedTabs = await getStoredTabs();
+        const storedActiveTab = await getStoredActiveTab();
         
-        if (storedTabs?.length) {
-          setTabs(storedTabs);
-          // 如果当前路径有对应的标签页配置
-          const currentTab = getTabFromPath(location.pathname);
+        // 确保当前路径的标签页存在
+        const currentPath = location.pathname;
+        const currentTab = getTabFromPath(currentPath);
+        
+        if (storedTabs.length > 0) {
+          let newTabs = [...storedTabs];
+          
+          // 如果当前路径有对应的标签页配置且不在已存储的标签页中
+          if (currentTab && !storedTabs.find(tab => tab.key === currentPath)) {
+            newTabs = [...storedTabs, currentTab];
+          }
+          
+          setTabs(newTabs);
+          
+          // 设置活动标签页
           if (currentTab) {
-            // 确保当前路径的标签页存在
-            if (!storedTabs.find(tab => tab.key === location.pathname)) {
-              setTabs([...storedTabs, currentTab]);
-            }
-            setActiveTab(location.pathname);
-          } else if (storedActiveTab && storedTabs.find(tab => tab.key === storedActiveTab)) {
+            setActiveTab(currentPath);
+            await saveState(newTabs, currentPath);
+          } else if (storedActiveTab && newTabs.find(tab => tab.key === storedActiveTab)) {
             setActiveTab(storedActiveTab);
-            if (location.pathname !== storedActiveTab) {
+            if (currentPath !== storedActiveTab) {
               navigate(storedActiveTab);
             }
           }
         } else {
-          // 如果没有存储的标签页，检查当前路由
-          const currentTab = getTabFromPath(location.pathname);
-          if (currentTab && location.pathname !== '/dashboard') {
-            setTabs([DEFAULT_TAB, currentTab]);
-            setActiveTab(location.pathname);
+          // 如果没有存储的标签页，初始化默认标签页
+          const initialTabs = [DEFAULT_TAB];
+          if (currentTab && currentPath !== '/dashboard') {
+            initialTabs.push(currentTab);
           }
+          setTabs(initialTabs);
+          setActiveTab(currentPath === '/dashboard' ? '/dashboard' : currentPath);
+          await saveState(initialTabs, currentPath);
         }
       } catch (error) {
         console.error('初始化标签页失败:', error);
+        // 发生错误时设置默认状态
+        setTabs([DEFAULT_TAB]);
+        setActiveTab(DEFAULT_TAB.key);
       } finally {
         setIsInitialized(true);
+        setIsLoading(false);
       }
     };
     
@@ -127,7 +143,11 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // 获取标签页信息
   const getTabFromPath = (path: string): TabItem | null => {
     const tabInfo = routeToTabMap[path];
-    return tabInfo ? { key: path, label: tabInfo.label, closable: tabInfo.closable } : null;
+    return tabInfo ? { 
+      key: path, 
+      label: tabInfo.label, 
+      closable: tabInfo.closable !== false // 默认为 true
+    } : null;
   };
 
   // 保存状态到 IndexedDB
@@ -153,7 +173,6 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setActiveTab(tab.key);
       saveState(tabs, tab.key);
     }
-    navigate(tab.key);
   };
 
   // 移除标签页
@@ -161,17 +180,20 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const targetIndex = tabs.findIndex(tab => tab.key === targetKey);
     const newTabs = tabs.filter(tab => tab.key !== targetKey);
 
-    // 如果删除的是当前标签页，需要切换到其他标签页
-    if (targetKey === activeTab && newTabs.length) {
-      const newActiveKey = newTabs[targetIndex - 1]?.key || newTabs[0].key;
-      setTabs(newTabs);
-      setActiveTab(newActiveKey);
-      saveState(newTabs, newActiveKey);
-      navigate(newActiveKey);
-    } else {
-      setTabs(newTabs);
-      saveState(newTabs, activeTab);
+    if (newTabs.length === 0) {
+      // 如果删除后没有标签页，添加默认标签页
+      newTabs.push(DEFAULT_TAB);
     }
+
+    // 如果删除的是当前标签页，需要切换到其他标签页
+    if (targetKey === activeTab) {
+      const newActiveKey = newTabs[targetIndex - 1]?.key || newTabs[0].key;
+      setActiveTab(newActiveKey);
+      navigate(newActiveKey);
+    }
+    
+    setTabs(newTabs);
+    saveState(newTabs, activeTab === targetKey ? (newTabs[targetIndex - 1]?.key || newTabs[0].key) : activeTab);
   };
 
   // 监听路由变化
@@ -181,19 +203,21 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const currentPath = location.pathname;
     const currentTab = getTabFromPath(currentPath);
     
-    if (currentTab && !tabs.find(tab => tab.key === currentPath)) {
-      const newTabs = [...tabs, currentTab];
-      setTabs(newTabs);
-      setActiveTab(currentPath);
-      saveState(newTabs, currentPath);
-    } else if (currentTab) {
-      setActiveTab(currentPath);
-      saveState(tabs, currentPath);
+    if (currentTab) {
+      if (!tabs.find(tab => tab.key === currentPath)) {
+        const newTabs = [...tabs, currentTab];
+        setTabs(newTabs);
+        setActiveTab(currentPath);
+        saveState(newTabs, currentPath);
+      } else {
+        setActiveTab(currentPath);
+        saveState(tabs, currentPath);
+      }
     }
   }, [location.pathname, isInitialized]);
 
   if (isLoading) {
-    return null; // 不显示任何加载状态，避免闪烁
+    return <div style={{ display: 'none' }} />; // 使用空的 div 而不是 null，避免闪烁
   }
 
   return (

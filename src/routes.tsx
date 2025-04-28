@@ -12,6 +12,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const SystemUserManagement = lazy(() => import('./pages/system/UserManagement'));
 const RoleManagement = lazy(() => import('./pages/system/RoleManagement'));
 const MenuManagement = lazy(() => import('./pages/system/MenuManagement'));
+const DepartmentManagement = lazy(() => import('./pages/system/DepartmentManagement'));
 // 个人信息页面
 const Profile = lazy(() => import('./pages/Profile'));
 
@@ -38,6 +39,10 @@ export const routes: RouteObject[] = [
         element: <Dashboard />,
       },
       // 系统管理模块路由
+      {
+        path: 'system/departments',
+        element: <DepartmentManagement />,
+      },
       {
         path: 'system/users',
         element: <SystemUserManagement />,
