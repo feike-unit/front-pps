@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [pluginReact()],
   source: {
     alias: {
-      '@': join(__dirname, 'src'),
+      '@': join(__dirname, './src'),
     },
   },
   server: {

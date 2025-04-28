@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Spin } from 'antd';
 import IndexedDBUtil from '../utils/indexedDB';
+import { routeMetadata } from '../routes';
 
 // 路由到标签页的映射配置
 const routeToTabMap: Record<string, { label: string; closable?: boolean }> = {
@@ -52,10 +53,15 @@ const getStoredTabs = async (): Promise<TabItem[]> => {
   try {
     const storedTabs = await indexedDB.get<TabItem[]>('tabs', TAB_STORAGE_KEY);
     console.log('Retrieved tabs from IndexedDB:', storedTabs);
-    return storedTabs || [{ key: '/dashboard', label: '仪表盘', closable: false }];
+    // 恢复存储的标签页时，确保图标信息也被正确恢复
+    return (storedTabs || [{ ...routeMetadata['/dashboard'], key: '/dashboard' }])
+      .map(tab => ({
+        ...tab,
+        icon: routeMetadata[tab.key]?.icon // 确保图标被正确恢复
+      }));
   } catch (error) {
     console.error('Error reading tabs from IndexedDB:', error);
-    return [{ key: '/dashboard', label: '仪表盘', closable: false }];
+    return [{ ...routeMetadata['/dashboard'], key: '/dashboard' }];
   }
 };
 
@@ -73,7 +79,7 @@ const getStoredActiveTab = async (): Promise<string> => {
 
 const TabContext = createContext<TabContextType | undefined>(undefined);
 
-const DEFAULT_TAB: TabItem = { key: '/dashboard', label: '仪表盘', closable: false };
+const DEFAULT_TAB: TabItem = { ...routeMetadata['/dashboard'], key: '/dashboard' };
 
 export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -142,11 +148,10 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // 获取标签页信息
   const getTabFromPath = (path: string): TabItem | null => {
-    const tabInfo = routeToTabMap[path];
-    return tabInfo ? { 
-      key: path, 
-      label: tabInfo.label, 
-      closable: tabInfo.closable !== false // 默认为 true
+    const metadata = routeMetadata[path];
+    return metadata ? {
+      key: path,
+      ...metadata
     } : null;
   };
 
