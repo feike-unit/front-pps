@@ -2,9 +2,29 @@ import axios, { AxiosError } from 'axios';
 import { authService } from './auth';
 import { tokenStore } from '../utils/db';
 
-interface ApiErrorResponse {
+export interface ApiResponse<T = any> {
+  code: number; // 响应码，200表示成功，其他表示错误
+  message: string;
+  data: T;
+  timestamp: string;
+}
+
+export interface ApiError {
+  response?: {
+    data?: {
+      code: number;
+      message: string;
+    };
+  };
   message?: string;
-  code?: number;
+}
+
+export interface PageResponse<T> {
+  pageNum: number;
+  pageSize: number;
+  total: number;
+  pages: number;
+  list: T[];
 }
 
 // 创建axios实例
@@ -33,7 +53,7 @@ const addRefreshSubscriber = (callback: (token: string) => void) => {
 };
 
 // 处理错误响应
-const handleErrorResponse = (error: AxiosError<ApiErrorResponse>) => {
+const handleErrorResponse = (error: AxiosError<ApiError>) => {
   const { response } = error;
   if (!response) {
     console.log('网络错误，无法连接到服务器');
@@ -69,7 +89,7 @@ const handleErrorResponse = (error: AxiosError<ApiErrorResponse>) => {
 };
 
 // 处理未授权错误
-const handleUnauthorizedError = async (error: AxiosError<ApiErrorResponse>) => {
+const handleUnauthorizedError = async (error: AxiosError<ApiError>) => {
   const { config, data } = error.response!;
 
   // 如果是登录或刷新token接口，则直接返回错误
