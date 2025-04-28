@@ -68,6 +68,6 @@ export const getRoleMenuIds = async (id: number) => {
 
 // 分配菜单给角色
 export const assignMenusToRole = async (roleId: number, menuIds: number[]) => {
-  const response = await api.post<void>(`/system/roles/${roleId}/menus`, { menuIds });
+  const response = await api.post<void>(`/system/roles/${roleId}/menus`, menuIds);
   return response.data;
 }; 

@@ -19,9 +19,15 @@ import { ApiError } from '../../../types/api';
 
 const { TextArea } = Input;
 
+interface TreeMenu extends DataNode {
+  key: number;
+  title: string;
+  children?: TreeMenu[];
+}
+
 const RoleManagement: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
-  const [menus, setMenus] = useState<Menu[]>([]);
+  const [menus, setMenus] = useState<TreeMenu[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [menuLoading, setMenuLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -78,7 +84,7 @@ const RoleManagement: React.FC = () => {
       // 将菜单列表转换为树形结构
       if (result && Array.isArray(result)) {
         const treeMenus = formatMenuTree(result);
-        setMenus(treeMenus);
+        setMenus(treeMenus.map(menu => formatTreeNode(menu)));
       } else {
         setMenus([]);
         message.warning('获取菜单列表数据格式不正确');
@@ -181,8 +187,16 @@ const RoleManagement: React.FC = () => {
         getAllMenus(),
         getRoleMenuIds(record.id),
       ]);
-      setMenus(menuList);
+      
+      // 将菜单列表转换为树形结构
+      const treeMenus = formatMenuTree(menuList);
+      
+      // 转换为 antd Tree 组件需要的数据格式
+      const formattedTreeData = treeMenus.map(menu => formatTreeNode(menu));
+      
+      setMenus(formattedTreeData);
       setCheckedMenuIds(roleMenuIds);
+      setExpandedKeys(roleMenuIds); // 设置展开的节点
       setMenuModalVisible(true);
     } catch (error) {
       const apiError = error as ApiError;
@@ -190,6 +204,15 @@ const RoleManagement: React.FC = () => {
     } finally {
       setMenuLoading(false);
     }
+  };
+
+  // 将菜单数据转换为 Tree 节点格式
+  const formatTreeNode = (menu: Menu): TreeMenu => {
+    return {
+      key: menu.id,
+      title: menu.name,
+      children: menu.children?.map(child => formatTreeNode(child)),
+    };
   };
 
   // 处理表单提交
