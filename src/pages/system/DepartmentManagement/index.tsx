@@ -180,12 +180,6 @@ const DepartmentManagement: React.FC = () => {
       key: 'name',
     },
     {
-      title: '排序',
-      dataIndex: 'sort',
-      key: 'sort',
-      width: 100,
-    },
-    {
       title: '状态',
       dataIndex: 'status',
       key: 'status',

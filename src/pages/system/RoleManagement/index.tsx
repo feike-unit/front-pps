@@ -15,7 +15,7 @@ import type { DataNode } from 'antd/es/tree';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MenuOutlined } from '@ant-design/icons';
 import { Role, getRolePage, createRole, updateRole, deleteRole, getRoleMenuIds, assignMenusToRole } from '../../../services/role';
 import { Menu, getAllMenus } from '../../../services/menu';
-import { ApiError } from '../../../types/api';
+import { ApiError } from '../../../services/api';
 
 const { TextArea } = Input;
 
@@ -318,8 +318,9 @@ const RoleManagement: React.FC = () => {
   ];
 
   return (
-    <Card>
-      <div style={{ marginBottom: 16 }}>
+    <Card
+      title="角色管理"
+      extra={
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -327,7 +328,8 @@ const RoleManagement: React.FC = () => {
         >
           添加角色
         </Button>
-      </div>
+      }
+    >
       <Table
         columns={columns}
         dataSource={roles}

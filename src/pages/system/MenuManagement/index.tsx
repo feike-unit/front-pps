@@ -195,11 +195,6 @@ const MenuManagement: React.FC = () => {
       key: 'icon',
     },
     {
-      title: '排序',
-      dataIndex: 'sort',
-      key: 'sort',
-    },
-    {
       title: '权限标识',
       dataIndex: 'permission',
       key: 'permission',
