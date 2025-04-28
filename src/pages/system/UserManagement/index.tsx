@@ -585,7 +585,10 @@ const UserManagement: React.FC = () => {
             <Select
               mode="multiple"
               placeholder="请选择角色"
-              options={roles.map(role => ({ label: role.name, value: role.id }))}
+              options={roles.map(role => ({ 
+                label: `${role.name}${role.description ? ` - ${role.description}` : ''}`, 
+                value: role.id 
+              }))}
             />
           </Form.Item>
         </Form>
