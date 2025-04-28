@@ -52,15 +52,24 @@ interface TabContextType {
 const getStoredTabs = async (): Promise<TabItem[]> => {
   try {
     const storedTabs = await indexedDB.get<TabItem[]>('tabs', TAB_STORAGE_KEY);
-    console.log('Retrieved tabs from IndexedDB:', storedTabs);
-    // 恢复存储的标签页时，确保图标信息也被正确恢复
-    return (storedTabs || [{ ...routeMetadata['/dashboard'], key: '/dashboard' }])
-      .map(tab => ({
-        ...tab,
-        icon: routeMetadata[tab.key]?.icon // 确保图标被正确恢复
-      }));
+    console.log('从 IndexedDB 获取的原始标签数据:', storedTabs);
+    
+    // 如果没有存储的标签，返回默认标签
+    if (!storedTabs) {
+      console.log('没有存储的标签，返回默认标签');
+      return [{ ...routeMetadata['/dashboard'], key: '/dashboard' }];
+    }
+
+    // 过滤掉没有对应 routeMetadata 的标签
+    const validTabs = storedTabs.filter(tab => routeMetadata[tab.key]);
+    console.log('过滤后的有效标签:', validTabs);
+
+    return validTabs.map(tab => ({
+      ...tab,
+      icon: routeMetadata[tab.key]?.icon
+    }));
   } catch (error) {
-    console.error('Error reading tabs from IndexedDB:', error);
+    console.error('从 IndexedDB 读取标签失败:', error);
     return [{ ...routeMetadata['/dashboard'], key: '/dashboard' }];
   }
 };
@@ -158,12 +167,21 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // 保存状态到 IndexedDB
   const saveState = async (newTabs: TabItem[], newActiveTab: string) => {
     try {
+      console.log('保存到 IndexedDB 的标签数据:', newTabs);
+      // 确保只保存必要的数据
+      const tabsToSave = newTabs.map(tab => ({
+        key: tab.key,
+        label: tab.label,
+        closable: tab.closable
+      }));
+      
       await Promise.all([
-        indexedDB.put('tabs', { key: TAB_STORAGE_KEY, value: newTabs }),
+        indexedDB.put('tabs', { key: TAB_STORAGE_KEY, value: tabsToSave }),
         indexedDB.put('tabs', { key: ACTIVE_TAB_STORAGE_KEY, value: newActiveTab })
       ]);
+      console.log('标签数据保存成功');
     } catch (error) {
-      console.error('保存标签页状态失败:', error);
+      console.error('保存标签状态失败:', error);
     }
   };
 
@@ -181,24 +199,33 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // 移除标签页
-  const removeTab = (targetKey: string) => {
+  const removeTab = async (targetKey: string) => {
+    console.log('开始移除标签:', targetKey);
     const targetIndex = tabs.findIndex(tab => tab.key === targetKey);
     const newTabs = tabs.filter(tab => tab.key !== targetKey);
 
     if (newTabs.length === 0) {
-      // 如果删除后没有标签页，添加默认标签页
       newTabs.push(DEFAULT_TAB);
     }
 
     // 如果删除的是当前标签页，需要切换到其他标签页
+    let newActiveTab = activeTab;
     if (targetKey === activeTab) {
-      const newActiveKey = newTabs[targetIndex - 1]?.key || newTabs[0].key;
-      setActiveTab(newActiveKey);
-      navigate(newActiveKey);
+      newActiveTab = newTabs[targetIndex - 1]?.key || newTabs[0].key;
+      setActiveTab(newActiveTab);
+      navigate(newActiveTab);
     }
     
+    console.log('更新后的标签列表:', newTabs);
     setTabs(newTabs);
-    saveState(newTabs, activeTab === targetKey ? (newTabs[targetIndex - 1]?.key || newTabs[0].key) : activeTab);
+    
+    // 确保异步操作完成
+    try {
+      await saveState(newTabs, newActiveTab);
+      console.log('标签移除并保存成功');
+    } catch (error) {
+      console.error('标签移除保存失败:', error);
+    }
   };
 
   // 监听路由变化
