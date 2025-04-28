@@ -71,10 +71,14 @@ const DepartmentManagement: React.FC = () => {
     
     return data
       .filter(dept => dept && dept.parentId === 0)
-      .map(dept => ({
-        ...dept,
-        children: getChildren(data, dept.id),
-      }));
+      .map(dept => {
+        const children = getChildren(data, dept.id);
+        return {
+          ...dept,
+          // 只有当有子部门时才添加 children 属性
+          ...(children.length > 0 ? { children } : {})
+        };
+      });
   };
 
   // 获取子部门
@@ -85,10 +89,14 @@ const DepartmentManagement: React.FC = () => {
     
     return data
       .filter(dept => dept && dept.parentId === parentId)
-      .map(dept => ({
-        ...dept,
-        children: getChildren(data, dept.id),
-      }));
+      .map(dept => {
+        const children = getChildren(data, dept.id);
+        return {
+          ...dept,
+          // 只有当有子部门时才添加 children 属性
+          ...(children.length > 0 ? { children } : {})
+        };
+      });
   };
 
   useEffect(() => {
@@ -237,6 +245,8 @@ const DepartmentManagement: React.FC = () => {
         rowKey="id"
         loading={loading}
         pagination={false}
+        childrenColumnName="children"
+        indentSize={24}
       />
 
       {/* 添加/编辑部门对话框 */}

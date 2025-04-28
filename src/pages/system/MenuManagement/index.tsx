@@ -16,7 +16,7 @@ import {
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Menu, getAllMenus, createMenu, updateMenu, deleteMenu } from '../../../services/menu';
-import { ApiError } from '../../../types/api';
+import { ApiError } from '../../../services/api';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -139,10 +139,14 @@ const MenuManagement: React.FC = () => {
     
     return data
       .filter(menu => menu && menu.parentId === 0)
-      .map(menu => ({
-        ...menu,
-        children: getChildren(data, menu.id),
-      }));
+      .map(menu => {
+        const children = getChildren(data, menu.id);
+        return {
+          ...menu,
+          // 只有当有子菜单时才添加 children 属性
+          ...(children.length > 0 ? { children } : {})
+        };
+      });
   };
 
   // 获取子菜单
@@ -153,10 +157,14 @@ const MenuManagement: React.FC = () => {
     
     return data
       .filter(menu => menu && menu.parentId === parentId)
-      .map(menu => ({
-        ...menu,
-        children: getChildren(data, menu.id),
-      }));
+      .map(menu => {
+        const children = getChildren(data, menu.id);
+        return {
+          ...menu,
+          // 只有当有子菜单时才添加 children 属性
+          ...(children.length > 0 ? { children } : {})
+        };
+      });
   };
 
   const columns = [
@@ -242,6 +250,8 @@ const MenuManagement: React.FC = () => {
         dataSource={processMenuData(menus)}
         loading={loading}
         pagination={false}
+        childrenColumnName="children"
+        indentSize={24}
       />
 
       {/* 添加/编辑菜单对话框 */}
