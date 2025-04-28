@@ -12,7 +12,9 @@ import {
   message,
   Popconfirm,
   TablePaginationConfig,
+  SorterResult,
 } from 'antd';
+import type { TableProps } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, SearchOutlined } from '@ant-design/icons';
 import { 
   User, 
@@ -56,10 +58,22 @@ const UserManagement: React.FC = () => {
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
 
   // 获取用户列表
-  const fetchUsers = async (page = pagination.current || 1, pageSize = pagination.pageSize || 10, searchKeyword = keyword) => {
+  const fetchUsers = async (
+    page = pagination.current || 1, 
+    pageSize = pagination.pageSize || 10, 
+    searchKeyword = keyword,
+    sortField?: string,
+    sortOrder?: string,
+  ) => {
     setLoading(true);
     try {
-      const result = await getUsers({ pageNum: page, pageSize, keyword: searchKeyword });
+      const result = await getUsers({ 
+        pageNum: page, 
+        pageSize, 
+        keyword: searchKeyword,
+        sortField,
+        sortOrder,
+      });
       setUsers(result.list);
       setPagination({
         ...pagination,
@@ -94,10 +108,20 @@ const UserManagement: React.FC = () => {
     fetchUsers();
   }, []);
 
-  // 处理表格分页变化
-  const handleTableChange = (newPagination: TablePaginationConfig) => {
+  // 处理表格变化
+  const handleTableChange: TableProps<User>['onChange'] = (
+    newPagination: TablePaginationConfig,
+    _filters,
+    sorter: SorterResult<User> | SorterResult<User>[]
+  ) => {
     const { current = 1, pageSize = 10 } = newPagination;
-    fetchUsers(current, pageSize);
+    const singleSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    const sortField = singleSorter.field as string;
+    const sortOrder = singleSorter.order ? 
+      (singleSorter.order === 'descend' ? 'desc' : 'asc') : 
+      undefined;
+
+    fetchUsers(current, pageSize, keyword, sortField, sortOrder);
   };
 
   // 处理搜索
@@ -299,125 +323,73 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  // 添加行点击事件处理
-  const onRow = (record: User) => ({
-    onClick: (event: React.MouseEvent) => {
-      const key = record.id;
-      
-      // Shift + 点击：选择范围
-      if (event.shiftKey && lastSelectedKey !== null) {
-        const currentIndex = users.findIndex(user => user.id === key);
-        const lastIndex = users.findIndex(user => user.id === lastSelectedKey);
-        if (currentIndex !== -1 && lastIndex !== -1) {
-          const start = Math.min(currentIndex, lastIndex);
-          const end = Math.max(currentIndex, lastIndex);
-          const keysInRange = users
-            .slice(start, end + 1)
-            .map(user => user.id);
-          setSelectedRowKeys(keysInRange);
-        }
-      }
-      // Ctrl/Command + 点击：切换选中状态
-      else if (event.ctrlKey || event.metaKey) {
-        const newSelectedRowKeys = selectedRowKeys.includes(key)
-          ? selectedRowKeys.filter(k => k !== key)
-          : [...selectedRowKeys, key];
-        setSelectedRowKeys(newSelectedRowKeys);
-      }
-      // 普通点击：只选中当前行
-      else {
-        setSelectedRowKeys([key]);
-      }
-      
-      setLastSelectedKey(key);
-    }
-  });
-
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (newSelectedRowKeys: React.Key[]) => {
-      setSelectedRowKeys(newSelectedRowKeys);
-      if (newSelectedRowKeys.length > 0) {
-        setLastSelectedKey(newSelectedRowKeys[newSelectedRowKeys.length - 1]);
-      } else {
-        setLastSelectedKey(null);
-      }
-    },
-  };
-
+  // 表格列定义
   const columns = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
     {
       title: '用户名',
       dataIndex: 'username',
       key: 'username',
+      sorter: true,
     },
     {
       title: '姓名',
       dataIndex: 'name',
       key: 'name',
+      sorter: true,
     },
     {
       title: '邮箱',
       dataIndex: 'email',
       key: 'email',
+      sorter: true,
     },
     {
       title: '电话',
       dataIndex: 'phone',
       key: 'phone',
+      sorter: true,
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      sorter: true,
       render: (status: number, record: User) => (
-        <Popconfirm
-          title={`确定要${status === 1 ? '禁用' : '启用'}该用户吗？`}
-          onConfirm={() => handleStatusChange(status === 0, record)}
-          okText="确定"
-          cancelText="取消"
-        >
-          <Switch
-            checked={status === 1}
-            checkedChildren="启用"
-            unCheckedChildren="禁用"
-          />
-        </Popconfirm>
+        <Switch
+          checked={status === 1}
+          onChange={(checked) => handleStatusChange(checked, record)}
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+        />
       ),
     },
     {
       title: '角色',
       dataIndex: 'roles',
       key: 'roles',
-      render: (roles: string[]) => roles?.join(', '),
+      render: (roles: string[]) => roles?.join(', ') || '-',
     },
     {
       title: '操作',
       key: 'action',
-      width: 360,
       render: (_: any, record: User) => (
-        <Space>
+        <Space size="middle">
           <Button
-            type="link"
+            type="text"
             icon={<EditOutlined />}
             onClick={() => handleAddOrEdit(record)}
           >
             编辑
           </Button>
           <Button
-            type="link"
+            type="text"
             icon={<KeyOutlined />}
             onClick={() => showPasswordModal(record)}
           >
             重置密码
           </Button>
           <Button
-            type="link"
+            type="text"
             icon={<UserSwitchOutlined />}
             onClick={() => showRoleModal(record)}
           >
@@ -429,7 +401,7 @@ const UserManagement: React.FC = () => {
             okText="确定"
             cancelText="取消"
           >
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="text" danger icon={<DeleteOutlined />}>
               删除
             </Button>
           </Popconfirm>
@@ -465,7 +437,7 @@ const UserManagement: React.FC = () => {
                 批量分配角色
               </Button>
               <Popconfirm
-                title="确定要删除选中的用户吗？"
+                title={`确定要删除选中的 ${selectedRowKeys.length} 个用户吗？`}
                 onConfirm={handleBatchDelete}
                 okText="确定"
                 cancelText="取消"
@@ -486,8 +458,15 @@ const UserManagement: React.FC = () => {
         loading={loading}
         pagination={pagination}
         onChange={handleTableChange}
-        rowSelection={rowSelection}
-        onRow={onRow}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (selectedKeys, selectedRows) => {
+            setSelectedRowKeys(selectedKeys);
+          },
+          onSelect: (record, selected) => {
+            setLastSelectedKey(selected ? record.id : null);
+          },
+        }}
       />
 
       {/* 添加/编辑用户对话框 */}
