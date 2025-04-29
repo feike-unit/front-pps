@@ -12,12 +12,48 @@ import {
   message,
   Popconfirm,
   TreeSelect,
+  Tag,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
-import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus } from '../../../services/department';
+import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus, getDepartmentUsers } from '../../../services/department';
 import { ApiError } from '../../../services/api';
 import type { ColumnsType } from 'antd/es/table';
 import AssignUsersModal from './AssignUsersModal';
+import type { UserInfo } from '../../../services/user';
+
+// 新增 DepartmentUsers 组件
+const DepartmentUsers: React.FC<{ departmentId: number }> = ({ departmentId }) => {
+  const [users, setUsers] = useState<UserInfo[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const result = await getDepartmentUsers(departmentId);
+        setUsers(result);
+      } catch (error) {
+        const apiError = error as ApiError;
+        message.error(apiError.response?.data?.message || apiError.message || '获取用户列表失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [departmentId]);
+
+  if (loading) {
+    return <span>加载中...</span>;
+  }
+
+  return (
+    <Space wrap>
+      {users.map(user => (
+        <Tag key={user.id}>{user.name}</Tag>
+      ))}
+    </Space>
+  );
+};
 
 const DepartmentManagement: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -28,6 +64,7 @@ const DepartmentManagement: React.FC = () => {
   const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
   const [assignUsersModalVisible, setAssignUsersModalVisible] = useState<boolean>(false);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [refreshUserListKey, setRefreshUserListKey] = useState<number>(0);
   const [form] = Form.useForm();
 
   // 获取部门列表
@@ -68,36 +105,36 @@ const DepartmentManagement: React.FC = () => {
 
   // 递归处理部门数据，用于表格展示
   const processDepartmentData = (data: Department[]): Department[] => {
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    if (!data || !Array.isArray(data)) {
       return [];
     }
     
     return data
-      .filter(dept => dept && dept.parentId === 0)
+      .filter(dept => dept && typeof dept.id === 'number' && typeof dept.parentId === 'number' && dept.parentId === 0)
       .map(dept => {
+        if (!dept) return dept;
         const children = getChildren(data, dept.id);
         return {
           ...dept,
-          // 只有当有子部门时才添加 children 属性
-          ...(children.length > 0 ? { children } : {})
+          ...(children && children.length > 0 ? { children } : {})
         };
       });
   };
 
   // 获取子部门
   const getChildren = (data: Department[], parentId: number): Department[] => {
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    if (!data || !Array.isArray(data) || typeof parentId !== 'number') {
       return [];
     }
     
     return data
-      .filter(dept => dept && dept.parentId === parentId)
+      .filter(dept => dept && typeof dept.id === 'number' && typeof dept.parentId === 'number' && dept.parentId === parentId)
       .map(dept => {
+        if (!dept) return dept;
         const children = getChildren(data, dept.id);
         return {
           ...dept,
-          // 只有当有子部门时才添加 children 属性
-          ...(children.length > 0 ? { children } : {})
+          ...(children && children.length > 0 ? { children } : {})
         };
       });
   };
@@ -188,11 +225,38 @@ const DepartmentManagement: React.FC = () => {
     setSelectedDepartmentId(null);
   };
 
+  // 用户分配成功的回调
+  const handleAssignUsersSuccess = () => {
+    // 增加 refreshKey 以触发重新获取用户列表
+    setRefreshUserListKey(prev => prev + 1);
+  };
+
   const columns: ColumnsType<Department> = [
     {
       title: '部门名称',
       dataIndex: 'name',
       key: 'name',
+      width: 200,
+      ellipsis: true,
+      render: (name: string) => (
+        <div style={{ 
+          whiteSpace: 'nowrap', 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis' 
+        }}>
+          {name}
+        </div>
+      )
+    },
+    {
+      title: '用户列表',
+      key: 'users',
+      render: (_, record) => (
+        <DepartmentUsers 
+          key={`${record.id}-${refreshUserListKey}`} 
+          departmentId={record.id} 
+        />
+      )
     },
     {
       title: '状态',
@@ -304,7 +368,7 @@ const DepartmentManagement: React.FC = () => {
         open={assignUsersModalVisible}
         departmentId={selectedDepartmentId}
         onClose={handleAssignUsersClose}
-        onSuccess={fetchDepartments}
+        onSuccess={handleAssignUsersSuccess}
       />
     </Card>
   );

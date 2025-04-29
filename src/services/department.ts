@@ -1,5 +1,6 @@
 import api from './api';
 import type { ApiResponse } from './api';
+import type { UserInfo } from './user';
 
 export interface Department {
   id: number;
@@ -62,9 +63,9 @@ export const updateDepartmentStatus = async (id: number, status: number): Promis
   return response.data;
 };
 
-// 获取部门的用户列表
-export const getDepartmentUsers = async (id: number): Promise<number[]> => {
-  const response = await api.get<number[]>(`/system/departments/${id}/users`);
+// 获取部门下的用户列表
+export const getDepartmentUsers = async (departmentId: number): Promise<UserInfo[]> => {
+  const response = await api.get<UserInfo[]>(`/system/users/department/${departmentId}`);
   return response.data;
 };
 

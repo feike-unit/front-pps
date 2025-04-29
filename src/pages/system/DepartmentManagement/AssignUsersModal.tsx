@@ -5,7 +5,12 @@ import type { Key } from 'antd/es/table/interface';
 import { getDepartmentUsers, assignUsersToDepartment } from '../../../services/department';
 import { getUsers } from '../../../services/user';
 import { ApiError } from '../../../services/api';
-import { User } from '../../../types/user';
+
+interface User {
+  id: number;
+  username: string;
+  nickname?: string;
+}
 
 interface AssignUsersModalProps {
   open: boolean;
@@ -49,8 +54,8 @@ const AssignUsersModal: React.FC<AssignUsersModalProps> = ({
       }));
       setUsers(transferUsers);
 
-      // 设置已选中的用户
-      setSelectedKeys(departmentUsers);
+      // 设置已选中的用户，确保 departmentUsers 是数组
+      setSelectedKeys(Array.isArray(departmentUsers) ? departmentUsers.map(user => user.id) : []);
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取用户数据失败');
@@ -71,6 +76,12 @@ const AssignUsersModal: React.FC<AssignUsersModalProps> = ({
 
   const handleOk = async () => {
     if (!departmentId) return;
+    
+    // 检查是否有已分配用户
+    if (selectedKeys.length === 0) {
+      message.warning('请至少分配一个用户');
+      return;
+    }
     
     try {
       await assignUsersToDepartment(departmentId, selectedKeys.map(key => Number(key)));
