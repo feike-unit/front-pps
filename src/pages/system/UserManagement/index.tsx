@@ -104,6 +104,7 @@ const UserManagement: React.FC = () => {
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
   const [departmentForm] = Form.useForm();
   const [departmentDisplayKey, setDepartmentDisplayKey] = useState<number>(0);
+  const [currentAssignUserId, setCurrentAssignUserId] = useState<number | null>(null);
 
   interface TreeNode {
     title: string;
@@ -446,6 +447,23 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  // 显示加入部门对话框（支持单个和批量）
+  const showAssignDepartmentModal = async (userId?: number) => {
+    if (userId) {
+      // 单个用户
+      setCurrentAssignUserId(userId);
+    } else {
+      // 批量操作
+      if (selectedRowKeys.length === 0) {
+        message.warning('请先选择用户');
+        return;
+      }
+      setCurrentAssignUserId(null);
+    }
+    await fetchDepartments();
+    setDepartmentModalVisible(true);
+  };
+
   // 处理批量加入部门
   const handleBatchAssignDepartment = async () => {
     if (!selectedDepartmentId) {
@@ -454,11 +472,18 @@ const UserManagement: React.FC = () => {
     }
 
     try {
-      await assignUsersToDepartment(selectedDepartmentId, selectedRowKeys.map(key => Number(key)));
+      const userIds = currentAssignUserId 
+        ? [currentAssignUserId] 
+        : selectedRowKeys.map(key => Number(key));
+
+      await assignUsersToDepartment(selectedDepartmentId, userIds);
       message.success('用户加入部门成功');
       setDepartmentModalVisible(false);
       setSelectedDepartmentId(null);
-      setSelectedRowKeys([]);
+      setCurrentAssignUserId(null);
+      if (!currentAssignUserId) {
+        setSelectedRowKeys([]);
+      }
       setDepartmentDisplayKey(prev => prev + 1);
       fetchUsers();
     } catch (error) {
@@ -549,6 +574,13 @@ const UserManagement: React.FC = () => {
           >
             分配角色
           </Button>
+          <Button
+            type="text"
+            icon={<TeamOutlined />}
+            onClick={() => showAssignDepartmentModal(record.id)}
+          >
+            加入部门
+          </Button>
           <Popconfirm
             title="确定要删除该用户吗？"
             onConfirm={() => handleDelete(record.id)}
@@ -596,10 +628,7 @@ const UserManagement: React.FC = () => {
                 <Button danger icon={<DeleteOutlined />}>批量删除</Button>
               </Popconfirm>
               <Button icon={<UserSwitchOutlined />} onClick={showBatchRoleModal}>批量分配角色</Button>
-              <Button icon={<TeamOutlined />} onClick={() => {
-                fetchDepartments();
-                setDepartmentModalVisible(true);
-              }}>批量加入部门</Button>
+              <Button icon={<TeamOutlined />} onClick={() => showAssignDepartmentModal()}>批量加入部门</Button>
             </>
           )}
         </Space>
@@ -727,14 +756,18 @@ const UserManagement: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* 批量加入部门对话框 */}
+      {/* 加入部门对话框（支持单个和批量） */}
       <Modal
-        title="批量加入部门"
+        title={currentAssignUserId ? '加入部门' : '批量加入部门'}
         open={departmentModalVisible}
         onOk={handleBatchAssignDepartment}
         onCancel={() => {
           setDepartmentModalVisible(false);
           setSelectedDepartmentId(null);
+          setCurrentAssignUserId(null);
+          if (!currentAssignUserId) {
+            setSelectedRowKeys([]);
+          }
         }}
         width={400}
       >
