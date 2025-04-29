@@ -33,16 +33,19 @@ import {
   updateUserStatus,
   assignRolesBatch,
   getUserDepartments,
+  removeUserFromDepartment,
 } from '../../../services/user';
 import type { Department } from '../../../services/department';
 import { getAllDepartments, assignUsersToDepartment } from '../../../services/department';
 import { Role, getRoles } from '../../../services/role';
 import type { ApiError } from '../../../types/api';
+import ReactDOM from 'react-dom';
 
 // 用户所属部门组件
 const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ userId, refreshKey }) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
+  const [popconfirmVisible, setPopconfirmVisible] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -60,6 +63,21 @@ const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ use
     fetchDepartments();
   }, [userId, refreshKey]);
 
+  const handleRemoveDepartment = async (departmentId: number) => {
+    try {
+      await removeUserFromDepartment(userId, departmentId);
+      message.success('移除部门成功');
+      // 重新获取部门列表
+      const result = await getUserDepartments(userId);
+      setDepartments(result);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '移除部门失败');
+    } finally {
+      setPopconfirmVisible(null);
+    }
+  };
+
   if (loading) {
     return <span>加载中...</span>;
   }
@@ -67,7 +85,25 @@ const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ use
   return (
     <Space wrap>
       {departments.map(dept => (
-        <Tag key={dept.id}>{dept.name}</Tag>
+        <Popconfirm
+          key={dept.id}
+          title="确定要移除该部门吗？"
+          open={popconfirmVisible === dept.id}
+          onConfirm={() => handleRemoveDepartment(dept.id)}
+          onCancel={() => setPopconfirmVisible(null)}
+          okText="确定"
+          cancelText="取消"
+        >
+          <Tag 
+            closable 
+            onClose={(e) => {
+              e.preventDefault();
+              setPopconfirmVisible(dept.id);
+            }}
+          >
+            {dept.name}
+          </Tag>
+        </Popconfirm>
       ))}
     </Space>
   );

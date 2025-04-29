@@ -177,3 +177,8 @@ export async function getUserDepartments(userId: number): Promise<Department[]> 
   const response = await api.get<Department[]>(`/system/departments/users/${userId}/departments`);
   return response.data;
 }
+
+// 移除用户与部门的关联
+export async function removeUserFromDepartment(userId: number, departmentId: number): Promise<void> {
+  return api.delete(`/system/users/${userId}/departments/${departmentId}`);
+}
