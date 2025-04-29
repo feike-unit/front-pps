@@ -15,7 +15,7 @@ import {
   TreeSelect,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Menu, getAllMenus, createMenu, updateMenu, deleteMenu } from '../../../services/menu';
+import { Menu, getAllMenus, createMenu, updateMenu, deleteMenu, updateMenuStatus } from '../../../services/menu';
 import { ApiError } from '../../../services/api';
 
 const { Option } = Select;
@@ -167,6 +167,20 @@ const MenuManagement: React.FC = () => {
       });
   };
 
+  // 更新菜单状态
+  const handleStatusChange = async (id: number, checked: boolean) => {
+    try {
+      const status = checked ? 1 : 0;
+      const statusText = status === 1 ? '启用' : '禁用';
+      await updateMenuStatus(id, status);
+      message.success(`菜单${statusText}成功，已同步更新所有子菜单状态`);
+      fetchMenus();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '状态更新失败');
+    }
+  };
+
   const columns = [
     {
       title: '菜单名称',
@@ -203,7 +217,15 @@ const MenuManagement: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: number) => (status === 1 ? '启用' : '禁用'),
+      width: 100,
+      render: (status: number, record: Menu) => (
+        <Switch
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+          checked={status === 1}
+          onChange={(checked) => handleStatusChange(record.id, checked)}
+        />
+      ),
     },
     {
       title: '操作',
@@ -216,7 +238,7 @@ const MenuManagement: React.FC = () => {
           </Button>
           <Popconfirm
             title="确定要删除这个菜单吗？"
-            description="删除后将无法恢复，且会同时删除其所有子菜单。"
+            description="删除后将无法恢复，如果有菜单，请先删除子菜单。"
             onConfirm={() => handleDelete(record.id)}
             okText="确定"
             cancelText="取消"

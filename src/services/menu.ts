@@ -94,3 +94,9 @@ export const getRoleMenus = async (roleId: number) => {
   const response = await api.get(`/system/menus/role/${roleId}`);
   return response.data;
 };
+
+// 更新菜单状态
+export const updateMenuStatus = async (id: number, status: number): Promise<Menu> => {
+  const response = await api.put<Menu>(`/system/menus/${id}/status`, { status });
+  return response.data;
+};
