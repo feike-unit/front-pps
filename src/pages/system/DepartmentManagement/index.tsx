@@ -13,10 +13,11 @@ import {
   Popconfirm,
   TreeSelect,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
 import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus } from '../../../services/department';
 import { ApiError } from '../../../services/api';
 import type { ColumnsType } from 'antd/es/table';
+import AssignUsersModal from './AssignUsersModal';
 
 const DepartmentManagement: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -25,6 +26,8 @@ const DepartmentManagement: React.FC = () => {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [modalTitle, setModalTitle] = useState<string>('添加部门');
   const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
+  const [assignUsersModalVisible, setAssignUsersModalVisible] = useState<boolean>(false);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
   const [form] = Form.useForm();
 
   // 获取部门列表
@@ -173,6 +176,18 @@ const DepartmentManagement: React.FC = () => {
     }
   };
 
+  // 打开分配用户对话框
+  const handleAssignUsers = (department: Department) => {
+    setSelectedDepartmentId(department.id);
+    setAssignUsersModalVisible(true);
+  };
+
+  // 关闭分配用户对话框
+  const handleAssignUsersClose = () => {
+    setAssignUsersModalVisible(false);
+    setSelectedDepartmentId(null);
+  };
+
   const columns: ColumnsType<Department> = [
     {
       title: '部门名称',
@@ -202,18 +217,26 @@ const DepartmentManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 180,
-      render: (_: any, record: Department) => (
-        <Space size="middle">
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleAddOrEdit(record)}>
+      width: 280,
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleAddOrEdit(record)}
+          >
             编辑
           </Button>
+          <Button
+            type="link"
+            icon={<UserOutlined />}
+            onClick={() => handleAssignUsers(record)}
+          >
+            分配用户
+          </Button>
           <Popconfirm
-            title="确定要删除这个部门吗？"
-            description="删除后将无法恢复，如果有子部门，请先删除子部门。"
+            title="确定要删除该部门吗？"
             onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
           >
             <Button type="link" danger icon={<DeleteOutlined />}>
               删除
@@ -239,17 +262,12 @@ const DepartmentManagement: React.FC = () => {
         rowKey="id"
         loading={loading}
         pagination={false}
-        childrenColumnName="children"
-        indentSize={24}
       />
-
-      {/* 添加/编辑部门对话框 */}
       <Modal
         title={modalTitle}
         open={modalVisible}
         onOk={handleSaveDepartment}
         onCancel={() => setModalVisible(false)}
-        width={600}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -268,22 +286,26 @@ const DepartmentManagement: React.FC = () => {
               treeData={treeData}
               placeholder="请选择上级部门"
               treeDefaultExpandAll
-              disabled={currentDepartment?.id === 1}
             />
           </Form.Item>
           <Form.Item
             name="sort"
             label="排序"
             rules={[{ required: true, message: '请输入排序值' }]}
-            initialValue={0}
           >
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="status" label="状态" valuePropName="checked">
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" defaultChecked />
+            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
           </Form.Item>
         </Form>
       </Modal>
+      <AssignUsersModal
+        open={assignUsersModalVisible}
+        departmentId={selectedDepartmentId}
+        onClose={handleAssignUsersClose}
+        onSuccess={fetchDepartments}
+      />
     </Card>
   );
 };

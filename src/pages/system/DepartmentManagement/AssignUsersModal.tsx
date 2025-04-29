@@ -1,73 +1,107 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Select, message } from 'antd';
-import { getUsers } from '@/services/user';
-import { User } from '@/types/user';
+import { Modal, Transfer, message } from 'antd';
+import type { TransferDirection, TransferProps } from 'antd/es/transfer';
+import type { Key } from 'antd/es/table/interface';
+import { getDepartmentUsers, assignUsersToDepartment } from '../../../services/department';
+import { getUsers } from '../../../services/user';
+import { ApiError } from '../../../services/api';
+import { User } from '../../../types/user';
 
 interface AssignUsersModalProps {
   open: boolean;
-  onCancel: () => void;
-  onOk: (selectedUserIds: number[]) => void;
-  departmentId?: number;
+  departmentId: number | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+interface TransferUser {
+  key: Key;
+  title: string;
+  description: string;
 }
 
 const AssignUsersModal: React.FC<AssignUsersModalProps> = ({
   open,
-  onCancel,
-  onOk,
   departmentId,
+  onClose,
+  onSuccess,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const [users, setUsers] = useState<TransferUser[]>([]);
+  const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
 
-  // 获取用户列表
-  const fetchUsers = async () => {
+  // 获取所有用户和部门已分配的用户
+  const fetchData = async () => {
+    if (!departmentId) return;
+    
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await getUsers({
-        pageNum: 1,
-        pageSize: 100, // 设置一个较大的数值以获取更多用户
-        keyword: '',
-      });
-      setUsers(response.data.list); // 使用分页响应中的 list 数组
-    } catch (error: any) {
-      message.error(error.response?.data?.message || error.message || '获取用户列表失败');
+      const [allUsers, departmentUsers] = await Promise.all([
+        getUsers({ pageNum: 1, pageSize: 1000, keyword: '' }),
+        getDepartmentUsers(departmentId),
+      ]);
+
+      // 转换用户数据为 Transfer 需要的格式
+      const transferUsers = allUsers.list.map((user: User) => ({
+        key: user.id,
+        title: user.username,
+        description: user.nickname || user.username,
+      }));
+      setUsers(transferUsers);
+
+      // 设置已选中的用户
+      setSelectedKeys(departmentUsers);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取用户数据失败');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (open) {
-      fetchUsers();
-      setSelectedUserIds([]);
+    if (open && departmentId) {
+      fetchData();
     }
-  }, [open]);
+  }, [open, departmentId]);
 
-  const handleOk = () => {
-    onOk(selectedUserIds);
+  const handleChange = (targetKeys: Key[], direction: TransferDirection, moveKeys: Key[]) => {
+    setSelectedKeys(targetKeys);
+  };
+
+  const handleOk = async () => {
+    if (!departmentId) return;
+    
+    try {
+      await assignUsersToDepartment(departmentId, selectedKeys.map(key => Number(key)));
+      message.success('用户分配成功');
+      onSuccess();
+      onClose();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '分配用户失败');
+    }
   };
 
   return (
     <Modal
       title="分配用户"
       open={open}
-      onCancel={onCancel}
       onOk={handleOk}
+      onCancel={onClose}
+      width={800}
       confirmLoading={loading}
-      destroyOnClose
     >
-      <Select
-        mode="multiple"
-        style={{ width: '100%' }}
-        placeholder="请选择用户"
-        loading={loading}
-        value={selectedUserIds}
-        onChange={(value) => setSelectedUserIds(value)}
-        options={(users || []).map((user) => ({
-          label: `${user.username} (${user.name}) - ${user.email}`,
-          value: user.id,
-        }))}
+      <Transfer<TransferUser>
+        dataSource={users}
+        titles={['未分配用户', '已分配用户']}
+        targetKeys={selectedKeys}
+        onChange={handleChange}
+        render={item => item.title}
+        listStyle={{
+          width: 300,
+          height: 400,
+        }}
       />
     </Modal>
   );

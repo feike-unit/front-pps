@@ -62,6 +62,12 @@ export const updateDepartmentStatus = async (id: number, status: number): Promis
   return response.data;
 };
 
+// 获取部门的用户列表
+export const getDepartmentUsers = async (id: number): Promise<number[]> => {
+  const response = await api.get<number[]>(`/system/departments/${id}/users`);
+  return response.data;
+};
+
 // 分配用户到部门
 export const assignUsersToDepartment = async (id: number, userIds: number[]): Promise<void> => {
   const response = await api.put<void>(`/system/departments/${id}/users`, userIds);
