@@ -71,8 +71,9 @@ export const getUsers = async (params: {
   keyword?: string;
   sortField?: string;
   sortOrder?: string;
-}): Promise<ApiResponse<PageResponse<User>>> => {
-  const response = await api.get<ApiResponse<PageResponse<User>>>('/system/users', { params });
+  departmentStatus?: 'all' | 'in' | 'out';
+}): Promise<PageResponse<User>> => {
+  const response = await api.get<PageResponse<User>>('/system/users', { params });
   return response.data;
 };
 

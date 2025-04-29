@@ -12,9 +12,10 @@ import {
   message,
   Popconfirm,
   TablePaginationConfig,
-  SorterResult,
+  Radio,
 } from 'antd';
 import type { TableProps } from 'antd/es/table';
+import type { SorterResult } from 'antd/es/table/interface';
 import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, SearchOutlined } from '@ant-design/icons';
 import { 
   User, 
@@ -29,7 +30,7 @@ import {
   assignRolesBatch,
 } from '../../../services/user';
 import { Role, getRoles } from '../../../services/role';
-import { ApiError } from '@/types/api';
+import type { ApiError } from '../../../types/api';
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -56,6 +57,7 @@ const UserManagement: React.FC = () => {
   const [roleForm] = Form.useForm();
   const [keyword, setKeyword] = useState<string>('');
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
+  const [departmentStatus, setDepartmentStatus] = useState<'all' | 'in' | 'out'>('all');
 
   // 获取用户列表
   const fetchUsers = async (
@@ -73,6 +75,7 @@ const UserManagement: React.FC = () => {
         keyword: searchKeyword,
         sortField,
         sortOrder,
+        departmentStatus,
       });
       setUsers(result.list);
       setPagination({
@@ -323,6 +326,12 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  // 处理部门状态变化
+  const handleDepartmentStatusChange = (value: 'all' | 'in' | 'out') => {
+    setDepartmentStatus(value);
+    fetchUsers(1, pagination.pageSize, keyword);
+  };
+
   // 表格列定义
   const columns = [
     {
@@ -416,36 +425,32 @@ const UserManagement: React.FC = () => {
       extra={
         <Space>
           <Input
-            placeholder="搜索用户"
+            placeholder="请输入用户名或姓名搜索"
             value={keyword}
             onChange={handleSearchChange}
             onKeyPress={handleSearchKeyPress}
             style={{ width: 200 }}
-            suffix={
-              <Button type="text" icon={<SearchOutlined />} onClick={handleSearch} />
-            }
+            prefix={<SearchOutlined />}
           />
+          <Radio.Group value={departmentStatus} onChange={(e) => handleDepartmentStatusChange(e.target.value)}>
+            <Radio.Button value="all">全部</Radio.Button>
+            <Radio.Button value="in">已加入部门</Radio.Button>
+            <Radio.Button value="out">未加入部门</Radio.Button>
+          </Radio.Group>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => handleAddOrEdit()}>
             添加用户
           </Button>
           {selectedRowKeys.length > 0 && (
             <>
-              <Button
-                icon={<UserSwitchOutlined />}
-                onClick={showBatchRoleModal}
-              >
-                批量分配角色
-              </Button>
               <Popconfirm
-                title={`确定要删除选中的 ${selectedRowKeys.length} 个用户吗？`}
+                title="确定要删除选中的用户吗？"
                 onConfirm={handleBatchDelete}
                 okText="确定"
                 cancelText="取消"
               >
-                <Button danger icon={<DeleteOutlined />}>
-                  批量删除
-                </Button>
+                <Button danger icon={<DeleteOutlined />}>批量删除</Button>
               </Popconfirm>
+              <Button icon={<UserSwitchOutlined />} onClick={showBatchRoleModal}>批量分配角色</Button>
             </>
           )}
         </Space>
