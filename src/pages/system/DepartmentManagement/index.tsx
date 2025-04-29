@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Button,
@@ -13,6 +13,7 @@ import {
   Popconfirm,
   TreeSelect,
   Tag,
+  Spin,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
 import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus, getDepartmentUsers } from '../../../services/department';
@@ -20,27 +21,44 @@ import { ApiError } from '../../../services/api';
 import type { ColumnsType } from 'antd/es/table';
 import AssignUsersModal from './AssignUsersModal';
 import type { UserInfo } from '../../../services/user';
+import { removeUserFromDepartment } from '../../../services/user';
 
 // 新增 DepartmentUsers 组件
 const DepartmentUsers: React.FC<{ departmentId: number }> = ({ departmentId }) => {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [popconfirmVisible, setPopconfirmVisible] = useState<number | null>(null);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getDepartmentUsers(departmentId);
+      setUsers(data);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取用户列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [departmentId]);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const result = await getDepartmentUsers(departmentId);
-        setUsers(result);
-      } catch (error) {
-        const apiError = error as ApiError;
-        message.error(apiError.response?.data?.message || apiError.message || '获取用户列表失败');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
-  }, [departmentId]);
+  }, [fetchUsers]);
+
+  const handleRemoveUser = async (userId: number) => {
+    try {
+      await removeUserFromDepartment(userId, departmentId);
+      message.success('移除用户成功');
+      // 重新获取用户列表
+      fetchUsers();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '移除用户失败');
+    } finally {
+      setPopconfirmVisible(null);
+    }
+  };
 
   if (loading) {
     return <span>加载中...</span>;
@@ -49,7 +67,25 @@ const DepartmentUsers: React.FC<{ departmentId: number }> = ({ departmentId }) =
   return (
     <Space wrap>
       {users.map(user => (
-        <Tag key={user.id}>{user.name}</Tag>
+        <Popconfirm
+          key={user.id}
+          title="确定要移除该用户吗？"
+          open={popconfirmVisible === user.id}
+          onConfirm={() => handleRemoveUser(user.id)}
+          onCancel={() => setPopconfirmVisible(null)}
+          okText="确定"
+          cancelText="取消"
+        >
+          <Tag 
+            closable 
+            onClose={(e) => {
+              e.preventDefault();
+              setPopconfirmVisible(user.id);
+            }}
+          >
+            {user.username}
+          </Tag>
+        </Popconfirm>
       ))}
     </Space>
   );
