@@ -13,6 +13,7 @@ import {
   Popconfirm,
   TablePaginationConfig,
   Radio,
+  RadioChangeEvent,
 } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
@@ -66,16 +67,18 @@ const UserManagement: React.FC = () => {
     searchKeyword = keyword,
     sortField?: string,
     sortOrder?: string,
+    status: 'all' | 'in' | 'out' = departmentStatus,
   ) => {
     setLoading(true);
     try {
+      console.log('departmentStatus:', departmentStatus);
       const result = await getUsers({ 
         pageNum: page, 
         pageSize, 
         keyword: searchKeyword,
         sortField,
         sortOrder,
-        departmentStatus,
+        departmentStatus: status,
       });
       setUsers(result.list);
       setPagination({
@@ -327,9 +330,9 @@ const UserManagement: React.FC = () => {
   };
 
   // 处理部门状态变化
-  const handleDepartmentStatusChange = (value: 'all' | 'in' | 'out') => {
+  const handleDepartmentStatusChange = (e: RadioChangeEvent) => {
+    const value = e.target.value;
     setDepartmentStatus(value);
-    fetchUsers(1, pagination.pageSize, keyword);
   };
 
   // 表格列定义
@@ -432,10 +435,10 @@ const UserManagement: React.FC = () => {
             style={{ width: 200 }}
             prefix={<SearchOutlined />}
           />
-          <Radio.Group value={departmentStatus} onChange={(e) => handleDepartmentStatusChange(e.target.value)}>
-            <Radio.Button value="all">全部</Radio.Button>
-            <Radio.Button value="in">已加入部门</Radio.Button>
-            <Radio.Button value="out">未加入部门</Radio.Button>
+          <Radio.Group value={departmentStatus} onChange={handleDepartmentStatusChange}>
+            <Radio.Button value="all" onClick={() => fetchUsers(1, pagination.pageSize, keyword, undefined, undefined, 'all')}>全部</Radio.Button>
+            <Radio.Button value="in" onClick={() => fetchUsers(1, pagination.pageSize, keyword, undefined, undefined, 'in')}>已加入部门</Radio.Button>
+            <Radio.Button value="out" onClick={() => fetchUsers(1, pagination.pageSize, keyword, undefined, undefined, 'out')}>未加入部门</Radio.Button>
           </Radio.Group>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => handleAddOrEdit()}>
             添加用户
