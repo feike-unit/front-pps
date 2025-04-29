@@ -277,12 +277,6 @@ const RoleManagement: React.FC = () => {
       sorter: true,
     },
     {
-      title: '更新时间',
-      dataIndex: 'updatedAt',
-      key: 'updatedAt',
-      sorter: true,
-    },
-    {
       title: '操作',
       key: 'action',
       width: 120,

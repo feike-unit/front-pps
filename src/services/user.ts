@@ -52,6 +52,7 @@ export interface UserInfo {
   phone: string;
   status: number;
   roles: string[];
+  createdAt: string;
 }
 
 export interface UserProfileUpdateDto {

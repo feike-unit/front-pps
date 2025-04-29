@@ -215,6 +215,12 @@ const MenuManagement: React.FC = () => {
       key: 'permission',
     },
     {
+      title: '创建时间',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      sorter: true,
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       key: 'status',

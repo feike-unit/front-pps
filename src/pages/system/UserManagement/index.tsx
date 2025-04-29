@@ -566,6 +566,18 @@ const UserManagement: React.FC = () => {
       sorter: true,
     },
     {
+      title: '角色',
+      dataIndex: 'roles',
+      key: 'roles',
+      render: (roles: string[]) => roles?.join(', ') || '-',
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      sorter: true,
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
@@ -578,12 +590,6 @@ const UserManagement: React.FC = () => {
           unCheckedChildren="禁用"
         />
       ),
-    },
-    {
-      title: '角色',
-      dataIndex: 'roles',
-      key: 'roles',
-      render: (roles: string[]) => roles?.join(', ') || '-',
     },
     {
       title: '操作',
