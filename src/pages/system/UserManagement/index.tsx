@@ -14,6 +14,7 @@ import {
   TablePaginationConfig,
   Radio,
   RadioChangeEvent,
+  Tag,
 } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
@@ -29,9 +30,45 @@ import {
   updateUserRoles,
   updateUserStatus,
   assignRolesBatch,
+  getUserDepartments,
 } from '../../../services/user';
+import type { Department } from '../../../services/department';
 import { Role, getRoles } from '../../../services/role';
 import type { ApiError } from '../../../types/api';
+
+// 用户所属部门组件
+const UserDepartments: React.FC<{ userId: number }> = ({ userId }) => {
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      setLoading(true);
+      try {
+        const result = await getUserDepartments(userId);
+        setDepartments(result);
+      } catch (error) {
+        const apiError = error as ApiError;
+        message.error(apiError.response?.data?.message || apiError.message || '获取部门信息失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDepartments();
+  }, [userId]);
+
+  if (loading) {
+    return <span>加载中...</span>;
+  }
+
+  return (
+    <Space wrap>
+      {departments.map(dept => (
+        <Tag key={dept.id}>{dept.name}</Tag>
+      ))}
+    </Space>
+  );
+};
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -348,6 +385,11 @@ const UserManagement: React.FC = () => {
       dataIndex: 'name',
       key: 'name',
       sorter: true,
+    },
+    {
+      title: '所属部门',
+      key: 'departments',
+      render: (_: unknown, record: User) => departmentStatus !== 'out' ? <UserDepartments userId={record.id} /> : null,
     },
     {
       title: '邮箱',

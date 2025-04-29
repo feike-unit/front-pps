@@ -1,5 +1,6 @@
 import api from './api';
 import { ApiResponse } from '../types/api';
+import type { Department } from './department';
 
 export interface User {
   id: number;
@@ -169,4 +170,10 @@ export async function updateUserRoles(userId: number, roleIds: number[]): Promis
 // 批量分配角色
 export async function assignRolesBatch(userIds: number[], roleIds: number[]): Promise<void> {
   return api.put('/system/users/batch/roles', { userIds, roleIds });
+}
+
+// 获取用户所属部门
+export async function getUserDepartments(userId: number): Promise<Department[]> {
+  const response = await api.get<Department[]>(`/system/departments/users/${userId}/departments`);
+  return response.data;
 }
