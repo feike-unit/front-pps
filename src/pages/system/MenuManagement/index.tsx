@@ -13,6 +13,7 @@ import {
   message,
   Popconfirm,
   TreeSelect,
+  Tooltip,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Menu, getAllMenus, createMenu, updateMenu, deleteMenu, updateMenuStatus } from '../../../services/menu';
@@ -230,23 +231,30 @@ const MenuManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 180,
+      width: 120,
       render: (_: any, record: Menu) => (
-        <Space size="middle">
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleAddOrEdit(record)}>
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这个菜单吗？"
-            description="删除后将无法恢复，如果有菜单，请先删除子菜单。"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
+        <Space size={0}>
+          <Tooltip title="编辑菜单">
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleAddOrEdit(record)}
+            />
+          </Tooltip>
+          <Tooltip title="删除菜单">
+            <Popconfirm
+              title="确定要删除该菜单吗？"
+              onConfirm={() => handleDelete(record.id)}
+            >
+              <Button 
+                type="link" 
+                size="small" 
+                danger 
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },

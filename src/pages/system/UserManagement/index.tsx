@@ -16,6 +16,7 @@ import {
   RadioChangeEvent,
   Tag,
   Tree,
+  Tooltip,
 } from 'antd';
 import type { TreeProps } from 'antd/es/tree';
 import type { TableProps } from 'antd/es/table';
@@ -66,13 +67,13 @@ const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ use
   const handleRemoveDepartment = async (departmentId: number) => {
     try {
       await removeUserFromDepartment(userId, departmentId);
-      message.success('移除部门成功');
+      message.success('移除部门关系成功');
       // 重新获取部门列表
       const result = await getUserDepartments(userId);
       setDepartments(result);
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '移除部门失败');
+      message.error(apiError.response?.data?.message || apiError.message || '移除部门关系失败');
     } finally {
       setPopconfirmVisible(null);
     }
@@ -87,7 +88,7 @@ const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ use
       {departments.map(dept => (
         <Popconfirm
           key={dept.id}
-          title="确定要移除该部门吗？"
+          title="确定要移除该部门关系吗？"
           open={popconfirmVisible === dept.id}
           onConfirm={() => handleRemoveDepartment(dept.id)}
           onCancel={() => setPopconfirmVisible(null)}
@@ -587,46 +588,54 @@ const UserManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
+      width: 160,
       render: (_: any, record: User) => (
-        <Space size="middle">
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => handleAddOrEdit(record)}
-          >
-            编辑
-          </Button>
-          <Button
-            type="text"
-            icon={<KeyOutlined />}
-            onClick={() => showPasswordModal(record)}
-          >
-            重置密码
-          </Button>
-          <Button
-            type="text"
-            icon={<UserSwitchOutlined />}
-            onClick={() => showRoleModal(record)}
-          >
-            分配角色
-          </Button>
-          <Button
-            type="text"
-            icon={<TeamOutlined />}
-            onClick={() => showAssignDepartmentModal(record.id)}
-          >
-            加入部门
-          </Button>
-          <Popconfirm
-            title="确定要删除该用户吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="text" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
+        <Space size={0}>
+          <Tooltip title="编辑用户">
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleAddOrEdit(record)}
+            />
+          </Tooltip>
+          <Tooltip title="重置密码">
+            <Button
+              type="link"
+              size="small"
+              icon={<KeyOutlined />}
+              onClick={() => showPasswordModal(record)}
+            />
+          </Tooltip>
+          <Tooltip title="分配角色">
+            <Button
+              type="link"
+              size="small"
+              icon={<UserSwitchOutlined />}
+              onClick={() => showRoleModal(record)}
+            />
+          </Tooltip>
+          <Tooltip title="分配部门">
+            <Button
+              type="link"
+              size="small"
+              icon={<TeamOutlined />}
+              onClick={() => showAssignDepartmentModal(record.id)}
+            />
+          </Tooltip>
+          <Tooltip title="删除用户">
+            <Popconfirm
+              title="确定要删除该用户吗？"
+              onConfirm={() => handleDelete(record.id)}
+            >
+              <Button 
+                type="link" 
+                size="small" 
+                danger 
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },

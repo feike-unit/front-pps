@@ -14,6 +14,7 @@ import {
   TreeSelect,
   Tag,
   Spin,
+  Tooltip,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
 import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus, getDepartmentUsers } from '../../../services/department';
@@ -49,12 +50,12 @@ const DepartmentUsers: React.FC<{ departmentId: number }> = ({ departmentId }) =
   const handleRemoveUser = async (userId: number) => {
     try {
       await removeUserFromDepartment(userId, departmentId);
-      message.success('移除用户成功');
+      message.success('移除用户关系成功');
       // 重新获取用户列表
       fetchUsers();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '移除用户失败');
+      message.error(apiError.response?.data?.message || apiError.message || '移除用户关系失败');
     } finally {
       setPopconfirmVisible(null);
     }
@@ -69,7 +70,7 @@ const DepartmentUsers: React.FC<{ departmentId: number }> = ({ departmentId }) =
       {users.map(user => (
         <Popconfirm
           key={user.id}
-          title="确定要移除该用户吗？"
+          title="确定要移除该用户关系吗？"
           open={popconfirmVisible === user.id}
           onConfirm={() => handleRemoveUser(user.id)}
           onCancel={() => setPopconfirmVisible(null)}
@@ -317,31 +318,38 @@ const DepartmentManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 280,
+      width: 120,
       render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleAddOrEdit(record)}
-          >
-            编辑
-          </Button>
-          <Button
-            type="link"
-            icon={<UserOutlined />}
-            onClick={() => handleAssignUsers(record)}
-          >
-            分配用户
-          </Button>
-          <Popconfirm
-            title="确定要删除该部门吗？"
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Button type="link" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
+        <Space size={0}>
+          <Tooltip title="编辑部门">
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleAddOrEdit(record)}
+            />
+          </Tooltip>
+          <Tooltip title="分配用户">
+            <Button
+              type="link"
+              size="small"
+              icon={<UserOutlined />}
+              onClick={() => handleAssignUsers(record)}
+            />
+          </Tooltip>
+          <Tooltip title="删除部门">
+            <Popconfirm
+              title="确定要删除该部门吗？"
+              onConfirm={() => handleDelete(record.id)}
+            >
+              <Button 
+                type="link" 
+                size="small" 
+                danger 
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },

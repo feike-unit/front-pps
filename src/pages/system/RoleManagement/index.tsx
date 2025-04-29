@@ -10,6 +10,7 @@ import {
   message,
   Popconfirm,
   Tree,
+  Tooltip,
 } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MenuOutlined } from '@ant-design/icons';
@@ -284,34 +285,38 @@ const RoleManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (text: string, record: Role) => (
-        <Space size="middle">
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            编辑
-          </Button>
-          <Button
-            type="link"
-            icon={<MenuOutlined />}
-            onClick={() => handleMenuSetting(record)}
-          >
-            菜单权限
-          </Button>
-          {record.name.toLowerCase() !== 'admin' && (
+      width: 120,
+      render: (_: any, record: Role) => (
+        <Space size={0}>
+          <Tooltip title="编辑角色">
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
+          <Tooltip title="菜单权限">
+            <Button
+              type="link"
+              size="small"
+              icon={<MenuOutlined />}
+              onClick={() => handleMenuSetting(record)}
+            />
+          </Tooltip>
+          <Tooltip title="删除角色">
             <Popconfirm
-              title="确定要删除这个角色吗？"
+              title="确定要删除该角色吗？"
               onConfirm={() => handleDelete(record.id)}
-              okText="确定"
-              cancelText="取消"
             >
-              <Button type="link" danger icon={<DeleteOutlined />}>
-                删除
-              </Button>
+              <Button 
+                type="link" 
+                size="small" 
+                danger 
+                icon={<DeleteOutlined />}
+              />
             </Popconfirm>
-          )}
+          </Tooltip>
         </Space>
       ),
     },
