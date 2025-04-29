@@ -15,10 +15,12 @@ import {
   Radio,
   RadioChangeEvent,
   Tag,
+  Tree,
 } from 'antd';
+import type { TreeProps } from 'antd/es/tree';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
-import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, SearchOutlined, TeamOutlined } from '@ant-design/icons';
 import { 
   User, 
   getUsers, 
@@ -33,11 +35,12 @@ import {
   getUserDepartments,
 } from '../../../services/user';
 import type { Department } from '../../../services/department';
+import { getAllDepartments, assignUsersToDepartment } from '../../../services/department';
 import { Role, getRoles } from '../../../services/role';
 import type { ApiError } from '../../../types/api';
 
 // 用户所属部门组件
-const UserDepartments: React.FC<{ userId: number }> = ({ userId }) => {
+const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ userId, refreshKey }) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -55,7 +58,7 @@ const UserDepartments: React.FC<{ userId: number }> = ({ userId }) => {
       }
     };
     fetchDepartments();
-  }, [userId]);
+  }, [userId, refreshKey]);
 
   if (loading) {
     return <span>加载中...</span>;
@@ -96,6 +99,70 @@ const UserManagement: React.FC = () => {
   const [keyword, setKeyword] = useState<string>('');
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
   const [departmentStatus, setDepartmentStatus] = useState<'all' | 'in' | 'out'>('all');
+  const [departmentModalVisible, setDepartmentModalVisible] = useState<boolean>(false);
+  const [departments, setDepartments] = useState<TreeNode[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [departmentForm] = Form.useForm();
+  const [departmentDisplayKey, setDepartmentDisplayKey] = useState<number>(0);
+
+  interface TreeNode {
+    title: string;
+    key: number;
+    children?: TreeNode[];
+  }
+
+  // 将平铺结构转换为树形结构
+  const convertToTreeData = (departments: Department[]): Department[] => {
+    const map = new Map<number, Department>();
+    const result: Department[] = [];
+
+    // 先把所有部门放入 map
+    departments.forEach(dept => {
+      map.set(dept.id, { ...dept, children: [] });
+    });
+
+    // 构建树形结构
+    departments.forEach(dept => {
+      const node = map.get(dept.id)!;
+      if (dept.parentId === 0) {
+        // 根节点
+        result.push(node);
+      } else {
+        // 子节点，添加到父节点的 children 中
+        const parent = map.get(dept.parentId);
+        if (parent) {
+          parent.children = parent.children || [];
+          parent.children.push(node);
+        }
+      }
+    });
+
+    return result;
+  };
+
+  // 格式化部门树数据
+  const formatDepartmentTreeData = (data: Department[]): TreeNode[] => {
+    return data.map(item => ({
+      title: item.name,
+      key: item.id,
+      children: item.children && item.children.length > 0 ? formatDepartmentTreeData(item.children) : undefined,
+    }));
+  };
+
+  // 获取部门树数据
+  const fetchDepartments = async () => {
+    try {
+      const result = await getAllDepartments();
+      if (result && Array.isArray(result)) {
+        // 先转换为树形结构，再格式化为 Tree 组件需要的格式
+        const treeData = formatDepartmentTreeData(convertToTreeData(result));
+        setDepartments(treeData);
+      }
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取部门列表失败');
+    }
+  };
 
   // 获取用户列表
   const fetchUsers = async (
@@ -372,6 +439,34 @@ const UserManagement: React.FC = () => {
     setDepartmentStatus(value);
   };
 
+  // 处理部门选择
+  const handleDepartmentSelect: TreeProps['onSelect'] = (selectedKeys) => {
+    if (selectedKeys.length > 0) {
+      setSelectedDepartmentId(Number(selectedKeys[0]));
+    }
+  };
+
+  // 处理批量加入部门
+  const handleBatchAssignDepartment = async () => {
+    if (!selectedDepartmentId) {
+      message.error('请选择部门');
+      return;
+    }
+
+    try {
+      await assignUsersToDepartment(selectedDepartmentId, selectedRowKeys.map(key => Number(key)));
+      message.success('用户加入部门成功');
+      setDepartmentModalVisible(false);
+      setSelectedDepartmentId(null);
+      setSelectedRowKeys([]);
+      setDepartmentDisplayKey(prev => prev + 1);
+      fetchUsers();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '用户加入部门失败');
+    }
+  };
+
   // 表格列定义
   const columns = [
     {
@@ -389,7 +484,12 @@ const UserManagement: React.FC = () => {
     {
       title: '所属部门',
       key: 'departments',
-      render: (_: unknown, record: User) => departmentStatus !== 'out' ? <UserDepartments userId={record.id} /> : null,
+      render: (_: unknown, record: User) => departmentStatus !== 'out' ? (
+        <UserDepartments 
+          userId={record.id} 
+          refreshKey={departmentDisplayKey}
+        />
+      ) : null,
     },
     {
       title: '邮箱',
@@ -496,6 +596,10 @@ const UserManagement: React.FC = () => {
                 <Button danger icon={<DeleteOutlined />}>批量删除</Button>
               </Popconfirm>
               <Button icon={<UserSwitchOutlined />} onClick={showBatchRoleModal}>批量分配角色</Button>
+              <Button icon={<TeamOutlined />} onClick={() => {
+                fetchDepartments();
+                setDepartmentModalVisible(true);
+              }}>批量加入部门</Button>
             </>
           )}
         </Space>
@@ -621,6 +725,27 @@ const UserManagement: React.FC = () => {
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 批量加入部门对话框 */}
+      <Modal
+        title="批量加入部门"
+        open={departmentModalVisible}
+        onOk={handleBatchAssignDepartment}
+        onCancel={() => {
+          setDepartmentModalVisible(false);
+          setSelectedDepartmentId(null);
+        }}
+        width={400}
+      >
+        <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+          <Tree
+            treeData={departments}
+            onSelect={handleDepartmentSelect}
+            selectedKeys={selectedDepartmentId ? [selectedDepartmentId] : []}
+            defaultExpandAll
+          />
+        </div>
       </Modal>
     </Card>
   );
