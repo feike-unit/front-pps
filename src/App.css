@@ -42,7 +42,6 @@ body {
 /* 数据表格容器样式优化 */
 .ant-table-wrapper {
   background: #fff;
-  padding: 24px;
   border-radius: 2px;
 }
 
