@@ -16,7 +16,17 @@ import {
 } from 'antd';
 import type { TreeProps } from 'antd/es/tree';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable, TableDropdown, LightFilter } from '@ant-design/pro-components';
+import { 
+  ProTable, 
+  TableDropdown, 
+  LightFilter, 
+  ModalForm,
+  ProForm,
+  ProFormText,
+  ProFormSwitch,
+  ProFormSelect,
+  ProFormDependency,
+} from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, TeamOutlined, EllipsisOutlined } from '@ant-design/icons';
 import { 
   User, 
@@ -120,6 +130,7 @@ const UserManagement: React.FC = () => {
   const [currentAssignUserId, setCurrentAssignUserId] = React.useState<number | null>(null);
   const [departmentDisplayKey, setDepartmentDisplayKey] = React.useState<number>(0);
   const [searchKeyword, setSearchKeyword] = React.useState<string>('');
+  const [resetPasswordVisible, setResetPasswordVisible] = React.useState<boolean>(false);
 
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
@@ -195,39 +206,45 @@ const UserManagement: React.FC = () => {
   };
 
   // 保存用户
-  const handleSaveUser = async () => {
+  const handleSaveUser = async (values: any) => {
     try {
-      const values = await form.validateFields();
       const params = {
         ...values,
         status: values.status ? 1 : 0,
       };
 
-      if (currentUser) {
-        await updateUser({ id: currentUser.id, ...params });
+      if (values.id) {
+        await updateUser({ id: values.id, ...params });
         message.success('用户更新成功');
       } else {
         await createUser(params);
         message.success('用户创建成功');
       }
-      setModalVisible(false);
       actionRef.current?.reload();
+      return true;
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '保存用户失败');
+      return false;
     }
   };
 
   // 删除用户
   const handleDelete = async (id: number) => {
-    try {
-      await deleteUser(id);
-      message.success('用户删除成功');
-      actionRef.current?.reload();
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '删除用户失败');
-    }
+    Modal.confirm({
+      title: '删除确认',
+      content: '确定要删除该用户吗？',
+      async onOk() {
+        try {
+          await deleteUser(id);
+          message.success('用户删除成功');
+          actionRef.current?.reload();
+        } catch (error) {
+          const apiError = error as ApiError;
+          message.error(apiError.response?.data?.message || apiError.message || '删除用户失败');
+        }
+      },
+    });
   };
 
   // 显示重置密码对话框
@@ -238,17 +255,19 @@ const UserManagement: React.FC = () => {
   };
 
   // 重置密码
-  const handleResetPassword = async () => {
+  const handleResetPassword = async (values: any) => {
     try {
-      const values = await passwordForm.validateFields();
       if (currentUser) {
         await resetPassword(currentUser.id, values.password);
         message.success('密码重置成功');
         setPasswordModalVisible(false);
+        return true;
       }
+      return false;
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '重置密码失败');
+      return false;
     }
   };
 
@@ -271,18 +290,20 @@ const UserManagement: React.FC = () => {
   };
 
   // 保存用户角色
-  const handleSaveUserRoles = async () => {
+  const handleSaveUserRoles = async (values: any) => {
     try {
-      const values = await roleForm.validateFields();
       if (currentUser) {
         await updateUserRoles(currentUser.id, values.roleIds);
         message.success('角色分配成功');
         setRoleModalVisible(false);
         actionRef.current?.reload();
+        return true;
       }
+      return false;
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '保存用户角色失败');
+      return false;
     }
   };
 
@@ -328,17 +349,18 @@ const UserManagement: React.FC = () => {
   };
 
   // 保存批量分配的角色
-  const handleSaveBatchRoles = async () => {
+  const handleSaveBatchRoles = async (values: any) => {
     try {
-      const values = await roleForm.validateFields();
       await assignRolesBatch(selectedRowKeys.map(key => Number(key)), values.roleIds);
       message.success('批量分配角色成功');
       setRoleModalVisible(false);
       setSelectedRowKeys([]);
       actionRef.current?.reload();
+      return true;
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '批量分配角色失败');
+      return false;
     }
   };
 
@@ -394,11 +416,6 @@ const UserManagement: React.FC = () => {
 
   // ProTable 列定义
   const columns: ProColumns<User>[] = [
-    // {
-    //   dataIndex: 'index',
-    //   valueType: 'indexBorder',
-    //   width: 48,
-    // },
     {
       title: '用户名',
       dataIndex: 'username',
@@ -482,31 +499,101 @@ const UserManagement: React.FC = () => {
       valueType: 'option',
       key: 'option',
       width: 120,
-      render: (_, record, __, action) => [
-        <a
+      render: (_, record) => [
+        <ModalForm<User>
           key="edit"
-          onClick={() => handleAddOrEdit(record)}
+          title="编辑用户"
+          trigger={<a>编辑</a>}
+          initialValues={{
+            ...record,
+            status: record.status === 1,
+          }}
+          onFinish={handleSaveUser}
+          modalProps={{
+            destroyOnClose: true,
+          }}
+          width={600}
         >
-          编辑
-        </a>,
+          <ProForm.Group>
+            <ProFormText
+              name="username"
+              label="用户名"
+              rules={[{ required: true, message: '请输入用户名' }]}
+              disabled
+              width="md"
+            />
+            <ProFormText
+              name="name"
+              label="姓名"
+              rules={[{ required: true, message: '请输入姓名' }]}
+              width="md"
+            />
+          </ProForm.Group>
+          <ProForm.Group>
+            <ProFormText
+              name="email"
+              label="邮箱"
+              rules={[{ type: 'email', message: '邮箱格式不正确' }]}
+              width="md"
+            />
+            <ProFormText
+              name="phone"
+              label="手机号"
+              width="md"
+            />
+          </ProForm.Group>
+          <ProFormSwitch
+            name="status"
+            label="状态"
+            checkedChildren="启用"
+            unCheckedChildren="禁用"
+          />
+          <ProFormText
+            name="id"
+            hidden
+          />
+        </ModalForm>,
         <TableDropdown
           key="actionGroup"
           onSelect={async (key) => {
-            if (key === 'reset_password') {
-              showPasswordModal(record);
-            } else if (key === 'assign_role') {
-              await showRoleModal(record);
-            } else if (key === 'assign_department') {
+            if (key === 'assign_department') {
               await showAssignDepartmentModal(record.id);
             } else if (key === 'delete') {
-              await handleDelete(record.id);
+              handleDelete(record.id);
             }
           }}
           menus={[
-            { key: 'reset_password', name: '重置密码' },
-            { key: 'assign_role', name: '分配角色' },
+            {
+              key: 'reset_password',
+              name: '重置密码',
+              onClick: () => {
+                setCurrentUser(record);
+                setResetPasswordVisible(true);
+              },
+            },
+            {
+              key: 'assign_role',
+              name: '分配角色',
+              onClick: async () => {
+                try {
+                  const result = await getRoles();
+                  if (result && Array.isArray(result)) {
+                    setRoles(result);
+                    setCurrentUser(record);
+                  } else {
+                    message.warning('获取角色列表数据格式不正确');
+                  }
+                } catch (error) {
+                  message.error('获取角色列表失败');
+                }
+              },
+            },
             { key: 'assign_department', name: '分配部门' },
-            { key: 'delete', name: '删除' },
+            { 
+              key: 'delete', 
+              name: '删除',
+              danger: true,
+            },
           ]}
         />,
       ],
@@ -577,18 +664,34 @@ const UserManagement: React.FC = () => {
         tableAlertOptionRender={() => {
           return (
             <Space size={16}>
-              <a onClick={() => {
-                Modal.confirm({
-                  title: '批量删除',
-                  content: '确定要删除选中的用户吗？',
-                  onOk: handleBatchDelete,
-                });
-              }}>
-                批量删除
-              </a>
-              <a onClick={showBatchRoleModal}>
-                批量分配角色
-              </a>
+              <Popconfirm
+                title="确定要删除选中的用户吗？"
+                onConfirm={handleBatchDelete}
+              >
+                <a>批量删除</a>
+              </Popconfirm>
+              <ModalForm
+                title="批量分配角色"
+                trigger={<a>批量分配角色</a>}
+                onFinish={handleSaveBatchRoles}
+                modalProps={{
+                  destroyOnClose: true,
+                }}
+              >
+                <ProFormSelect
+                  name="roleIds"
+                  label="角色"
+                  mode="multiple"
+                  request={async () => {
+                    const roles = await getRoles();
+                    return roles.map(role => ({
+                      label: `${role.name}${role.description ? ` - ${role.description}` : ''}`,
+                      value: role.id,
+                    }));
+                  }}
+                  rules={[{ required: true, message: '请选择角色' }]}
+                />
+              </ModalForm>
               <a onClick={() => showAssignDepartmentModal()}>
                 批量加入部门
               </a>
@@ -629,14 +732,65 @@ const UserManagement: React.FC = () => {
             },
           },
           actions: [
-            <Button
+            <ModalForm<User>
               key="add"
-              type="primary"
-              onClick={() => handleAddOrEdit()}
-              icon={<PlusOutlined />}
+              title="添加用户"
+              trigger={
+                <Button type="primary" icon={<PlusOutlined />}>
+                  添加用户
+                </Button>
+              }
+              initialValues={{
+                status: true,
+              }}
+              onFinish={handleSaveUser}
+              modalProps={{
+                destroyOnClose: true,
+              }}
+              width={600}
             >
-              添加用户
-            </Button>,
+              <ProForm.Group>
+                <ProFormText
+                  name="username"
+                  label="用户名"
+                  rules={[{ required: true, message: '请输入用户名' }]}
+                  width="md"
+                />
+                <ProFormText.Password
+                  name="password"
+                  label="密码"
+                  rules={[{ required: true, message: '请输入密码' }]}
+                  width="md"
+                />
+              </ProForm.Group>
+              <ProForm.Group>
+                <ProFormText
+                  name="name"
+                  label="姓名"
+                  rules={[{ required: true, message: '请输入姓名' }]}
+                  width="md"
+                />
+                <ProFormText
+                  name="email"
+                  label="邮箱"
+                  rules={[{ type: 'email', message: '邮箱格式不正确' }]}
+                  width="md"
+                />
+              </ProForm.Group>
+              <ProForm.Group>
+                <ProFormText
+                  name="phone"
+                  label="手机号"
+                  width="md"
+                />
+                <ProFormSwitch
+                  name="status"
+                  label="状态"
+                  checkedChildren="启用"
+                  unCheckedChildren="禁用"
+                />
+              </ProForm.Group>
+            </ModalForm>,
           ],
         }}
         options={{
@@ -652,117 +806,74 @@ const UserManagement: React.FC = () => {
         dateFormatter="string"
       />
 
-      {/* 添加/编辑用户对话框 */}
-      <Modal
-        title={modalTitle}
-        open={modalVisible}
-        onOk={handleSaveUser}
-        onCancel={() => setModalVisible(false)}
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="username"
-            label="用户名"
-            rules={[{ required: true, message: '请输入用户名' }]}
-          >
-            <Input disabled={!!currentUser} />
-          </Form.Item>
-          {!currentUser && (
-            <Form.Item
-              name="password"
-              label="密码"
-              rules={[{ required: true, message: '请输入密码' }]}
-            >
-              <Input.Password />
-            </Form.Item>
-          )}
-          <Form.Item
-            name="name"
-            label="姓名"
-            rules={[{ required: true, message: '请输入姓名' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item 
-            name="email" 
-            label="邮箱" 
-            rules={[{ type: 'email', message: '邮箱格式不正确' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item name="phone" label="手机号">
-            <Input />
-          </Form.Item>
-          <Form.Item name="status" label="状态" valuePropName="checked">
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" defaultChecked />
-          </Form.Item>
-        </Form>
-      </Modal>
-
       {/* 重置密码对话框 */}
-      <Modal
+      <ModalForm
         title="重置密码"
-        open={passwordModalVisible}
-        onOk={handleResetPassword}
-        onCancel={() => setPasswordModalVisible(false)}
-      >
-        <Form form={passwordForm} layout="vertical">
-          <Form.Item 
-            name="password" 
-            label="新密码" 
-            rules={[{ required: true, message: '请输入新密码' }]}
-          >
-            <Input.Password />
-          </Form.Item>
-          <Form.Item
-            name="confirmPassword"
-            label="确认密码"
-            dependencies={['password']}
-            rules={[
-              { required: true, message: '请确认密码' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('两次输入的密码不一致'));
-                },
-              }),
-            ]}
-          >
-            <Input.Password />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* 分配角色对话框 */}
-      <Modal
-        title={currentUser ? "分配角色" : "批量分配角色"}
-        open={roleModalVisible}
-        onOk={currentUser ? handleSaveUserRoles : handleSaveBatchRoles}
-        onCancel={() => {
-          setRoleModalVisible(false);
-          setCurrentUser(null);
+        open={resetPasswordVisible}
+        onFinish={async (values) => {
+          const success = await handleResetPassword(values);
+          if (success) {
+            setResetPasswordVisible(false);
+            setCurrentUser(null);
+          }
+          return success;
+        }}
+        modalProps={{
+          destroyOnClose: true,
+          onCancel: () => {
+            setResetPasswordVisible(false);
+            setCurrentUser(null);
+          },
         }}
       >
-        <Form form={roleForm} layout="vertical">
-          <Form.Item
-            name="roleIds"
-            label="角色"
-            rules={[{ required: true, message: '请选择角色' }]}
-          >
-            <Select
-              mode="multiple"
-              placeholder="请选择角色"
-              options={roles.map(role => ({ 
-                label: `${role.name}${role.description ? ` - ${role.description}` : ''}`, 
-                value: role.id 
-              }))}
+        <ProFormText.Password
+          name="password"
+          label="新密码"
+          rules={[{ required: true, message: '请输入新密码' }]}
+        />
+        <ProFormDependency name={['password']}>
+          {({ password }) => (
+            <ProFormText.Password
+              name="confirmPassword"
+              label="确认密码"
+              rules={[
+                { required: true, message: '请确认密码' },
+                {
+                  validator: (_, value) =>
+                    value === password
+                      ? Promise.resolve()
+                      : Promise.reject(new Error('两次输入的密码不一致')),
+                },
+              ]}
             />
-          </Form.Item>
-        </Form>
-      </Modal>
+          )}
+        </ProFormDependency>
+      </ModalForm>
+
+      {/* 分配角色对话框 */}
+      <ModalForm
+        title={currentUser ? "分配角色" : "批量分配角色"}
+        open={!!currentUser && roles.length > 0}
+        onFinish={handleSaveUserRoles}
+        modalProps={{
+          destroyOnClose: true,
+          onCancel: () => {
+            setCurrentUser(null);
+            setRoles([]);
+          },
+        }}
+      >
+        <ProFormSelect
+          name="roleIds"
+          label="角色"
+          mode="multiple"
+          options={roles.map(role => ({
+            label: `${role.name}${role.description ? ` - ${role.description}` : ''}`,
+            value: role.id,
+          }))}
+          rules={[{ required: true, message: '请选择角色' }]}
+        />
+      </ModalForm>
 
       {/* 加入部门对话框（支持单个和批量） */}
       <Modal

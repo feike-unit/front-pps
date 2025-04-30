@@ -2,23 +2,25 @@ import React, { useRef } from 'react';
 import {
   Button,
   Space,
-  Modal,
-  Form,
-  Input,
   message,
   Tree,
-  Switch,
+  Modal,
+  Popconfirm,
 } from 'antd';
 import type { TreeProps } from 'antd/es/tree';
 import type { DataNode } from 'antd/es/tree';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
-import { PlusOutlined, MenuOutlined } from '@ant-design/icons';
+import { 
+  ProTable, 
+  ModalForm, 
+  ProForm, 
+  ProFormText, 
+  ProFormTextArea 
+} from '@ant-design/pro-components';
+import { PlusOutlined } from '@ant-design/icons';
 import { Role, getRolePage, createRole, updateRole, deleteRole, getRoleMenuIds, assignMenusToRole } from '../../../services/role';
 import { Menu, getAllMenus } from '../../../services/menu';
 import { ApiError } from '../../../services/api';
-
-const { TextArea } = Input;
 
 interface TreeMenu extends DataNode {
   key: number;
@@ -28,14 +30,11 @@ interface TreeMenu extends DataNode {
 
 const RoleManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
-  const [modalVisible, setModalVisible] = React.useState<boolean>(false);
   const [menuModalVisible, setMenuModalVisible] = React.useState<boolean>(false);
-  const [modalTitle, setModalTitle] = React.useState<string>('添加角色');
   const [currentRole, setCurrentRole] = React.useState<Role | null>(null);
   const [menus, setMenus] = React.useState<TreeMenu[]>([]);
   const [checkedMenuIds, setCheckedMenuIds] = React.useState<React.Key[]>([]);
   const [expandedKeys, setExpandedKeys] = React.useState<React.Key[]>([]);
-  const [form] = Form.useForm();
 
   // 将菜单列表转换为树形结构
   const formatMenuTree = (menus: Menu[]): Menu[] => {
@@ -76,36 +75,22 @@ const RoleManagement: React.FC = () => {
     return result;
   };
 
-  // 添加或编辑角色
-  const handleAddOrEdit = async (role?: Role) => {
-    if (role) {
-      setModalTitle('编辑角色');
-      setCurrentRole(role);
-      form.setFieldsValue(role);
-    } else {
-      setModalTitle('添加角色');
-      setCurrentRole(null);
-      form.resetFields();
-    }
-    setModalVisible(true);
-  };
-
   // 保存角色
-  const handleSaveRole = async () => {
+  const handleSaveRole = async (values: any) => {
     try {
-      const values = await form.validateFields();
-      if (currentRole) {
-        await updateRole({ ...values, id: currentRole.id });
+      if (values.id) {
+        await updateRole(values);
         message.success('角色更新成功');
       } else {
         await createRole(values);
         message.success('角色创建成功');
       }
-      setModalVisible(false);
       actionRef.current?.reload();
+      return true;
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '保存角色失败');
+      return false;
     }
   };
 
@@ -169,7 +154,6 @@ const RoleManagement: React.FC = () => {
     }
   };
 
-  // ProTable 列定义
   const columns: ProColumns<Role>[] = [
     {
       title: '角色名称',
@@ -198,30 +182,47 @@ const RoleManagement: React.FC = () => {
       valueType: 'option',
       key: 'option',
       render: (_, record) => [
-        <a
+        <ModalForm<Role>
           key="edit"
-          onClick={() => handleAddOrEdit(record)}
+          title="编辑角色"
+          trigger={<a>编辑</a>}
+          initialValues={record}
+          onFinish={handleSaveRole}
+          modalProps={{
+            destroyOnClose: true,
+          }}
+          width={600}
         >
-          编辑
-        </a>,
+          <ProFormText
+            name="name"
+            label="角色名称"
+            rules={[{ required: true, message: '请输入角色名称' }]}
+          />
+          <ProFormTextArea
+            name="description"
+            label="角色描述"
+            fieldProps={{
+              rows: 4,
+            }}
+          />
+          <ProFormText
+            name="id"
+            hidden
+          />
+        </ModalForm>,
         <a
           key="menu"
           onClick={() => handleMenuSetting(record)}
         >
           菜单权限
         </a>,
-        <a
+        <Popconfirm
           key="delete"
-          onClick={() => {
-            Modal.confirm({
-              title: '删除角色',
-              content: '确定要删除该角色吗？',
-              onOk: () => handleDelete(record.id),
-            });
-          }}
+          title="确定要删除该角色吗？"
+          onConfirm={() => handleDelete(record.id)}
         >
-          删除
-        </a>,
+          <a>删除</a>
+        </Popconfirm>,
       ],
     },
   ];
@@ -270,14 +271,33 @@ const RoleManagement: React.FC = () => {
         search={false}
         toolbar={{
           actions: [
-            <Button
+            <ModalForm<Role>
               key="add"
-              type="primary"
-              onClick={() => handleAddOrEdit()}
-              icon={<PlusOutlined />}
+              title="添加角色"
+              trigger={
+                <Button type="primary" icon={<PlusOutlined />}>
+                  添加角色
+                </Button>
+              }
+              onFinish={handleSaveRole}
+              modalProps={{
+                destroyOnClose: true,
+              }}
+              width={600}
             >
-              添加角色
-            </Button>,
+              <ProFormText
+                name="name"
+                label="角色名称"
+                rules={[{ required: true, message: '请输入角色名称' }]}
+              />
+              <ProFormTextArea
+                name="description"
+                label="角色描述"
+                fieldProps={{
+                  rows: 4,
+                }}
+              />
+            </ModalForm>,
           ],
         }}
         options={{
@@ -292,31 +312,6 @@ const RoleManagement: React.FC = () => {
         }}
         dateFormatter="string"
       />
-
-      {/* 添加/编辑角色对话框 */}
-      <Modal
-        title={modalTitle}
-        open={modalVisible}
-        onOk={handleSaveRole}
-        onCancel={() => setModalVisible(false)}
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="name"
-            label="角色名称"
-            rules={[{ required: true, message: '请输入角色名称' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item 
-            name="description" 
-            label="角色描述"
-          >
-            <TextArea rows={4} />
-          </Form.Item>
-        </Form>
-      </Modal>
 
       {/* 菜单权限设置对话框 */}
       <Modal
