@@ -1,29 +1,59 @@
 /* 登录页面容器样式 */
-/* 使用flex布局使登录卡片垂直水平居中 */
 .container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #f0f2f5;  /* 浅灰色背景 */
+  background: #f0f2f5;
 }
 
-/* 登录卡片样式 */
-.loginCard {
-  width: 100%;
-  max-width: 400px;  /* 限制最大宽度 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);  /* 添加阴影效果 */
+/* 登录表单样式 */
+.container :global(.ant-pro-form-login-container) {
+  padding: 32px 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 600px;
 }
 
-/* 登录卡片标题样式 */
-/* 使用:global修饰符访问antd组件内部类名 */
-.loginCard :global(.ant-card-head-title) {
-  text-align: center;
+/* 登录表单标题样式 */
+.container :global(.ant-pro-form-login-title) {
+  color: rgba(0, 0, 0, 0.85);
+  font-weight: 600;
   font-size: 24px;
-  font-weight: bold;
+  line-height: 32px;
 }
 
-/* 移除表单最后一个元素的底部边距 */
-.loginCard :global(.ant-form-item:last-child) {
-  margin-bottom: 0;
+/* 登录表单副标题样式 */
+.container :global(.ant-pro-form-login-subtitle) {
+  margin-top: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+/* 输入框图标样式 */
+.container :global(.prefixIcon) {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+/* 暗黑主题 */
+[data-theme='dark'] .container {
+  background: #1f1f1f;
+}
+
+[data-theme='dark'] .container :global(.ant-pro-form-login-container) {
+  background: #141414;
+}
+
+[data-theme='dark'] .container :global(.ant-pro-form-login-title) {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme='dark'] .container :global(.ant-pro-form-login-subtitle) {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+[data-theme='dark'] .container :global(.prefixIcon) {
+  color: rgba(255, 255, 255, 0.25);
 } 

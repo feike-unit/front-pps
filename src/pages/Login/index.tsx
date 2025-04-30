@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, message } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { message } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { LoginForm, ProFormText } from '@ant-design/pro-components';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { login } from '../../services/auth';
 import styles from './index.module.css';
 
@@ -19,7 +20,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // 表单提交处理函数
-  const onFinish = async (values: LoginForm) => {
+  const handleSubmit = async (values: LoginForm) => {
     try {
       setLoading(true);
       // 调用登录API
@@ -38,40 +39,47 @@ const Login: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <Card title="企业计划管理系统" className={styles.loginCard}>
-        <Form
-          name="login"
-          initialValues={{ username: 'admin', password: 'admin123' }}
-          onFinish={onFinish}
-          size="large"
-        >
-          {/* 用户名输入框 */}
-          <Form.Item
-            name="username"
-            rules={[{ required: true, message: '请输入用户名' }]}
-          >
-            <Input prefix={<UserOutlined />} placeholder="用户名" />
-          </Form.Item>
-
-          {/* 密码输入框 */}
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: '请输入密码' }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="密码"
-            />
-          </Form.Item>
-
-          {/* 登录按钮 */}
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={loading}>
-              登录
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
+      <LoginForm
+        title="企业计划管理系统"
+        subTitle="欢迎回来！请登录您的账户"
+        loading={loading}
+        initialValues={{
+          username: 'admin',
+          password: 'admin123',
+        }}
+        onFinish={async (values) => {
+          await handleSubmit(values as LoginForm);
+        }}
+      >
+        <ProFormText
+          name="username"
+          fieldProps={{
+            size: 'large',
+            prefix: <UserOutlined className={'prefixIcon'} />,
+          }}
+          placeholder={'用户名'}
+          rules={[
+            {
+              required: true,
+              message: '请输入用户名!',
+            },
+          ]}
+        />
+        <ProFormText.Password
+          name="password"
+          fieldProps={{
+            size: 'large',
+            prefix: <LockOutlined className={'prefixIcon'} />,
+          }}
+          placeholder={'密码'}
+          rules={[
+            {
+              required: true,
+              message: '请输入密码！',
+            },
+          ]}
+        />
+      </LoginForm>
     </div>
   );
 };
