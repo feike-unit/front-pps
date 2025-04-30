@@ -403,12 +403,14 @@ const UserManagement: React.FC = () => {
       dataIndex: 'username',
       copyable: true,
       ellipsis: true,
+      sorter: true,
     },
     {
       title: '姓名',
       dataIndex: 'name',
       copyable: true,
       ellipsis: true,
+      sorter: true,
     },
     {
       title: '所属部门',
@@ -426,12 +428,14 @@ const UserManagement: React.FC = () => {
       dataIndex: 'email',
       copyable: true,
       ellipsis: true,
+      sorter: true,
     },
     {
       title: '电话',
       dataIndex: 'phone',
       copyable: true,
       ellipsis: true,
+      sorter: true,
     },
     {
       title: '角色',
