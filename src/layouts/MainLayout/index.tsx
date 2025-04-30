@@ -164,11 +164,11 @@ const MainLayoutContent: React.FC = () => {
 
   // 生成面包屑数据
   const getBreadcrumbItems = () => {
-    const items = [{ path: '/dashboard', title: '首页' }];
+    const items = [{ title: '首页' }];
     const currentPath = location.pathname;
     
     // 查找当前路径对应的菜单项及其父级
-    const findMenuPath = (menuItems: MenuProps['items'] | undefined, targetPath: string): { path: string; title: string }[] => {
+    const findMenuPath = (menuItems: MenuProps['items'] | undefined, targetPath: string): { title: string }[] => {
       if (!menuItems) return [];
       
       for (const item of menuItems) {
@@ -177,7 +177,6 @@ const MainLayoutContent: React.FC = () => {
         // 如果找到当前路径
         if (item.key === targetPath) {
           return [{
-            path: item.key.toString(),
             title: 'label' in item && typeof item.label === 'string' ? item.label : ''
           }];
         }
@@ -187,7 +186,6 @@ const MainLayoutContent: React.FC = () => {
           const found = findMenuPath(item.children, targetPath);
           if (found.length > 0) {
             return [{
-              path: item.key.toString(),
               title: 'label' in item && typeof item.label === 'string' ? item.label : ''
             }, ...found];
           }
