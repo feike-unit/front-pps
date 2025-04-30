@@ -17,8 +17,8 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
 import { getProfile, logout } from '../../services/auth';
-import { TabProvider, useTab } from '../../contexts/TabContext';
-import { db } from '../../utils/db';
+import { TabsProvider, useTabs } from './TabsContext';
+import { convertRoutesToMenuItems, routes, routeMetadata } from '../../routes';
 
 interface Menu {
   id: number;
@@ -51,7 +51,7 @@ const MainLayoutContent: React.FC = () => {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { addTab, activeTab, tabs, removeTab } = useTab();
+  const { addTab, activeTab, tabs, removeTab } = useTabs();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -70,74 +70,47 @@ const MainLayoutContent: React.FC = () => {
     }
   };
 
-  const menuItems: MenuProps['items'] = [
-    {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: '仪表盘',
-    },
-    {
-      key: 'system',
-      icon: <SettingOutlined />,
-      label: '系统管理',
-      children: [
-        {
-          key: '/system/departments',
-          icon: <ApartmentOutlined />,
-          label: '部门管理',
-        },
-        {
-          key: '/system/users',
-          icon: <UserOutlined />,
-          label: '用户管理',
-        },
-        {
-          key: '/system/roles',
-          icon: <TeamOutlined />,
-          label: '角色管理',
-        },
-        {
-          key: '/system/menus',
-          icon: <MenuOutlined />,
-          label: '菜单管理',
-        },
-      ],
-    }
-  ];
+  // 获取菜单项
+  const menuItems = React.useMemo(() => {
+    const mainLayoutRoute = routes.find(route => route.path === '/');
+    return convertRoutesToMenuItems(mainLayoutRoute?.children || []);
+  }, []);
 
-  const handleMenuClick: MenuProps['onClick'] = ({ key, domEvent }) => {
-    // 获取菜单项的标签文本
-    const menuItem = menuItems.flatMap(item => {
-      if (item && 'children' in item) {
-        return item.children || [];
-      }
-      return item;
-    }).find(item => item?.key === key) as Required<MenuProps>['items'][number];
+  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
+    // 处理完整路径
+    const fullPath = key.toString();
+    console.log('Menu clicked:', { 
+      key, 
+      fullPath, 
+      metadata: routeMetadata[fullPath],
+      allMetadata: routeMetadata,
+      menuItems
+    });
     
-    if (menuItem && 'label' in menuItem && 'icon' in menuItem) {
-      addTab({
-        key: key as string,
-        label: menuItem.label as string,
-        icon: menuItem.icon,
-        closable: key !== '/dashboard',
-      });
-    } else if (menuItem && 'label' in menuItem) {
-      addTab({
-        key: key as string,
-        label: menuItem.label as string,
-        closable: key !== '/dashboard',
-      });
+    // 如果是父级菜单，不进行处理
+    const menuItem = menuItems?.find(item => item?.key === fullPath);
+    if (menuItem && 'children' in menuItem) {
+      return;
     }
-    navigate(key);
+
+    // 从路由元数据中获取标签信息
+    const metadata = routeMetadata[fullPath];
+    if (metadata) {
+      addTab({
+        key: fullPath,
+        label: metadata.label || '',
+        icon: metadata.icon,
+        closable: metadata.closable !== false, // 默认为 true
+      });
+      navigate(fullPath);
+    } else {
+      console.warn('No metadata found for path:', fullPath);
+    }
   };
 
   const handleLogout = async () => {
     try {
-      // 清除标签页存储
-      await db.clearTabs();
-      // 执行登出
       await logout();
-      // 重定向到登录页
       navigate('/login');
     } catch (error) {
       console.error('登出失败:', error);
@@ -221,7 +194,7 @@ const MainLayoutContent: React.FC = () => {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={['system']}
+          defaultOpenKeys={['/system']}
           items={menuItems}
           onClick={handleMenuClick}
         />
@@ -261,54 +234,16 @@ const MainLayoutContent: React.FC = () => {
               ghost: true,
               breadcrumb: {
                 items: getBreadcrumbItems()
-              },
-              extra: [
-                <Button key="refresh" onClick={() => window.location.reload()}>
-                  刷新
-                </Button>,
-                <Dropdown
-                  key="more"
-                  trigger={['click']}
-                  menu={{
-                    items: [
-                      {
-                        label: '刷新页面',
-                        key: 'refresh',
-                        onClick: () => window.location.reload(),
-                      },
-                      {
-                        label: '关闭当前页',
-                        key: 'close',
-                        onClick: () => activeTab !== '/dashboard' && removeTab(activeTab),
-                      },
-                      {
-                        label: '关闭其他页面',
-                        key: 'closeOthers',
-                        onClick: () => {
-                          const currentTab = tabs.find(tab => tab.key === activeTab);
-                          if (currentTab) {
-                            const dashboardTab = tabs.find(tab => tab.key === '/dashboard');
-                            const newTabs = dashboardTab ? [dashboardTab, currentTab] : [currentTab];
-                            tabs.forEach(tab => {
-                              if (tab.key !== activeTab && tab.key !== '/dashboard') {
-                                removeTab(tab.key);
-                              }
-                            });
-                          }
-                        },
-                      },
-                    ],
-                  }}
-                >
-                  <Button style={{ padding: '0 8px' }}>
-                    <EllipsisOutlined />
-                  </Button>
-                </Dropdown>,
-              ],
+              }
             }}
             tabList={tabs.map(tab => ({
               key: tab.key,
-              tab: tab.label,
+              tab: (
+                <span>
+                  {tab.icon && <span style={{ marginRight: 4 }}>{tab.icon}</span>}
+                  {tab.label}
+                </span>
+              ),
               closable: tab.closable,
             }))}
             tabProps={{
@@ -346,9 +281,9 @@ const MainLayoutContent: React.FC = () => {
 
 const MainLayout: React.FC = () => {
   return (
-    <TabProvider>
+    <TabsProvider>
       <MainLayoutContent />
-    </TabProvider>
+    </TabsProvider>
   );
 };
 

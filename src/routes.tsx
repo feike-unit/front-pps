@@ -7,18 +7,21 @@ import {
   TeamOutlined,
   MenuOutlined,
   BankOutlined,
-  UserSwitchOutlined
+  UserSwitchOutlined,
+  SettingOutlined
 } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
 
 // 路由元数据类型
-type RouteMetadata = {
-  label: string;
-  icon: React.ReactNode;
+interface RouteMetadata {
+  label?: string;
+  icon?: React.ReactNode;
   closable?: boolean;
-};
+  hideInMenu?: boolean;
+}
 
 // 扩展路由对象类型
-type ExtendedRouteObject = RouteObject & {
+export type ExtendedRouteObject = Omit<RouteObject, 'children'> & {
   metadata?: RouteMetadata;
   children?: ExtendedRouteObject[];
 };
@@ -27,15 +30,24 @@ type ExtendedRouteObject = RouteObject & {
 export const routes: ExtendedRouteObject[] = [
   {
     path: '/login',
-    element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/Login')))}</Suspense>
+    element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/Login')))}</Suspense>,
+    metadata: {
+      hideInMenu: true
+    }
   },
   {
     path: '/',
     element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./layouts/MainLayout')))}</Suspense>,
+    metadata: {
+      hideInMenu: true
+    },
     children: [
       {
         path: '',
-        element: <Navigate to="/dashboard" replace />
+        element: <Navigate to="/dashboard" replace />,
+        metadata: {
+          hideInMenu: true
+        }
       },
       {
         path: 'dashboard',
@@ -47,40 +59,49 @@ export const routes: ExtendedRouteObject[] = [
         }
       },
       {
-        path: 'system/departments',
-        element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/DepartmentManagement')))}</Suspense>,
+        path: 'system',
         metadata: {
-          label: '部门管理',
-          icon: <BankOutlined />,
-          closable: true
-        }
-      },
-      {
-        path: 'system/users',
-        element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/UserManagement')))}</Suspense>,
-        metadata: {
-          label: '用户管理',
-          icon: <UserOutlined />,
-          closable: true
-        }
-      },
-      {
-        path: 'system/roles',
-        element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/RoleManagement')))}</Suspense>,
-        metadata: {
-          label: '角色管理',
-          icon: <TeamOutlined />,
-          closable: true
-        }
-      },
-      {
-        path: 'system/menus',
-        element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/MenuManagement')))}</Suspense>,
-        metadata: {
-          label: '菜单管理',
-          icon: <MenuOutlined />,
-          closable: true
-        }
+          label: '系统管理',
+          icon: <SettingOutlined />
+        },
+        children: [
+          {
+            path: 'departments',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/DepartmentManagement')))}</Suspense>,
+            metadata: {
+              label: '部门管理',
+              icon: <BankOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'users',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/UserManagement')))}</Suspense>,
+            metadata: {
+              label: '用户管理',
+              icon: <UserOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'roles',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/RoleManagement')))}</Suspense>,
+            metadata: {
+              label: '角色管理',
+              icon: <TeamOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'menus',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/MenuManagement')))}</Suspense>,
+            metadata: {
+              label: '菜单管理',
+              icon: <MenuOutlined />,
+              closable: true
+            }
+          }
+        ]
       },
       {
         path: 'profile',
@@ -88,25 +109,93 @@ export const routes: ExtendedRouteObject[] = [
         metadata: {
           label: '个人信息',
           icon: <UserSwitchOutlined />,
-          closable: true
+          closable: true,
+          hideInMenu: true
         }
       }
     ]
   },
   {
     path: '*',
-    element: <Navigate to="/" replace />
+    element: <Navigate to="/" replace />,
+    metadata: {
+      hideInMenu: true
+    }
   }
 ];
 
-// 生成路由元数据
-export const routeMetadata = routes.reduce((acc, route) => {
-  if (route.children) {
-    route.children.forEach(child => {
-      if (child.metadata && child.path) {
-        acc[`/${child.path}`] = child.metadata;
+// 生成路由元数据映射
+export const generateRouteMetadata = (routes: ExtendedRouteObject[]): Record<string, RouteMetadata> => {
+  const metadata: Record<string, RouteMetadata> = {};
+
+  const processRoute = (route: ExtendedRouteObject, parentPath: string = '') => {
+    if (!route.path) return;
+
+    // 构建完整路径
+    let fullPath = '';
+    if (route.path.startsWith('/')) {
+      fullPath = route.path;
+    } else if (parentPath) {
+      fullPath = parentPath === '/' ? `/${route.path}` : `${parentPath}/${route.path}`;
+    } else {
+      fullPath = `/${route.path}`;
+    }
+
+    // 保存元数据
+    if (route.metadata) {
+      console.log('Adding metadata for path:', fullPath, route.metadata);
+      metadata[fullPath] = route.metadata;
+    }
+
+    // 处理子路由
+    if (route.children) {
+      route.children.forEach(child => processRoute(child, fullPath));
+    }
+  };
+
+  routes.forEach(route => processRoute(route));
+  console.log('Final route metadata:', metadata);
+  return metadata;
+};
+
+// 将路由配置转换为菜单项
+export const convertRoutesToMenuItems = (routes: ExtendedRouteObject[]): MenuProps['items'] => {
+  const processRoute = (route: ExtendedRouteObject, parentPath: string = ''): any => {
+    if (!route.metadata || route.metadata.hideInMenu) return null;
+    if (!route.path) return null;
+
+    // 构建完整路径
+    let fullPath = '';
+    if (route.path.startsWith('/')) {
+      fullPath = route.path;
+    } else if (parentPath) {
+      fullPath = parentPath === '/' ? `/${route.path}` : `${parentPath}/${route.path}`;
+    } else {
+      fullPath = `/${route.path}`;
+    }
+
+    const menuItem: any = {
+      key: fullPath,
+      icon: route.metadata.icon,
+      label: route.metadata.label,
+    };
+
+    if (route.children) {
+      const childrenItems = route.children
+        .map(child => processRoute(child, fullPath))
+        .filter(Boolean);
+
+      if (childrenItems.length > 0) {
+        menuItem.children = childrenItems;
       }
-    });
-  }
-  return acc;
-}, {} as Record<string, RouteMetadata>); 
+    }
+
+    return menuItem;
+  };
+
+  return routes
+    .map(route => processRoute(route))
+    .filter(Boolean);
+};
+
+export const routeMetadata = generateRouteMetadata(routes); 
