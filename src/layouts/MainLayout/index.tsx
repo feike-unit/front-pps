@@ -127,6 +127,7 @@ const MainLayoutContent: React.FC = () => {
         )}
       >
         <PageContainer
+          title={false}
           tabList={tabs.map(tab => ({
             key: tab.key,
             tab: (
