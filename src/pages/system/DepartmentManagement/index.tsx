@@ -15,7 +15,7 @@ import {
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CaretDownOutlined, CaretRightOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import { ProTable, ModalForm, ProFormText, ProFormDigit, ProFormTreeSelect, ProFormSwitch } from '@ant-design/pro-components';
 import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus, getDepartmentUsers } from '../../../services/department';
 import { ApiError } from '../../../services/api';
 import AssignUsersModal from './AssignUsersModal';
@@ -91,15 +91,13 @@ const DepartmentUsers: React.FC<{ departmentId: number; refreshKey: number }> = 
 
 const DepartmentManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
-  const [modalVisible, setModalVisible] = React.useState<boolean>(false);
-  const [modalTitle, setModalTitle] = React.useState<string>('添加部门');
   const [currentDepartment, setCurrentDepartment] = React.useState<Department | null>(null);
   const [assignUsersModalVisible, setAssignUsersModalVisible] = React.useState<boolean>(false);
   const [selectedDepartmentId, setSelectedDepartmentId] = React.useState<number | null>(null);
   const [refreshUserListKey, setRefreshUserListKey] = React.useState<number>(0);
   const [treeData, setTreeData] = React.useState<any[]>([]);
   const [expandedKeys, setExpandedKeys] = React.useState<number[]>([]);
-  const [form] = Form.useForm();
+  const [modalVisible, setModalVisible] = React.useState<boolean>(false);
 
   // 将部门列表转换为树形结构
   const convertToTreeData = (departments: Department[]): Department[] => {
@@ -214,29 +212,13 @@ const DepartmentManagement: React.FC = () => {
   const handleAddOrEdit = async (department?: Department) => {
     // 重新获取最新的部门树数据
     await fetchTreeSelectData();
-    
-    if (department) {
-      setModalTitle('编辑部门');
-      setCurrentDepartment(department);
-      form.setFieldsValue({
-        name: department.name,
-        parentId: department.parentId,
-        sort: department.sort,
-        status: department.status === 1,
-      });
-    } else {
-      setModalTitle('添加部门');
-      setCurrentDepartment(null);
-      form.resetFields();
-      form.setFieldsValue({ parentId: 0, sort: 0, status: true });
-    }
+    setCurrentDepartment(department || null);
     setModalVisible(true);
   };
 
   // 保存部门
-  const handleSaveDepartment = async () => {
+  const handleSaveDepartment = async (values: any) => {
     try {
-      const values = await form.validateFields();
       const params = {
         ...values,
         status: values.status ? 1 : 0,
@@ -249,11 +231,14 @@ const DepartmentManagement: React.FC = () => {
         await createDepartment(params);
         message.success('部门创建成功');
       }
+      
       setModalVisible(false);
       actionRef.current?.reload();
+      return true;
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '保存部门失败');
+      message.error(apiError.response?.data?.message || apiError.message || '保存失败');
+      return false;
     }
   };
 
@@ -443,55 +428,59 @@ const DepartmentManagement: React.FC = () => {
         indentSize={24}
       />
 
-      {/* 添加/编辑部门对话框 */}
-      <Modal
-        title={modalTitle}
+      <ModalForm
+        title={currentDepartment ? '编辑部门' : '添加部门'}
         open={modalVisible}
-        onOk={handleSaveDepartment}
-        onCancel={() => setModalVisible(false)}
+        onOpenChange={setModalVisible}
+        initialValues={{
+          parentId: currentDepartment?.parentId || 0,
+          name: currentDepartment?.name,
+          sort: currentDepartment?.sort || 0,
+          status: currentDepartment ? currentDepartment.status === 1 : true,
+        }}
+        onFinish={handleSaveDepartment}
+        modalProps={{
+          destroyOnClose: true,
+          maskClosable: false,
+        }}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="name"
-            label="部门名称"
-            rules={[{ required: true, message: '请输入部门名称' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="parentId"
-            label="上级部门"
-            rules={[{ required: true, message: '请选择上级部门' }]}
-          >
-            <TreeSelect
-              placeholder="请选择上级部门"
-              treeDefaultExpandAll
-              dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
-              showSearch
-              allowClear
-              treeNodeFilterProp="title"
-              filterTreeNode={(input, node) => {
-                return (node?.title as string)?.toLowerCase().indexOf(input.toLowerCase()) >= 0;
-              }}
-              treeNodeLabelProp="title"
-              // 禁用当前部门及其子部门
-              treeData={currentDepartment ? disableCurrentAndChildren(treeData, currentDepartment.id) : treeData}
-            />
-          </Form.Item>
-          <Form.Item
-            name="sort"
-            label="排序"
-            rules={[{ required: true, message: '请输入排序值' }]}
-          >
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="status" label="状态" valuePropName="checked">
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-          </Form.Item>
-        </Form>
-      </Modal>
+        <ProFormTreeSelect
+          name="parentId"
+          label="上级部门"
+          tooltip="不选择则为顶级部门"
+          fieldProps={{
+            treeData,
+            treeDefaultExpandAll: true,
+            disabled: currentDepartment?.id === 1,
+          }}
+          rules={[{ required: true, message: '请选择上级部门' }]}
+        />
+        <ProFormText
+          name="name"
+          label="部门名称"
+          rules={[
+            { required: true, message: '请输入部门名称' },
+            { max: 50, message: '部门名称不能超过50个字符' }
+          ]}
+        />
+        <ProFormDigit
+          name="sort"
+          label="排序号"
+          tooltip="数字越小越靠前"
+          fieldProps={{
+            precision: 0,
+            min: 0,
+          }}
+          rules={[{ required: true, message: '请输入排序号' }]}
+        />
+        <ProFormSwitch
+          name="status"
+          label="状态"
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+        />
+      </ModalForm>
 
-      {/* 分配用户对话框 */}
       <AssignUsersModal
         open={assignUsersModalVisible}
         departmentId={selectedDepartmentId}
