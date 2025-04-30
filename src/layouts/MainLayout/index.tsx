@@ -266,7 +266,7 @@ const MainLayoutContent: React.FC = () => {
             )}
           </Space>
         </Header>
-        <div style={{ background: '#F5F7FA', height: '100%' }}>
+        <div style={{ background: '#FFF', height: '100%' }}>
           <PageContainer
             header={{
               ghost: true,

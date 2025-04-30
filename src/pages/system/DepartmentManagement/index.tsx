@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useRef } from 'react';
 import {
-  Card,
   Button,
-  Table,
   Space,
   Modal,
   Form,
@@ -13,24 +11,24 @@ import {
   Popconfirm,
   TreeSelect,
   Tag,
-  Spin,
   Tooltip,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CaretDownOutlined, CaretRightOutlined } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { ProTable } from '@ant-design/pro-components';
 import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus, getDepartmentUsers } from '../../../services/department';
 import { ApiError } from '../../../services/api';
-import type { ColumnsType } from 'antd/es/table';
 import AssignUsersModal from './AssignUsersModal';
 import type { UserInfo } from '../../../services/user';
 import { removeUserFromDepartment } from '../../../services/user';
 
-// 新增 DepartmentUsers 组件
-const DepartmentUsers: React.FC<{ departmentId: number }> = ({ departmentId }) => {
-  const [users, setUsers] = useState<UserInfo[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [popconfirmVisible, setPopconfirmVisible] = useState<number | null>(null);
+// 部门用户组件
+const DepartmentUsers: React.FC<{ departmentId: number; refreshKey: number }> = ({ departmentId, refreshKey }) => {
+  const [users, setUsers] = React.useState<UserInfo[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [popconfirmVisible, setPopconfirmVisible] = React.useState<number | null>(null);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = React.useCallback(async () => {
     try {
       setLoading(true);
       const data = await getDepartmentUsers(departmentId);
@@ -43,15 +41,14 @@ const DepartmentUsers: React.FC<{ departmentId: number }> = ({ departmentId }) =
     }
   }, [departmentId]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+  }, [fetchUsers, refreshKey]);
 
   const handleRemoveUser = async (userId: number) => {
     try {
       await removeUserFromDepartment(userId, departmentId);
       message.success('移除用户关系成功');
-      // 重新获取用户列表
       fetchUsers();
     } catch (error) {
       const apiError = error as ApiError;
@@ -93,41 +90,42 @@ const DepartmentUsers: React.FC<{ departmentId: number }> = ({ departmentId }) =
 };
 
 const DepartmentManagement: React.FC = () => {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [treeData, setTreeData] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [modalTitle, setModalTitle] = useState<string>('添加部门');
-  const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
-  const [assignUsersModalVisible, setAssignUsersModalVisible] = useState<boolean>(false);
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
-  const [refreshUserListKey, setRefreshUserListKey] = useState<number>(0);
+  const actionRef = useRef<ActionType>();
+  const [modalVisible, setModalVisible] = React.useState<boolean>(false);
+  const [modalTitle, setModalTitle] = React.useState<string>('添加部门');
+  const [currentDepartment, setCurrentDepartment] = React.useState<Department | null>(null);
+  const [assignUsersModalVisible, setAssignUsersModalVisible] = React.useState<boolean>(false);
+  const [selectedDepartmentId, setSelectedDepartmentId] = React.useState<number | null>(null);
+  const [refreshUserListKey, setRefreshUserListKey] = React.useState<number>(0);
+  const [treeData, setTreeData] = React.useState<any[]>([]);
+  const [expandedKeys, setExpandedKeys] = React.useState<number[]>([]);
   const [form] = Form.useForm();
 
-  // 获取部门列表
-  const fetchDepartments = async () => {
-    setLoading(true);
-    try {
-      const result = await getAllDepartments();
-      if (result && Array.isArray(result)) {
-        setDepartments(result);
-        // 构建树形选择数据
-        const treeSelectData = formatTreeSelectData([
-          { id: 0, name: '根部门', parentId: -1 } as Department,
-          ...result
-        ]);
-        setTreeData(treeSelectData);
+  // 将部门列表转换为树形结构
+  const convertToTreeData = (departments: Department[]): Department[] => {
+    const map = new Map<number, Department>();
+    const result: Department[] = [];
+
+    // 先创建所有节点的副本
+    departments.forEach(dept => {
+      map.set(dept.id, { ...dept, children: [] });
+    });
+
+    // 构建树形结构
+    departments.forEach(dept => {
+      const node = map.get(dept.id)!;
+      if (dept.parentId === 0) {
+        result.push(node);
       } else {
-        setDepartments([]);
-        setTreeData([{ title: '根部门', value: 0, key: 0 }]);
-        message.warning('获取部门列表数据格式不正确');
+        const parent = map.get(dept.parentId);
+        if (parent) {
+          parent.children = parent.children || [];
+          parent.children.push(node);
+        }
       }
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '获取部门列表失败');
-    } finally {
-      setLoading(false);
-    }
+    });
+
+    return result;
   };
 
   // 将部门列表转换为TreeSelect需要的数据格式
@@ -136,52 +134,87 @@ const DepartmentManagement: React.FC = () => {
       title: item.name,
       value: item.id,
       key: item.id,
-      children: item.children && item.children.length > 0 ? formatTreeSelectData(item.children) : undefined,
+      children: item.children && item.children.length > 0 
+        ? formatTreeSelectData(item.children) 
+        : undefined,
     }));
   };
 
-  // 递归处理部门数据，用于表格展示
-  const processDepartmentData = (data: Department[]): Department[] => {
-    if (!data || !Array.isArray(data)) {
-      return [];
+  // 获取部门树形选择数据
+  const fetchTreeSelectData = async () => {
+    try {
+      const result = await getAllDepartments();
+      if (result && Array.isArray(result)) {
+        // 设置默认展开的根节点
+        const rootDepartments = result.filter(dept => dept.parentId === 0);
+        setExpandedKeys(rootDepartments.map(dept => dept.id));
+        
+        // 转换为树形结构
+        const treeData = convertToTreeSelectData(result);
+        setTreeData(treeData);
+      } else {
+        setTreeData([]);
+      }
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取部门列表失败');
     }
-    
-    return data
-      .filter(dept => dept && typeof dept.id === 'number' && typeof dept.parentId === 'number' && dept.parentId === 0)
-      .map(dept => {
-        if (!dept) return dept;
-        const children = getChildren(data, dept.id);
-        return {
-          ...dept,
-          ...(children && children.length > 0 ? { children } : {})
-        };
-      });
   };
 
-  // 获取子部门
-  const getChildren = (data: Department[], parentId: number): Department[] => {
-    if (!data || !Array.isArray(data) || typeof parentId !== 'number') {
-      return [];
-    }
-    
-    return data
-      .filter(dept => dept && typeof dept.id === 'number' && typeof dept.parentId === 'number' && dept.parentId === parentId)
-      .map(dept => {
-        if (!dept) return dept;
-        const children = getChildren(data, dept.id);
+  // 将部门列表转换为树形结构的 TreeSelect 数据
+  const convertToTreeSelectData = (departments: Department[]): any[] => {
+    const map = new Map<number, any>();
+    const result: any[] = [];
+
+    // 先创建所有节点
+    departments.forEach(dept => {
+      map.set(dept.id, {
+        title: dept.name,
+        value: dept.id,
+        key: dept.id,
+        children: [],
+      });
+    });
+
+    // 构建树形结构
+    departments.forEach(dept => {
+      const node = map.get(dept.id);
+      if (dept.parentId === 0) {
+        result.push(node);
+      } else {
+        const parent = map.get(dept.parentId);
+        if (parent) {
+          parent.children.push(node);
+        }
+      }
+    });
+
+    // 移除空的 children 数组
+    const removeEmptyChildren = (nodes: any[]): any[] => {
+      return nodes.map(node => {
+        if (node.children.length === 0) {
+          const { children, ...rest } = node;
+          return rest;
+        }
         return {
-          ...dept,
-          ...(children && children.length > 0 ? { children } : {})
+          ...node,
+          children: removeEmptyChildren(node.children),
         };
       });
+    };
+
+    return removeEmptyChildren(result);
   };
 
-  useEffect(() => {
-    fetchDepartments();
+  React.useEffect(() => {
+    fetchTreeSelectData();
   }, []);
 
   // 添加或编辑部门
-  const handleAddOrEdit = (department?: Department) => {
+  const handleAddOrEdit = async (department?: Department) => {
+    // 重新获取最新的部门树数据
+    await fetchTreeSelectData();
+    
     if (department) {
       setModalTitle('编辑部门');
       setCurrentDepartment(department);
@@ -217,7 +250,7 @@ const DepartmentManagement: React.FC = () => {
         message.success('部门创建成功');
       }
       setModalVisible(false);
-      fetchDepartments();
+      actionRef.current?.reload();
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '保存部门失败');
@@ -229,7 +262,7 @@ const DepartmentManagement: React.FC = () => {
     try {
       await deleteDepartment(id);
       message.success('部门删除成功');
-      fetchDepartments();
+      actionRef.current?.reload();
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '删除部门失败');
@@ -243,7 +276,7 @@ const DepartmentManagement: React.FC = () => {
       const statusText = status === 1 ? '启用' : '禁用';
       await updateDepartmentStatus(id, status);
       message.success(`部门${statusText}成功，已同步更新所有子部门状态`);
-      fetchDepartments();
+      actionRef.current?.reload();
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '状态更新失败');
@@ -264,47 +297,45 @@ const DepartmentManagement: React.FC = () => {
 
   // 用户分配成功的回调
   const handleAssignUsersSuccess = () => {
-    // 增加 refreshKey 以触发重新获取用户列表
     setRefreshUserListKey(prev => prev + 1);
   };
 
-  const columns: ColumnsType<Department> = [
+  const columns: ProColumns<Department>[] = [
     {
       title: '部门名称',
       dataIndex: 'name',
-      key: 'name',
-      width: 200,
+      copyable: true,
       ellipsis: true,
-      render: (name: string) => (
-        <div style={{ 
-          whiteSpace: 'nowrap', 
-          overflow: 'hidden', 
-          textOverflow: 'ellipsis' 
-        }}>
-          {name}
-        </div>
-      )
+      order: 1,
+      render: (_, record) => record.name,
     },
     {
       title: '用户列表',
-      key: 'users',
+      dataIndex: 'users',
+      search: false,
       render: (_, record) => (
         <DepartmentUsers 
           key={`${record.id}-${refreshUserListKey}`} 
-          departmentId={record.id} 
+          departmentId={record.id}
+          refreshKey={refreshUserListKey}
         />
-      )
+      ),
     },
     {
       title: '状态',
       dataIndex: 'status',
-      key: 'status',
-      width: 100,
-      render: (status: number, record: Department) => (
+      filters: true,
+      onFilter: true,
+      valueType: 'select',
+      valueEnum: {
+        1: { text: '启用', status: 'Success' },
+        0: { text: '禁用', status: 'Error' },
+      },
+      render: (_, record) => (
         <Switch
           checkedChildren="启用"
           unCheckedChildren="禁用"
-          checked={status === 1}
+          checked={record.status === 1}
           onChange={(checked) => handleStatusChange(record.id, checked)}
         />
       ),
@@ -312,65 +343,107 @@ const DepartmentManagement: React.FC = () => {
     {
       title: '创建时间',
       dataIndex: 'createdAt',
-      key: 'createdAt',
-      width: 180,
+      valueType: 'dateTime',
+      sorter: true,
+      hideInSearch: true,
     },
     {
       title: '操作',
-      key: 'action',
-      width: 120,
-      render: (_, record) => (
-        <Space size={0}>
-          <Tooltip title="编辑部门">
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleAddOrEdit(record)}
-            />
-          </Tooltip>
-          <Tooltip title="分配用户">
-            <Button
-              type="link"
-              size="small"
-              icon={<UserOutlined />}
-              onClick={() => handleAssignUsers(record)}
-            />
-          </Tooltip>
-          <Tooltip title="删除部门">
-            <Popconfirm
-              title="确定要删除该部门吗？"
-              onConfirm={() => handleDelete(record.id)}
-            >
-              <Button 
-                type="link" 
-                size="small" 
-                danger 
-                icon={<DeleteOutlined />}
-              />
-            </Popconfirm>
-          </Tooltip>
-        </Space>
-      ),
+      valueType: 'option',
+      key: 'option',
+      render: (_, record) => [
+        <a key="edit" onClick={() => handleAddOrEdit(record)}>
+          编辑
+        </a>,
+        <a key="assign" onClick={() => handleAssignUsers(record)}>
+          分配用户
+        </a>,
+        <Popconfirm
+          key="delete"
+          title="确定要删除该部门吗？"
+          onConfirm={() => handleDelete(record.id)}
+        >
+          <a>删除</a>
+        </Popconfirm>,
+      ],
     },
   ];
 
   return (
-    <Card
-      title="部门管理"
-      extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleAddOrEdit()}>
-          添加部门
-        </Button>
-      }
-    >
-      <Table
+    <>
+      <ProTable<Department>
         columns={columns}
-        dataSource={processDepartmentData(departments)}
+        actionRef={actionRef}
+        cardBordered
+        request={async (params = {}, sort, filter) => {
+          try {
+            const result = await getAllDepartments();
+            const treeData = convertToTreeData(result);
+            // 如果还没有设置展开的键,设置根节点为展开状态
+            if (expandedKeys.length === 0) {
+              const rootDepartments = result.filter(dept => dept.parentId === 0);
+              setExpandedKeys(rootDepartments.map(dept => dept.id));
+            }
+            return {
+              data: treeData,
+              success: true,
+            };
+          } catch (error) {
+            const apiError = error as ApiError;
+            message.error(apiError.response?.data?.message || apiError.message || '获取部门列表失败');
+            return {
+              data: [],
+              success: false,
+            };
+          }
+        }}
+        editable={{
+          type: 'multiple',
+        }}
+        columnsState={{
+          persistenceKey: 'department-management-table',
+          persistenceType: 'localStorage',
+        }}
         rowKey="id"
-        loading={loading}
+        search={false}
+        toolbar={{
+          actions: [
+            <Button
+              key="add"
+              type="primary"
+              onClick={() => handleAddOrEdit()}
+              icon={<PlusOutlined />}
+            >
+              添加部门
+            </Button>,
+          ],
+        }}
+        options={{
+          setting: {
+            listsHeight: 400,
+          },
+        }}
         pagination={false}
+        dateFormatter="string"
+        expandable={{
+          expandedRowKeys: expandedKeys,
+          onExpandedRowsChange: (keys) => setExpandedKeys(keys as number[]),
+          expandIcon: ({ expanded, onExpand, record }) => {
+            if (record.children && record.children.length > 0) {
+              return expanded ? (
+                <CaretDownOutlined onClick={e => onExpand(record, e)} />
+              ) : (
+                <CaretRightOutlined onClick={e => onExpand(record, e)} />
+              );
+            }
+            return null;
+          },
+        }}
+        childrenColumnName="children"
+        indentSize={24}
       />
+
+      {/* 添加/编辑部门对话框 */}
       <Modal
         title={modalTitle}
         open={modalVisible}
@@ -391,9 +464,18 @@ const DepartmentManagement: React.FC = () => {
             rules={[{ required: true, message: '请选择上级部门' }]}
           >
             <TreeSelect
-              treeData={treeData}
               placeholder="请选择上级部门"
               treeDefaultExpandAll
+              dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+              showSearch
+              allowClear
+              treeNodeFilterProp="title"
+              filterTreeNode={(input, node) => {
+                return (node?.title as string)?.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+              }}
+              treeNodeLabelProp="title"
+              // 禁用当前部门及其子部门
+              treeData={currentDepartment ? disableCurrentAndChildren(treeData, currentDepartment.id) : treeData}
             />
           </Form.Item>
           <Form.Item
@@ -408,14 +490,32 @@ const DepartmentManagement: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* 分配用户对话框 */}
       <AssignUsersModal
         open={assignUsersModalVisible}
         departmentId={selectedDepartmentId}
         onClose={handleAssignUsersClose}
         onSuccess={handleAssignUsersSuccess}
       />
-    </Card>
+    </>
   );
+};
+
+// 递归禁用当前部门及其子部门
+const disableCurrentAndChildren = (treeData: any[], currentId: number): any[] => {
+  return treeData.map(node => {
+    if (node.value === currentId) {
+      return { ...node, disabled: true };
+    }
+    if (node.children) {
+      return {
+        ...node,
+        children: disableCurrentAndChildren(node.children, currentId)
+      };
+    }
+    return node;
+  });
 };
 
 export default DepartmentManagement; 
