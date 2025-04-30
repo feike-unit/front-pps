@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Button, theme, Avatar, Space, Dropdown, message } from 'antd';
 import type { MenuProps } from 'antd';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -11,12 +12,12 @@ import {
   TeamOutlined,
   MenuOutlined,
   ApartmentOutlined,
+  EllipsisOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
 import { getProfile, logout } from '../../services/auth';
 import { TabProvider, useTab } from '../../contexts/TabContext';
-import TabNavigation from '../../components/TabNavigation';
 import { db } from '../../utils/db';
 
 interface Menu {
@@ -50,7 +51,7 @@ const MainLayoutContent: React.FC = () => {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { addTab } = useTab();
+  const { addTab, activeTab, tabs, removeTab } = useTab();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -161,6 +162,57 @@ const MainLayoutContent: React.FC = () => {
     },
   ];
 
+  // 获取当前路径对应的菜单项
+  const getCurrentMenuItem = () => {
+    const findMenuItem = (items: MenuProps['items']): Required<MenuProps>['items'][number] | undefined => {
+      if (!items) return undefined;
+      for (const item of items) {
+        if (!item) continue;
+        if ('children' in item) {
+          const found = findMenuItem(item.children);
+          if (found) return found;
+        }
+        if (item.key === location.pathname) return item;
+      }
+      return undefined;
+    };
+    return findMenuItem(menuItems);
+  };
+
+  // 获取当前路径对应的菜单项标题
+  const getCurrentMenuTitle = (): string => {
+    const currentItem = getCurrentMenuItem();
+    if (currentItem && 'label' in currentItem) {
+      const label = currentItem.label;
+      return typeof label === 'string' ? label : '页面标题';
+    }
+    return '页面标题';
+  };
+
+  // 生成面包屑数据
+  const getBreadcrumbItems = () => {
+    const items = [{ path: '/dashboard', title: '首页' }];
+    const currentItem = getCurrentMenuItem();
+    
+    if (currentItem) {
+      const parentItem = menuItems?.find(item => 
+        item && 'children' in item && item.children?.some(child => child?.key === location.pathname)
+      );
+      
+      if (parentItem && 'label' in parentItem) {
+        const parentLabel = parentItem.label;
+        items.push({ path: '', title: typeof parentLabel === 'string' ? parentLabel : '' });
+      }
+      
+      if ('label' in currentItem) {
+        const currentLabel = currentItem.label;
+        items.push({ path: location.pathname, title: typeof currentLabel === 'string' ? currentLabel : '' });
+      }
+    }
+    
+    return items;
+  };
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
@@ -202,19 +254,91 @@ const MainLayoutContent: React.FC = () => {
             )}
           </Space>
         </Header>
-        <TabNavigation />
-        <Content
-          className={styles.contentWrapper}
-          style={{
-            margin: '24px 16px',
-            padding: 24,
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-            minHeight: 280,
-          }}
-        >
-          <Outlet />
-        </Content>
+        <div style={{ background: '#F5F7FA', height: '100%' }}>
+          <PageContainer
+            header={{
+              title: getCurrentMenuTitle(),
+              ghost: true,
+              breadcrumb: {
+                items: getBreadcrumbItems()
+              },
+              extra: [
+                <Button key="refresh" onClick={() => window.location.reload()}>
+                  刷新
+                </Button>,
+                <Dropdown
+                  key="more"
+                  trigger={['click']}
+                  menu={{
+                    items: [
+                      {
+                        label: '刷新页面',
+                        key: 'refresh',
+                        onClick: () => window.location.reload(),
+                      },
+                      {
+                        label: '关闭当前页',
+                        key: 'close',
+                        onClick: () => activeTab !== '/dashboard' && removeTab(activeTab),
+                      },
+                      {
+                        label: '关闭其他页面',
+                        key: 'closeOthers',
+                        onClick: () => {
+                          const currentTab = tabs.find(tab => tab.key === activeTab);
+                          if (currentTab) {
+                            const dashboardTab = tabs.find(tab => tab.key === '/dashboard');
+                            const newTabs = dashboardTab ? [dashboardTab, currentTab] : [currentTab];
+                            tabs.forEach(tab => {
+                              if (tab.key !== activeTab && tab.key !== '/dashboard') {
+                                removeTab(tab.key);
+                              }
+                            });
+                          }
+                        },
+                      },
+                    ],
+                  }}
+                >
+                  <Button style={{ padding: '0 8px' }}>
+                    <EllipsisOutlined />
+                  </Button>
+                </Dropdown>,
+              ],
+            }}
+            tabList={tabs.map(tab => ({
+              key: tab.key,
+              tab: tab.label,
+              closable: tab.closable,
+            }))}
+            tabProps={{
+              activeKey: activeTab,
+              type: 'editable-card',
+              hideAdd: true,
+              onTabClick: (key) => {
+                navigate(key);
+              },
+              onEdit: (targetKey, action) => {
+                if (action === 'remove' && typeof targetKey === 'string') {
+                  removeTab(targetKey);
+                }
+              },
+            }}
+          >
+            <ProCard direction="column" ghost>
+              <div
+                style={{
+                  background: colorBgContainer,
+                  borderRadius: borderRadiusLG,
+                  padding: 24,
+                  minHeight: 280,
+                }}
+              >
+                <Outlet />
+              </div>
+            </ProCard>
+          </PageContainer>
+        </div>
       </Layout>
     </Layout>
   );
