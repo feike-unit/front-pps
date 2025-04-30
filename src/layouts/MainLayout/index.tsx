@@ -18,7 +18,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
 import { getProfile, logout } from '../../services/auth';
 import { TabsProvider, useTabs } from './TabsContext';
-import { convertRoutesToMenuItems, routes, routeMetadata } from '../../routes';
+import { convertRoutesToMenuItems, routes, routeMetadata, ExtendedRouteObject } from '../../routes';
 
 interface Menu {
   id: number;
@@ -165,25 +165,64 @@ const MainLayoutContent: React.FC = () => {
   // 生成面包屑数据
   const getBreadcrumbItems = () => {
     const items = [{ path: '/dashboard', title: '首页' }];
-    const currentItem = getCurrentMenuItem();
+    const currentPath = location.pathname;
     
-    if (currentItem) {
-      const parentItem = menuItems?.find(item => 
-        item && 'children' in item && item.children?.some(child => child?.key === location.pathname)
-      );
+    // 查找当前路径对应的菜单项及其父级
+    const findMenuPath = (menuItems: MenuProps['items'] | undefined, targetPath: string): { path: string; title: string }[] => {
+      if (!menuItems) return [];
       
-      if (parentItem && 'label' in parentItem) {
-        const parentLabel = parentItem.label;
-        items.push({ path: '', title: typeof parentLabel === 'string' ? parentLabel : '' });
+      for (const item of menuItems) {
+        if (!item || !('key' in item) || typeof item.key === 'undefined') continue;
+        
+        // 如果找到当前路径
+        if (item.key === targetPath) {
+          return [{
+            path: item.key.toString(),
+            title: 'label' in item && typeof item.label === 'string' ? item.label : ''
+          }];
+        }
+        
+        // 如果有子菜单，递归查找
+        if ('children' in item && Array.isArray(item.children)) {
+          const found = findMenuPath(item.children, targetPath);
+          if (found.length > 0) {
+            return [{
+              path: item.key.toString(),
+              title: 'label' in item && typeof item.label === 'string' ? item.label : ''
+            }, ...found];
+          }
+        }
       }
       
-      if ('label' in currentItem) {
-        const currentLabel = currentItem.label;
-        items.push({ path: location.pathname, title: typeof currentLabel === 'string' ? currentLabel : '' });
-      }
-    }
+      return [];
+    };
+    
+    // 获取面包屑路径
+    const breadcrumbPaths = findMenuPath(menuItems, currentPath);
+    
+    // 添加找到的路径到面包屑
+    breadcrumbPaths.forEach(item => {
+      items.push(item);
+    });
     
     return items;
+  };
+
+  // 检查路径是否有对应的页面组件
+  const hasPageComponent = (path: string): boolean => {
+    const findRoute = (routes: ExtendedRouteObject[]): boolean => {
+      for (const route of routes) {
+        if (route.path === path && route.element) {
+          return true;
+        }
+        if (route.children) {
+          const found = findRoute(route.children);
+          if (found) return true;
+        }
+      }
+      return false;
+    };
+    return findRoute(routes);
   };
 
   return (
@@ -230,7 +269,6 @@ const MainLayoutContent: React.FC = () => {
         <div style={{ background: '#F5F7FA', height: '100%' }}>
           <PageContainer
             header={{
-              title: getCurrentMenuTitle(),
               ghost: true,
               breadcrumb: {
                 items: getBreadcrumbItems()
@@ -246,6 +284,7 @@ const MainLayoutContent: React.FC = () => {
               ),
               closable: tab.closable,
             }))}
+            tabActiveKey={activeTab}
             tabProps={{
               activeKey: activeTab,
               type: 'editable-card',
@@ -259,8 +298,17 @@ const MainLayoutContent: React.FC = () => {
                 }
               },
             }}
+            style={{ 
+              background: 'transparent',
+            }}
           >
-            <ProCard direction="column" ghost>
+            <ProCard 
+              direction="column" 
+              ghost 
+              style={{ 
+                marginTop: -24, // 减少顶部间距
+              }}
+            >
               <div
                 style={{
                   background: colorBgContainer,

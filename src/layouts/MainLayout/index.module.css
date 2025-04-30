@@ -27,6 +27,7 @@
   display: flex;
   align-items: center;
   transition: all 0.3s;
+  margin-right: 16px;
 }
 
 .userInfo:hover {
@@ -45,4 +46,20 @@
   to {
     opacity: 1;
   }
+}
+
+:global(.ant-pro-page-container) {
+  margin: -24px -24px 0 !important;
+}
+
+:global(.ant-pro-page-container-warp) {
+  background-color: transparent !important;
+}
+
+:global(.ant-pro-page-container-children-content) {
+  margin: 24px;
+}
+
+:global(.ant-pro-card-ghost) {
+  padding: 0 !important;
 } 
