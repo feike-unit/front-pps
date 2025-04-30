@@ -393,11 +393,11 @@ const UserManagement: React.FC = () => {
 
   // ProTable 列定义
   const columns: ProColumns<User>[] = [
-    {
-      dataIndex: 'index',
-      valueType: 'indexBorder',
-      width: 48,
-    },
+    // {
+    //   dataIndex: 'index',
+    //   valueType: 'indexBorder',
+    //   width: 48,
+    // },
     {
       title: '用户名',
       dataIndex: 'username',
@@ -532,7 +532,7 @@ const UserManagement: React.FC = () => {
               sortOrder: sortOrder === 'descend' ? 'desc' : sortOrder === 'ascend' ? 'asc' : undefined,
               departmentStatus,
             });
-
+            console.log('当前选中的行:', selectedRowKeys); // 添加这行日志
             return {
               data: result.list,
               success: true,
@@ -645,7 +645,10 @@ const UserManagement: React.FC = () => {
         headerTitle="用户管理"
         rowSelection={{
           selectedRowKeys,
-          onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys),
+          onChange: (selectedKeys) => {
+            console.log('选择变化:', selectedKeys); // 添加这行日志
+            setSelectedRowKeys(selectedKeys);
+          },
         }}
       />
 
