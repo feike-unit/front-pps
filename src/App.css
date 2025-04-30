@@ -30,8 +30,8 @@ body {
 
 /* 主要内容区域样式 */
 .ant-layout-content {
-  margin: 12px;
-  padding: 12px;
+  margin: 0px;
+  padding: 0px;
   background: #fff;
   min-height: 280px;
 }
