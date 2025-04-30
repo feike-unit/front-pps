@@ -650,7 +650,6 @@ const UserManagement: React.FC = () => {
           showSizeChanger: true,
         }}
         dateFormatter="string"
-        headerTitle="用户管理"
       />
 
       {/* 添加/编辑用户对话框 */}
