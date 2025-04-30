@@ -21,19 +21,21 @@
   margin-right: 16px;
 }
 
+/* 用户信息样式 */
 .userInfo {
-  height: 64px;
-  padding: 0 24px;
+  height: 48px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   transition: all 0.3s;
-  margin-right: 16px;
+  cursor: pointer;
 }
 
 .userInfo:hover {
   background: rgba(0, 0, 0, 0.025);
 }
 
+/* 内容区域动画 */
 .contentWrapper {
   animation: fadeIn 0.2s ease-in-out;
   position: relative;
@@ -48,6 +50,7 @@
   }
 }
 
+/* ProLayout 样式覆盖 */
 :global(.ant-pro-page-container) {
   margin: -24px -24px 0 !important;
 }
@@ -62,4 +65,32 @@
 
 :global(.ant-pro-card-ghost) {
   padding: 0 !important;
+}
+
+/* 标签页样式优化 */
+:global(.ant-tabs-nav) {
+  margin: 0 !important;
+  padding: 0 24px;
+}
+
+:global(.ant-tabs-tab) {
+  padding: 12px 24px !important;
+  transition: all 0.3s;
+}
+
+:global(.ant-tabs-tab:hover) {
+  background: rgba(0, 0, 0, 0.025);
+}
+
+:global(.ant-tabs-tab-active) {
+  background: #f0f2f5 !important;
+}
+
+/* ProLayout 头部样式优化 */
+:global(.ant-pro-global-header) {
+  padding: 0 16px !important;
+}
+
+:global(.ant-pro-global-header-logo) {
+  padding: 16px !important;
 } 
