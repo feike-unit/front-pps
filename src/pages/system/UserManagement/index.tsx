@@ -498,105 +498,113 @@ const UserManagement: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      width: 120,
-      render: (_, record) => [
-        <ModalForm<User>
-          key="edit"
-          title="编辑用户"
-          trigger={<a>编辑</a>}
-          initialValues={{
-            ...record,
-            status: record.status === 1,
-          }}
-          onFinish={handleSaveUser}
-          modalProps={{
-            destroyOnClose: true,
-          }}
-          width={600}
-        >
-          <ProForm.Group>
-            <ProFormText
-              name="username"
-              label="用户名"
-              rules={[{ required: true, message: '请输入用户名' }]}
-              disabled
-              width="md"
+      width: 280,
+      render: (_, record) => (
+        <Space size="middle">
+          <ModalForm<User>
+            key="edit"
+            title="编辑用户"
+            trigger={<a>编辑</a>}
+            initialValues={{
+              ...record,
+              status: record.status === 1,
+            }}
+            onFinish={handleSaveUser}
+            modalProps={{
+              destroyOnClose: true,
+            }}
+            width={600}
+          >
+            <ProForm.Group>
+              <ProFormText
+                name="username"
+                label="用户名"
+                rules={[{ required: true, message: '请输入用户名' }]}
+                disabled
+                width="md"
+              />
+              <ProFormText
+                name="name"
+                label="姓名"
+                rules={[{ required: true, message: '请输入姓名' }]}
+                width="md"
+              />
+            </ProForm.Group>
+            <ProForm.Group>
+              <ProFormText
+                name="email"
+                label="邮箱"
+                rules={[{ type: 'email', message: '邮箱格式不正确' }]}
+                width="md"
+              />
+              <ProFormText
+                name="phone"
+                label="手机号"
+                width="md"
+              />
+            </ProForm.Group>
+            <ProFormSwitch
+              name="status"
+              label="状态"
+              checkedChildren="启用"
+              unCheckedChildren="禁用"
             />
             <ProFormText
-              name="name"
-              label="姓名"
-              rules={[{ required: true, message: '请输入姓名' }]}
-              width="md"
+              name="id"
+              hidden
             />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormText
-              name="email"
-              label="邮箱"
-              rules={[{ type: 'email', message: '邮箱格式不正确' }]}
-              width="md"
-            />
-            <ProFormText
-              name="phone"
-              label="手机号"
-              width="md"
-            />
-          </ProForm.Group>
-          <ProFormSwitch
-            name="status"
-            label="状态"
-            checkedChildren="启用"
-            unCheckedChildren="禁用"
-          />
-          <ProFormText
-            name="id"
-            hidden
-          />
-        </ModalForm>,
-        <TableDropdown
-          key="actionGroup"
-          onSelect={async (key) => {
-            if (key === 'assign_department') {
-              await showAssignDepartmentModal(record.id);
-            } else if (key === 'delete') {
-              handleDelete(record.id);
-            }
-          }}
-          menus={[
-            {
-              key: 'reset_password',
-              name: '重置密码',
-              onClick: () => {
-                setCurrentUser(record);
-                setResetPasswordVisible(true);
-              },
-            },
-            {
-              key: 'assign_role',
-              name: '分配角色',
-              onClick: async () => {
-                try {
-                  const result = await getRoles();
-                  if (result && Array.isArray(result)) {
-                    setRoles(result);
-                    setCurrentUser(record);
-                  } else {
-                    message.warning('获取角色列表数据格式不正确');
-                  }
-                } catch (error) {
-                  message.error('获取角色列表失败');
+          </ModalForm>
+          <a
+            key="reset_password"
+            onClick={() => {
+              setCurrentUser(record);
+              setResetPasswordVisible(true);
+            }}
+          >
+            重置密码
+          </a>
+          <a
+            key="assign_role"
+            onClick={async () => {
+              try {
+                const result = await getRoles();
+                if (result && Array.isArray(result)) {
+                  setRoles(result);
+                  setCurrentUser(record);
+                } else {
+                  message.warning('获取角色列表数据格式不正确');
                 }
-              },
-            },
-            { key: 'assign_department', name: '分配部门' },
-            { 
-              key: 'delete', 
-              name: '删除',
-              danger: true,
-            },
-          ]}
-        />,
-      ],
+              } catch (error) {
+                message.error('获取角色列表失败');
+              }
+            }}
+          >
+            分配角色
+          </a>
+          <a
+            key="assign_department"
+            onClick={() => showAssignDepartmentModal(record.id)}
+          >
+            分配部门
+          </a>
+          <Popconfirm
+            key="delete"
+            title="确定要删除该用户吗？"
+            onConfirm={async () => {
+              try {
+                await deleteUser(record.id);
+                message.success('用户删除成功');
+                actionRef.current?.reload();
+              } catch (error) {
+                const apiError = error as ApiError;
+                message.error(apiError.response?.data?.message || apiError.message || '删除用户失败');
+              }
+            }}
+          >
+            <a>删除</a>
+          </Popconfirm>
+        </Space>
+      ),
     },
   ];
 
