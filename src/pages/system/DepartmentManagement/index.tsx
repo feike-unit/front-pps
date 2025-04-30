@@ -12,8 +12,9 @@ import {
   TreeSelect,
   Tag,
   Tooltip,
+  Tree,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CaretDownOutlined, CaretRightOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CaretDownOutlined, CaretRightOutlined, TeamOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable, ModalForm, ProFormText, ProFormDigit, ProFormTreeSelect, ProFormSwitch } from '@ant-design/pro-components';
 import { Department, getAllDepartments, createDepartment, updateDepartment, deleteDepartment, updateDepartmentStatus, getDepartmentUsers } from '../../../services/department';
@@ -336,21 +337,29 @@ const DepartmentManagement: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      render: (_, record) => [
-        <a key="edit" onClick={() => handleAddOrEdit(record)}>
-          编辑
-        </a>,
-        <a key="assign" onClick={() => handleAssignUsers(record)}>
-          分配用户
-        </a>,
-        <Popconfirm
-          key="delete"
-          title="确定要删除该部门吗？"
-          onConfirm={() => handleDelete(record.id)}
-        >
-          <a>删除</a>
-        </Popconfirm>,
-      ],
+      width: 180,
+      render: (_, record) => (
+        <Space size="middle">
+          <Tooltip title="编辑">
+            <a onClick={() => handleAddOrEdit(record)}>
+              <EditOutlined />
+            </a>
+          </Tooltip>
+          <Tooltip title="分配用户">
+            <a onClick={() => handleAssignUsers(record)}>
+              <TeamOutlined />
+            </a>
+          </Tooltip>
+          <Popconfirm
+            title="确定要删除该部门吗？"
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <Tooltip title="删除">
+              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
     },
   ];
 

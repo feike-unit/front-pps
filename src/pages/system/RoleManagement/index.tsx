@@ -6,6 +6,7 @@ import {
   Tree,
   Modal,
   Popconfirm,
+  Tooltip,
 } from 'antd';
 import type { TreeProps } from 'antd/es/tree';
 import type { DataNode } from 'antd/es/tree';
@@ -17,7 +18,7 @@ import {
   ProFormText, 
   ProFormTextArea 
 } from '@ant-design/pro-components';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, MenuOutlined } from '@ant-design/icons';
 import { Role, getRolePage, createRole, updateRole, deleteRole, getRoleMenuIds, assignMenusToRole } from '../../../services/role';
 import { Menu, getAllMenus } from '../../../services/menu';
 import { ApiError } from '../../../services/api';
@@ -181,49 +182,56 @@ const RoleManagement: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      render: (_, record) => [
-        <ModalForm<Role>
-          key="edit"
-          title="编辑角色"
-          trigger={<a>编辑</a>}
-          initialValues={record}
-          onFinish={handleSaveRole}
-          modalProps={{
-            destroyOnClose: true,
-          }}
-          width={600}
-        >
-          <ProFormText
-            name="name"
-            label="角色名称"
-            rules={[{ required: true, message: '请输入角色名称' }]}
-          />
-          <ProFormTextArea
-            name="description"
-            label="角色描述"
-            fieldProps={{
-              rows: 4,
+      width: 180,
+      render: (_, record) => (
+        <Space size="middle">
+          <ModalForm<Role>
+            key="edit"
+            title="编辑角色"
+            trigger={
+              <Tooltip title="编辑">
+                <a><EditOutlined /></a>
+              </Tooltip>
+            }
+            initialValues={record}
+            onFinish={handleSaveRole}
+            modalProps={{
+              destroyOnClose: true,
             }}
-          />
-          <ProFormText
-            name="id"
-            hidden
-          />
-        </ModalForm>,
-        <a
-          key="menu"
-          onClick={() => handleMenuSetting(record)}
-        >
-          菜单权限
-        </a>,
-        <Popconfirm
-          key="delete"
-          title="确定要删除该角色吗？"
-          onConfirm={() => handleDelete(record.id)}
-        >
-          <a>删除</a>
-        </Popconfirm>,
-      ],
+            width={600}
+          >
+            <ProFormText
+              name="name"
+              label="角色名称"
+              rules={[{ required: true, message: '请输入角色名称' }]}
+            />
+            <ProFormTextArea
+              name="description"
+              label="角色描述"
+              fieldProps={{
+                rows: 4,
+              }}
+            />
+            <ProFormText
+              name="id"
+              hidden
+            />
+          </ModalForm>
+          <Tooltip title="菜单权限">
+            <a onClick={() => handleMenuSetting(record)}>
+              <MenuOutlined />
+            </a>
+          </Tooltip>
+          <Popconfirm
+            title="确定要删除该角色吗？"
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <Tooltip title="删除">
+              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
     },
   ];
 

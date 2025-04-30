@@ -13,6 +13,7 @@ import {
   Tree,
   Tag,
   Table,
+  Tooltip,
 } from 'antd';
 import type { TreeProps } from 'antd/es/tree';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
@@ -27,7 +28,7 @@ import {
   ProFormSelect,
   ProFormDependency,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, TeamOutlined, EllipsisOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, TeamOutlined } from '@ant-design/icons';
 import { 
   User, 
   getUsers, 
@@ -498,13 +499,17 @@ const UserManagement: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      width: 280,
+      width: 180,
       render: (_, record) => (
         <Space size="middle">
           <ModalForm<User>
             key="edit"
             title="编辑用户"
-            trigger={<a>编辑</a>}
+            trigger={
+              <Tooltip title="编辑">
+                <a><EditOutlined /></a>
+              </Tooltip>
+            }
             initialValues={{
               ...record,
               status: record.status === 1,
@@ -554,39 +559,45 @@ const UserManagement: React.FC = () => {
               hidden
             />
           </ModalForm>
-          <a
-            key="reset_password"
-            onClick={() => {
-              setCurrentUser(record);
-              setResetPasswordVisible(true);
-            }}
-          >
-            重置密码
-          </a>
-          <a
-            key="assign_role"
-            onClick={async () => {
-              try {
-                const result = await getRoles();
-                if (result && Array.isArray(result)) {
-                  setRoles(result);
-                  setCurrentUser(record);
-                } else {
-                  message.warning('获取角色列表数据格式不正确');
+          <Tooltip title="重置密码">
+            <a
+              key="reset_password"
+              onClick={() => {
+                setCurrentUser(record);
+                setResetPasswordVisible(true);
+              }}
+            >
+              <KeyOutlined />
+            </a>
+          </Tooltip>
+          <Tooltip title="分配角色">
+            <a
+              key="assign_role"
+              onClick={async () => {
+                try {
+                  const result = await getRoles();
+                  if (result && Array.isArray(result)) {
+                    setRoles(result);
+                    setCurrentUser(record);
+                  } else {
+                    message.warning('获取角色列表数据格式不正确');
+                  }
+                } catch (error) {
+                  message.error('获取角色列表失败');
                 }
-              } catch (error) {
-                message.error('获取角色列表失败');
-              }
-            }}
-          >
-            分配角色
-          </a>
-          <a
-            key="assign_department"
-            onClick={() => showAssignDepartmentModal(record.id)}
-          >
-            分配部门
-          </a>
+              }}
+            >
+              <UserSwitchOutlined />
+            </a>
+          </Tooltip>
+          <Tooltip title="分配部门">
+            <a
+              key="assign_department"
+              onClick={() => showAssignDepartmentModal(record.id)}
+            >
+              <TeamOutlined />
+            </a>
+          </Tooltip>
           <Popconfirm
             key="delete"
             title="确定要删除该用户吗？"
@@ -601,7 +612,9 @@ const UserManagement: React.FC = () => {
               }
             }}
           >
-            <a>删除</a>
+            <Tooltip title="删除">
+              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),

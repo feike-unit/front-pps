@@ -11,7 +11,7 @@ import {
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable, TableDropdown, ModalForm, ProForm, ProFormText, ProFormSelect, ProFormTreeSelect, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
-import { PlusOutlined, CaretDownOutlined, CaretRightOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretDownOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { Menu, getAllMenus, createMenu, updateMenu, deleteMenu, updateMenuStatus } from '../../../services/menu';
 import { ApiError } from '../../../services/api';
 
@@ -190,100 +190,112 @@ const MenuManagement: React.FC = () => {
       valueType: 'option',
       key: 'option',
       width: 120,
-      render: (_, record) => [
-        <ModalForm<Menu>
-          key="edit"
-          title="编辑菜单"
-          trigger={<a>编辑</a>}
-          initialValues={{
-            ...record,
-            status: record.status === 1,
-          }}
-          onFinish={handleSaveMenu}
-          modalProps={{
-            destroyOnClose: true,
-          }}
-          width={700}
-        >
-          <ProForm.Group>
-            <ProFormText
-              name="name"
-              label="菜单名称"
-              rules={[{ required: true, message: '请输入菜单名称' }]}
-              width="md"
-            />
-            <ProFormSelect
-              name="type"
-              label="菜单类型"
-              rules={[{ required: true, message: '请选择菜单类型' }]}
-              options={[
-                { label: '菜单', value: 0 },
-                { label: '按钮', value: 1 },
-              ]}
-              width="md"
-            />
-          </ProForm.Group>
-          <ProFormTreeSelect
-            name="parentId"
-            label="上级菜单"
-            rules={[{ required: true, message: '请选择上级菜单' }]}
-            width="xl"
-            request={async () => {
-              const menus = await getAllMenus();
-              return [{ title: '根菜单', value: 0, key: 0 }, ...formatTreeSelectData(menus)];
+      render: (_, record) => (
+        <Space size="middle">
+          <ModalForm<Menu>
+            key="edit"
+            title="编辑菜单"
+            trigger={
+              <Tooltip title="编辑">
+                <a><EditOutlined /></a>
+              </Tooltip>
+            }
+            initialValues={{
+              ...record,
+              status: record.status === 1,
             }}
-          />
-          <ProForm.Group>
+            onFinish={handleSaveMenu}
+            modalProps={{
+              destroyOnClose: true,
+            }}
+            width={700}
+          >
+            <ProForm.Group>
+              <ProFormText
+                name="name"
+                label="菜单名称"
+                rules={[{ required: true, message: '请输入菜单名称' }]}
+                width="md"
+              />
+              <ProFormSelect
+                name="type"
+                label="菜单类型"
+                rules={[{ required: true, message: '请选择菜单类型' }]}
+                options={[
+                  { label: '菜单', value: 0 },
+                  { label: '按钮', value: 1 },
+                ]}
+                width="md"
+              />
+            </ProForm.Group>
+            <ProFormTreeSelect
+              name="parentId"
+              label="上级菜单"
+              rules={[{ required: true, message: '请选择上级菜单' }]}
+              width="xl"
+              request={async () => {
+                const menus = await getAllMenus();
+                return [{ title: '根菜单', value: 0, key: 0 }, ...formatTreeSelectData(menus)];
+              }}
+            />
+            <ProForm.Group>
+              <ProFormText
+                name="path"
+                label="路由路径"
+                placeholder="如: /system/user"
+                width="md"
+              />
+              <ProFormText
+                name="component"
+                label="组件路径"
+                placeholder="如: system/user/index"
+                width="md"
+              />
+            </ProForm.Group>
+            <ProForm.Group>
+              <ProFormText
+                name="icon"
+                label="图标"
+                width="md"
+              />
+              <ProFormText
+                name="permission"
+                label="权限标识"
+                width="md"
+              />
+            </ProForm.Group>
+            <ProForm.Group>
+              <ProFormDigit
+                name="sort"
+                label="排序号"
+                width="md"
+                fieldProps={{
+                  precision: 0,
+                  min: 0,
+                }}
+              />
+              <ProFormSwitch
+                name="status"
+                label="状态"
+                checkedChildren="启用"
+                unCheckedChildren="禁用"
+              />
+            </ProForm.Group>
             <ProFormText
-              name="path"
-              label="路由路径"
-              placeholder="如: /system/user"
-              width="md"
+              name="id"
+              hidden
             />
-            <ProFormText
-              name="component"
-              label="组件路径"
-              placeholder="如: system/user/index"
-              width="md"
-            />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormText
-              name="icon"
-              label="图标"
-              width="md"
-            />
-            <ProFormText
-              name="permission"
-              label="权限标识"
-              placeholder="如: system:menu:list"
-              width="md"
-            />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormDigit
-              name="sort"
-              label="排序"
-              rules={[{ required: true, message: '请输入排序值' }]}
-              min={0}
-              width="md"
-            />
-            <ProFormSwitch
-              name="status"
-              label="状态"
-              checkedChildren="启用"
-              unCheckedChildren="禁用"
-            />
-          </ProForm.Group>
-        </ModalForm>,
-        <Popconfirm
-          key="delete"
-          title="确定要删除该菜单吗？"
-          onConfirm={() => handleDelete(record.id)}
-        >
-          <a>删除</a>
-        </Popconfirm>,
-      ],
+          </ModalForm>
+          <Popconfirm
+            title="确定要删除该菜单吗？"
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <Tooltip title="删除">
+              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
     },
   ];
 
@@ -435,9 +447,9 @@ const MenuManagement: React.FC = () => {
           expandIcon: ({ expanded, onExpand, record }) => {
             if (record.children && record.children.length > 0) {
               return expanded ? (
-                <CaretDownOutlined onClick={e => onExpand(record, e)} />
+                <CaretDownOutlined onClick={(e: React.MouseEvent<HTMLElement>) => onExpand(record, e)} />
               ) : (
-                <CaretRightOutlined onClick={e => onExpand(record, e)} />
+                <CaretRightOutlined onClick={(e: React.MouseEvent<HTMLElement>) => onExpand(record, e)} />
               );
             }
             return null;
