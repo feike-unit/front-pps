@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import {
   Button,
   Space,
@@ -11,13 +11,12 @@ import {
   Popconfirm,
   Radio,
   Tree,
-  Tooltip,
   Tag,
 } from 'antd';
 import type { TreeProps } from 'antd/es/tree';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, TeamOutlined } from '@ant-design/icons';
+import { ProTable, TableDropdown, LightFilter } from '@ant-design/pro-components';
+import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, UserSwitchOutlined, TeamOutlined, EllipsisOutlined } from '@ant-design/icons';
 import { 
   User, 
   getUsers, 
@@ -39,9 +38,9 @@ import type { ApiError } from '../../../types/api';
 
 // 用户所属部门组件
 const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ userId, refreshKey }) => {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [popconfirmVisible, setPopconfirmVisible] = useState<number | null>(null);
+  const [departments, setDepartments] = React.useState<Department[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [popconfirmVisible, setPopconfirmVisible] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     const fetchDepartments = async () => {
@@ -106,19 +105,20 @@ const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ use
 
 const UserManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [modalTitle, setModalTitle] = useState<string>('添加用户');
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
-  const [roleModalVisible, setRoleModalVisible] = useState<boolean>(false);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [departmentStatus, setDepartmentStatus] = useState<'all' | 'in' | 'out'>('all');
-  const [departmentModalVisible, setDepartmentModalVisible] = useState<boolean>(false);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
-  const [currentAssignUserId, setCurrentAssignUserId] = useState<number | null>(null);
-  const [departmentDisplayKey, setDepartmentDisplayKey] = useState<number>(0);
+  const [modalVisible, setModalVisible] = React.useState<boolean>(false);
+  const [modalTitle, setModalTitle] = React.useState<string>('添加用户');
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [passwordModalVisible, setPasswordModalVisible] = React.useState<boolean>(false);
+  const [roleModalVisible, setRoleModalVisible] = React.useState<boolean>(false);
+  const [roles, setRoles] = React.useState<Role[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = React.useState<React.Key[]>([]);
+  const [departmentStatus, setDepartmentStatus] = React.useState<'all' | 'in' | 'out'>('all');
+  const [departmentModalVisible, setDepartmentModalVisible] = React.useState<boolean>(false);
+  const [departments, setDepartments] = React.useState<any[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = React.useState<number | null>(null);
+  const [currentAssignUserId, setCurrentAssignUserId] = React.useState<number | null>(null);
+  const [departmentDisplayKey, setDepartmentDisplayKey] = React.useState<number>(0);
+  const [searchKeyword, setSearchKeyword] = React.useState<string>('');
 
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
@@ -394,16 +394,21 @@ const UserManagement: React.FC = () => {
   // ProTable 列定义
   const columns: ProColumns<User>[] = [
     {
+      dataIndex: 'index',
+      valueType: 'indexBorder',
+      width: 48,
+    },
+    {
       title: '用户名',
       dataIndex: 'username',
-      key: 'username',
-      sorter: true,
+      copyable: true,
+      ellipsis: true,
     },
     {
       title: '姓名',
       dataIndex: 'name',
-      key: 'name',
-      sorter: true,
+      copyable: true,
+      ellipsis: true,
     },
     {
       title: '所属部门',
@@ -419,34 +424,39 @@ const UserManagement: React.FC = () => {
     {
       title: '邮箱',
       dataIndex: 'email',
-      key: 'email',
-      sorter: true,
+      copyable: true,
+      ellipsis: true,
     },
     {
       title: '电话',
       dataIndex: 'phone',
-      key: 'phone',
-      sorter: true,
+      copyable: true,
+      ellipsis: true,
     },
     {
       title: '角色',
       dataIndex: 'roles',
-      key: 'roles',
       search: false,
-      render: (_, record) => record.roles?.join(', ') || '-',
+      render: (_, record) => (
+        <Space>
+          {record.roles?.map(role => (
+            <Tag key={role}>{role}</Tag>
+          ))}
+        </Space>
+      ),
     },
     {
       title: '创建时间',
       dataIndex: 'createdAt',
-      key: 'createdAt',
+      valueType: 'dateTime',
       sorter: true,
-      search: false,
+      hideInSearch: true,
     },
     {
       title: '状态',
       dataIndex: 'status',
-      key: 'status',
-      sorter: true,
+      filters: true,
+      onFilter: true,
       valueType: 'select',
       valueEnum: {
         1: { text: '启用', status: 'Success' },
@@ -465,53 +475,34 @@ const UserManagement: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      width: 160,
-      render: (_, record) => [
-        <Tooltip key="edit" title="编辑用户">
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleAddOrEdit(record)}
-          />
-        </Tooltip>,
-        <Tooltip key="password" title="重置密码">
-          <Button
-            type="link"
-            size="small"
-            icon={<KeyOutlined />}
-            onClick={() => showPasswordModal(record)}
-          />
-        </Tooltip>,
-        <Tooltip key="role" title="分配角色">
-          <Button
-            type="link"
-            size="small"
-            icon={<UserSwitchOutlined />}
-            onClick={() => showRoleModal(record)}
-          />
-        </Tooltip>,
-        <Tooltip key="department" title="分配部门">
-          <Button
-            type="link"
-            size="small"
-            icon={<TeamOutlined />}
-            onClick={() => showAssignDepartmentModal(record.id)}
-          />
-        </Tooltip>,
-        <Tooltip key="delete" title="删除用户">
-          <Popconfirm
-            title="确定要删除该用户吗？"
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Button 
-              type="link" 
-              size="small" 
-              danger 
-              icon={<DeleteOutlined />}
-            />
-          </Popconfirm>
-        </Tooltip>,
+      width: 120,
+      render: (_, record, __, action) => [
+        <a
+          key="edit"
+          onClick={() => handleAddOrEdit(record)}
+        >
+          编辑
+        </a>,
+        <TableDropdown
+          key="actionGroup"
+          onSelect={async (key) => {
+            if (key === 'reset_password') {
+              showPasswordModal(record);
+            } else if (key === 'assign_role') {
+              await showRoleModal(record);
+            } else if (key === 'assign_department') {
+              await showAssignDepartmentModal(record.id);
+            } else if (key === 'delete') {
+              await handleDelete(record.id);
+            }
+          }}
+          menus={[
+            { key: 'reset_password', name: '重置密码' },
+            { key: 'assign_role', name: '分配角色' },
+            { key: 'assign_department', name: '分配部门' },
+            { key: 'delete', name: '删除' },
+          ]}
+        />,
       ],
     },
   ];
@@ -519,60 +510,10 @@ const UserManagement: React.FC = () => {
   return (
     <>
       <ProTable<User>
-        headerTitle="用户管理"
+        columns={columns}
         actionRef={actionRef}
-        rowKey="id"
-        search={{
-          labelWidth: 120,
-        }}
-        toolBarRender={() => [
-          <Radio.Group 
-            key="departmentStatus" 
-            value={departmentStatus} 
-            onChange={(e) => {
-              setDepartmentStatus(e.target.value);
-              actionRef.current?.reload();
-            }}
-          >
-            <Radio.Button value="all">全部</Radio.Button>
-            <Radio.Button value="in">已加入部门</Radio.Button>
-            <Radio.Button value="out">未加入部门</Radio.Button>
-          </Radio.Group>,
-          <Button
-            key="add"
-            type="primary"
-            onClick={() => handleAddOrEdit()}
-            icon={<PlusOutlined />}
-          >
-            添加用户
-          </Button>,
-          selectedRowKeys.length > 0 && [
-            <Popconfirm
-              key="batchDelete"
-              title="确定要删除选中的用户吗？"
-              onConfirm={handleBatchDelete}
-              okText="确定"
-              cancelText="取消"
-            >
-              <Button danger icon={<DeleteOutlined />}>批量删除</Button>
-            </Popconfirm>,
-            <Button 
-              key="batchRole" 
-              icon={<UserSwitchOutlined />} 
-              onClick={showBatchRoleModal}
-            >
-              批量分配角色
-            </Button>,
-            <Button 
-              key="batchDepartment" 
-              icon={<TeamOutlined />} 
-              onClick={() => showAssignDepartmentModal()}
-            >
-              批量加入部门
-            </Button>,
-          ],
-        ]}
-        request={async (params, sort, filter) => {
+        cardBordered
+        request={async (params = {}, sort, filter) => {
           const { current = 1, pageSize = 10, ...restParams } = params;
           const sortField = Object.keys(sort || {})[0];
           const sortOrder = sortField ? sort[sortField] : undefined;
@@ -581,7 +522,7 @@ const UserManagement: React.FC = () => {
             const result = await getUsers({
               pageNum: current,
               pageSize,
-              keyword: restParams.username || restParams.name || restParams.email || restParams.phone,
+              keyword: searchKeyword,
               sortField,
               sortOrder: sortOrder === 'descend' ? 'desc' : sortOrder === 'ascend' ? 'asc' : undefined,
               departmentStatus,
@@ -602,7 +543,91 @@ const UserManagement: React.FC = () => {
             };
           }
         }}
-        columns={columns}
+        editable={{
+          type: 'multiple',
+        }}
+        columnsState={{
+          persistenceKey: 'user-management-table',
+          persistenceType: 'localStorage',
+        }}
+        rowKey="id"
+        search={false}
+        toolbar={{
+          search: {
+            onSearch: (value) => {
+              setSearchKeyword(value);
+              actionRef.current?.reload();
+            },
+            placeholder: '请输入用户名、姓名、邮箱或电话搜索',
+          },
+          filter: (
+            <LightFilter>
+              <Radio.Group
+                value={departmentStatus}
+                onChange={(e) => {
+                  setDepartmentStatus(e.target.value);
+                  actionRef.current?.reload();
+                }}
+              >
+                <Radio.Button value="all">全部</Radio.Button>
+                <Radio.Button value="in">已加入部门</Radio.Button>
+                <Radio.Button value="out">未加入部门</Radio.Button>
+              </Radio.Group>
+            </LightFilter>
+          ),
+          actions: [
+            <Button
+              key="add"
+              type="primary"
+              onClick={() => handleAddOrEdit()}
+              icon={<PlusOutlined />}
+            >
+              添加用户
+            </Button>,
+            selectedRowKeys.length > 0 && [
+              <Button
+                key="batchDelete"
+                danger
+                onClick={() => {
+                  Modal.confirm({
+                    title: '批量删除',
+                    content: '确定要删除选中的用户吗？',
+                    onOk: handleBatchDelete,
+                  });
+                }}
+                icon={<DeleteOutlined />}
+              >
+                批量删除
+              </Button>,
+              <Button
+                key="batchRole"
+                onClick={showBatchRoleModal}
+                icon={<UserSwitchOutlined />}
+              >
+                批量分配角色
+              </Button>,
+              <Button
+                key="batchDepartment"
+                onClick={() => showAssignDepartmentModal()}
+                icon={<TeamOutlined />}
+              >
+                批量加入部门
+              </Button>,
+            ],
+          ],
+        }}
+        options={{
+          setting: {
+            listsHeight: 400,
+          },
+        }}
+        pagination={{
+          pageSize: 10,
+          showQuickJumper: true,
+          showSizeChanger: true,
+        }}
+        dateFormatter="string"
+        headerTitle="用户管理"
         rowSelection={{
           selectedRowKeys,
           onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys),
