@@ -193,16 +193,9 @@ const MainLayoutContent: React.FC = () => {
           title={false}
           breadcrumb={{
             items: getBreadcrumbRoutes().map(route => ({
-              path: route.path,
               title: route.title,
-              onClick: () => {
-                if (route.path === '/') {
-                  navigate('/dashboard');
-                } else if (route.path) {
-                  navigate(route.path);
-                }
-              }
             })),
+            itemRender: (item) => <span>{item.title}</span>
           }}
           tabList={tabs.map(tab => ({
             key: tab.key,
