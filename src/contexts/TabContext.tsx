@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Spin } from 'antd';
-import IndexedDBUtil from '../utils/indexedDB';
+import { db } from '../utils/db';
 import { routeMetadata } from '../routes';
 
 // 路由到标签页的映射配置
@@ -22,16 +22,6 @@ console.log('Current pathname:', window.location.pathname);
 const TAB_STORAGE_KEY = 'tabs';
 const ACTIVE_TAB_STORAGE_KEY = 'activeTab';
 
-// 创建 IndexedDB 实例
-export const indexedDB = new IndexedDBUtil({
-  dbName: 'tabsDB',
-  version: 1,
-  stores: [{ name: 'tabs', keyPath: 'key' }]
-});
-
-// 初始化 IndexedDB
-const dbInitPromise = indexedDB.init();
-
 export interface TabItem {
   key: string;
   label: string;
@@ -48,14 +38,14 @@ interface TabContextType {
   isLoading: boolean;
 }
 
-// 从 IndexedDB 恢复标签页状态
+// 从数据库恢复标签页状态
 const getStoredTabs = async (): Promise<TabItem[]> => {
   try {
-    const storedTabs = await indexedDB.get<TabItem[]>('tabs', TAB_STORAGE_KEY);
-    console.log('从 IndexedDB 获取的原始标签数据:', storedTabs);
+    const storedTabs = await db.getTabs();
+    console.log('从数据库获取的原始标签数据:', storedTabs);
     
     // 如果没有存储的标签，返回默认标签
-    if (!storedTabs) {
+    if (!storedTabs || storedTabs.length === 0) {
       console.log('没有存储的标签，返回默认标签');
       return [{ ...routeMetadata['/dashboard'], key: '/dashboard' }];
     }
@@ -69,19 +59,19 @@ const getStoredTabs = async (): Promise<TabItem[]> => {
       icon: routeMetadata[tab.key]?.icon
     }));
   } catch (error) {
-    console.error('从 IndexedDB 读取标签失败:', error);
+    console.error('从数据库读取标签失败:', error);
     return [{ ...routeMetadata['/dashboard'], key: '/dashboard' }];
   }
 };
 
-// 从 IndexedDB 恢复当前活动标签页
+// 从数据库恢复当前活动标签页
 const getStoredActiveTab = async (): Promise<string> => {
   try {
-    const storedActiveTab = await indexedDB.get<string>('tabs', ACTIVE_TAB_STORAGE_KEY);
-    console.log('Retrieved active tab from IndexedDB:', storedActiveTab);
+    const storedActiveTab = await db.getActiveTab();
+    console.log('Retrieved active tab from database:', storedActiveTab);
     return storedActiveTab || '/dashboard';
   } catch (error) {
-    console.error('Error reading active tab from IndexedDB:', error);
+    console.error('Error reading active tab from database:', error);
     return '/dashboard';
   }
 };
@@ -103,7 +93,6 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const init = async () => {
       try {
         setIsLoading(true);
-        await dbInitPromise;
         const storedTabs = await getStoredTabs();
         const storedActiveTab = await getStoredActiveTab();
         
@@ -164,20 +153,13 @@ export const TabProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } : null;
   };
 
-  // 保存状态到 IndexedDB
+  // 保存状态到数据库
   const saveState = async (newTabs: TabItem[], newActiveTab: string) => {
     try {
-      console.log('保存到 IndexedDB 的标签数据:', newTabs);
-      // 确保只保存必要的数据
-      const tabsToSave = newTabs.map(tab => ({
-        key: tab.key,
-        label: tab.label,
-        closable: tab.closable
-      }));
-      
+      console.log('保存到数据库的标签数据:', newTabs);
       await Promise.all([
-        indexedDB.put('tabs', { key: TAB_STORAGE_KEY, value: tabsToSave }),
-        indexedDB.put('tabs', { key: ACTIVE_TAB_STORAGE_KEY, value: newActiveTab })
+        db.saveTabs(newTabs),
+        db.saveActiveTab(newActiveTab)
       ]);
       console.log('标签数据保存成功');
     } catch (error) {

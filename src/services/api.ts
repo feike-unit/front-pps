@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { tokenStore } from '../utils/db';
+import { db } from '../utils/db';
 import { refreshToken } from './auth';
 
 export interface ApiResponse<T = any> {
@@ -113,7 +113,7 @@ const handleUnauthorizedError = async (error: AxiosError<ApiError>) => {
 
   try {
     // 尝试刷新token
-    const refreshTokenStr = await tokenStore.getRefreshToken();
+    const refreshTokenStr = await db.getRefreshToken();
     if (!refreshTokenStr) {
       throw new Error('No refresh token available');
     }
@@ -129,7 +129,7 @@ const handleUnauthorizedError = async (error: AxiosError<ApiError>) => {
   } catch (refreshError: any) {
     const errorMessage = refreshError.response?.data?.message || 'Token刷新失败';
     console.log(errorMessage);
-    await tokenStore.clearTokens();
+    await db.clearTokens();
     window.location.href = '/login';
     return Promise.reject(refreshError);
   } finally {
@@ -140,7 +140,7 @@ const handleUnauthorizedError = async (error: AxiosError<ApiError>) => {
 // 请求拦截器
 api.interceptors.request.use(
   async (config) => {
-    const token = await tokenStore.getAccessToken();
+    const token = await db.getAccessToken();
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }

@@ -1,5 +1,6 @@
 import api from './api';
-import { tokenStore } from '../utils/db';
+import { db } from '../utils/db';
+import type { TokenData } from '../utils/db';
 
 export interface LoginParams {
   username: string;
@@ -40,11 +41,10 @@ export interface PasswordUpdateDto {
   newPassword: string;
 }
 
-
 // 登录
 export const login = async (params: LoginParams): Promise<AuthResponse> => {
   const response = await api.post<AuthResponse>('/auth/login', params);
-  await tokenStore.setTokens({
+  await db.setTokens({
     accessToken: response.data.accessToken,
     refreshToken: response.data.refreshToken,
   });
@@ -57,24 +57,24 @@ export const logout = async (): Promise<void> => {
     await api.post('/auth/logout');
   } finally {
     // 无论请求是否成功，都清除本地token
-    await tokenStore.clearTokens();
+    await db.clearTokens();
   }
 };
 
 // 刷新token
 export const refreshToken = async (params: RefreshTokenParams): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/refresh', params);
-    await tokenStore.setTokens({
-      accessToken: response.data.accessToken,
-      refreshToken: response.data.refreshToken,
-    });
-    return response.data;
+  const response = await api.post<AuthResponse>('/auth/refresh', params);
+  await db.setTokens({
+    accessToken: response.data.accessToken,
+    refreshToken: response.data.refreshToken,
+  });
+  return response.data;
 };
 
 // 获取用户信息
 export const getProfile = async (): Promise<UserInfo> => {
-    const response = await api.get<UserInfo>('/auth/profile');
-    return response.data;
+  const response = await api.get<UserInfo>('/auth/profile');
+  return response.data;
 };
 
 /**

@@ -15,8 +15,9 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
 import { getProfile, logout } from '../../services/auth';
-import { TabProvider, useTab, indexedDB } from '../../contexts/TabContext';
+import { TabProvider, useTab } from '../../contexts/TabContext';
 import TabNavigation from '../../components/TabNavigation';
+import { db } from '../../utils/db';
 
 interface Menu {
   id: number;
@@ -132,7 +133,7 @@ const MainLayoutContent: React.FC = () => {
   const handleLogout = async () => {
     try {
       // 清除标签页存储
-      await indexedDB.clearAll();
+      await db.clearTabs();
       // 执行登出
       await logout();
       // 重定向到登录页

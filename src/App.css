@@ -53,7 +53,7 @@ body {
 
 /* 按钮组件样式优化 */
 .ant-btn {
-  border-radius: 2px;
+  border-radius: 6px;
 }
 
 /* 卡片组件样式优化 */

@@ -34,7 +34,7 @@ import {
 import type { Department } from '../../../services/department';
 import { getAllDepartments, assignUsersToDepartment } from '../../../services/department';
 import { Role, getRoles } from '../../../services/role';
-import type { ApiError } from '../../../types/api';
+import type { ApiError } from '../../../services/api';
 
 // 用户所属部门组件
 const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ userId, refreshKey }) => {
@@ -441,8 +441,9 @@ const UserManagement: React.FC = () => {
       title: '角色',
       dataIndex: 'roles',
       search: false,
+      ellipsis: true,
       render: (_, record) => (
-        <Space>
+        <Space wrap>
           {record.roles?.map(role => (
             <Tag key={role}>{role}</Tag>
           ))}
@@ -557,28 +558,38 @@ const UserManagement: React.FC = () => {
         rowKey="id"
         search={false}
         toolbar={{
+          menu: {
+            type: 'tab',
+            activeKey: departmentStatus,
+            items: [
+              {
+                key: 'all',
+                label: '全部',
+              },
+              {
+                key: 'in',
+                label: '已加入部门',
+              },
+              {
+                key: 'out',
+                label: '未加入部门',
+              },
+            ],
+            onChange: (key) => {
+              setDepartmentStatus(key as 'all' | 'in' | 'out');
+              actionRef.current?.reload();
+            },
+          },
           search: {
             onSearch: (value) => {
               setSearchKeyword(value);
               actionRef.current?.reload();
             },
-            placeholder: '请输入用户名、姓名、邮箱或电话搜索',
+            placeholder: '请输入关键字搜索,ESC取消输入',
+            style: {
+              width: '300px',
+            },
           },
-          filter: (
-            <LightFilter>
-              <Radio.Group
-                value={departmentStatus}
-                onChange={(e) => {
-                  setDepartmentStatus(e.target.value);
-                  actionRef.current?.reload();
-                }}
-              >
-                <Radio.Button value="all">全部</Radio.Button>
-                <Radio.Button value="in">已加入部门</Radio.Button>
-                <Radio.Button value="out">未加入部门</Radio.Button>
-              </Radio.Group>
-            </LightFilter>
-          ),
           actions: [
             <Button
               key="add"
