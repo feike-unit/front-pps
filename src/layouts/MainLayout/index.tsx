@@ -141,6 +141,15 @@ const MainLayoutContent: React.FC = () => {
     >
       <ProLayout
         siderWidth={220}
+        token={{
+          sider: {
+            colorMenuBackground: '#fff',
+            colorMenuItemDivider: '#dfdfdf',
+            colorTextMenu: '#595959',
+            colorTextMenuSelected: 'rgba(42,122,251,1)',
+            colorBgMenuItemSelected: 'rgba(230,243,254,1)',
+          },
+        }}
         bgLayoutImgList={[
           {
             src: 'https://img.alicdn.com/imgextra/i2/O1CN01O4etvp1DvpFLKfuWq_!!6000000000279-2-tps-609-606.png',
@@ -189,6 +198,19 @@ const MainLayoutContent: React.FC = () => {
             </Tooltip>,
           ];
         }}
+        menuFooterRender={(props) => {
+          if (props?.collapsed) return undefined;
+          return (
+            <div
+              style={{
+                textAlign: 'center',
+                paddingBlockStart: 12,
+              }}
+            >
+              <div>&copy; 2025 Copyright Feike</div>
+            </div>
+          );
+        }}
         menuItemRender={(item, dom) => (
           <div
             onClick={() => {
@@ -206,9 +228,13 @@ const MainLayoutContent: React.FC = () => {
               navigate(path);
             }}
           >
-            <Space>
-            {item.icon}{dom}
-            </Space>
+            {item.pro_layout_parentKeys?.length ? (
+              <Space>
+                {item.icon}{dom}
+              </Space>
+            ) : (
+              dom
+            )}
           </div>
         )}
       >
