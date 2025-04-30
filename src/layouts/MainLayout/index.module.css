@@ -29,10 +29,29 @@
   align-items: center;
   transition: all 0.3s;
   cursor: pointer;
+  gap: 8px;
 }
 
 .userInfo:hover {
   background: rgba(0, 0, 0, 0.025);
+}
+
+.userName {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.85);
+  margin-left: 8px;
+}
+
+/* 操作图标样式 */
+.actionIcon {
+  padding: 4px 12px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.actionIcon:hover {
+  color: #1890ff;
 }
 
 /* 内容区域动画 */
@@ -93,4 +112,11 @@
 
 :global(.ant-pro-global-header-logo) {
   padding: 16px !important;
+}
+
+/* 暗色主题适配 */
+:global(.ant-layout-dark) {
+  .userName {
+    color: rgba(255, 255, 255, 0.85);
+  }
 } 

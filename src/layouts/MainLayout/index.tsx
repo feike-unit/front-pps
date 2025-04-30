@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Avatar, Space, Dropdown, message } from 'antd';
+import { Avatar, Space, message, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import { PageContainer, ProLayout, ProCard } from '@ant-design/pro-components';
 import {
   LogoutOutlined,
   UserOutlined,
-  SettingOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
@@ -30,6 +29,17 @@ const MainLayoutContent: React.FC = () => {
   const location = useLocation();
   const { addTab, activeTab, tabs, removeTab } = useTabs();
   const [pathname, setPathname] = useState(location.pathname);
+
+  // 处理用户头像点击事件
+  const handleAvatarClick = () => {
+    navigate('/profile');
+    addTab({
+      key: '/profile',
+      label: '个人信息',
+      icon: <UserOutlined />,
+      closable: true,
+    });
+  };
 
   // 监听路由变化，更新 pathname
   useEffect(() => {
@@ -60,23 +70,6 @@ const MainLayoutContent: React.FC = () => {
     }
   };
 
-  const userDropdownItems: MenuProps['items'] = [
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: '个人信息',
-      onClick: () => {
-        navigate('/profile');
-      },
-    },
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: '退出登录',
-      onClick: handleLogout,
-    },
-  ];
-
   return (
     <div
       style={{
@@ -92,15 +85,25 @@ const MainLayoutContent: React.FC = () => {
           src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
           size: 'small',
           title: userInfo?.name || userInfo?.username,
-          render: (props, dom) => {
-            return (
-              <Dropdown menu={{ items: userDropdownItems }}>
-                <Space className={styles.userInfo}>
-                  {dom}
-                </Space>
-              </Dropdown>
-            );
-          },
+          onClick: handleAvatarClick,
+          render: (props, dom) => (
+            <Tooltip title="个人信息">
+              <div className={styles.userInfo} onClick={handleAvatarClick}>
+                {dom}
+              </div>
+            </Tooltip>
+          ),
+        }}
+        actionsRender={(props) => {
+          if (props.isMobile) return [];
+          return [
+            <Tooltip key="logout" title="退出登录">
+              <LogoutOutlined 
+                className={styles.actionIcon}
+                onClick={handleLogout}
+              />
+            </Tooltip>,
+          ];
         }}
         menuItemRender={(item, dom) => (
           <div
