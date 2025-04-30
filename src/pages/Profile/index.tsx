@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, message, Tabs, Space } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined } from '@ant-design/icons';
-import { getUserInfo, updateUserProfile, updateUserPassword } from '../../services/user';
+import { getProfile} from '../../services/auth';
+import { updateUserProfile, updateUserPassword } from '../../services/auth';
 import type { UserInfo } from '../../services/user';
 import styles from './index.module.css';
 
@@ -16,13 +17,13 @@ const Profile: React.FC = () => {
   // 获取用户信息
   const fetchUserInfo = async () => {
     try {
-      const response = await getUserInfo();
-      if (response.data) {
-        setUserInfo(response.data);
+      const result = await getProfile();
+      if (result) {
+        setUserInfo(result);
         form.setFieldsValue({
-          name: response.data.name,
-          email: response.data.email,
-          phone: response.data.phone,
+          name: result.name,
+          email: result.email,
+          phone: result.phone,
         });
       }
     } catch (error) {

@@ -1,5 +1,4 @@
 import api from './api';
-import type { ApiResponse } from './api';
 import type { UserInfo } from './user';
 
 export interface Department {

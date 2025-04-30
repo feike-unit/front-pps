@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
-import { authService } from './auth';
 import { tokenStore } from '../utils/db';
+import { refreshToken } from './auth';
 
 export interface ApiResponse<T = any> {
   code: number; // 响应码，200表示成功，其他表示错误
@@ -118,7 +118,7 @@ const handleUnauthorizedError = async (error: AxiosError<ApiError>) => {
       throw new Error('No refresh token available');
     }
 
-    const { accessToken } = await authService.refreshToken({ refreshToken: refreshTokenStr });
+    const { accessToken } = await refreshToken({ refreshToken: refreshTokenStr });
 
     // 更新token后重试所有等待的请求
     onRefreshed(accessToken);

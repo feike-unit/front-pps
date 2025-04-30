@@ -14,10 +14,22 @@ import {
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
-import { authService } from '../../services/auth';
-import { getUserInfo } from '../../services/user';
+import { getProfile, logout } from '../../services/auth';
 import { TabProvider, useTab, indexedDB } from '../../contexts/TabContext';
 import TabNavigation from '../../components/TabNavigation';
+
+interface Menu {
+  id: number;
+  name: string;
+  path: string;
+  component: string;
+  icon: string;
+  parentId: number;
+  type: number;
+  permission: string;
+  sort: number;
+  children?: Menu[];
+}
 
 interface UserInfo {
   id: number;
@@ -26,6 +38,7 @@ interface UserInfo {
   email: string;
   phone: string;
   status: number;
+  createdAt: string;
   roles: string[];
 }
 
@@ -47,13 +60,8 @@ const MainLayoutContent: React.FC = () => {
 
   const fetchUserInfo = async () => {
     try {
-      const response = await getUserInfo();
-      if (response.data) {
-        setUserInfo(response.data);
-      } else {
-        console.error('获取用户信息失败: 返回数据格式错误');
-        navigate('/login');
-      }
+      const data = await getProfile();
+      setUserInfo(data);
     } catch (error) {
       console.error('获取用户信息失败:', error);
       navigate('/login');
@@ -126,7 +134,7 @@ const MainLayoutContent: React.FC = () => {
       // 清除标签页存储
       await indexedDB.clearAll();
       // 执行登出
-      await authService.logout();
+      await logout();
       // 重定向到登录页
       navigate('/login');
     } catch (error) {

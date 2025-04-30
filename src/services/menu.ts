@@ -46,52 +46,51 @@ export interface MenuUpdateParams {
   method?: string;
   status?: number;
 }
-
 // 获取所有菜单
-export const getAllMenus = async () => {
-  const response = await api.get('/system/menus');
+export const getAllMenus = async (): Promise<Menu[]> => {
+  const response = await api.get<Menu[]>('/system/menus');
   return response.data;
 };
 
 // 获取当前用户菜单
-export const getCurrentUserMenus = async () => {
-  const response = await api.get('/system/menus/current');
+export const getCurrentUserMenus = async (): Promise<Menu[]> => {
+  const response = await api.get<Menu[]>('/system/menus/current');
   return response.data;
 };
 
 // 按类型获取菜单
-export const getMenusByType = async (type: number) => {
-  const response = await api.get(`/system/menus/type/${type}`);
+export const getMenusByType = async (type: number): Promise<Menu[]> => {
+  const response = await api.get<Menu[]>(`/system/menus/type/${type}`);
   return response.data;
 };
 
 // 获取菜单详情
-export const getMenu = async (id: number) => {
-  const response = await api.get(`/system/menus/${id}`);
+export const getMenu = async (id: number): Promise<Menu> => {
+  const response = await api.get<Menu>(`/system/menus/${id}`);
   return response.data;
 };
 
 // 创建菜单
-export const createMenu = async (params: MenuCreateParams) => {
-  const response = await api.post('/system/menus', params);
+export const createMenu = async (params: MenuCreateParams): Promise<Menu> => {
+  const response = await api.post<Menu>('/system/menus', params);
   return response.data;
 };
 
 // 更新菜单
-export const updateMenu = async (params: MenuUpdateParams) => {
-  const response = await api.put(`/system/menus/${params.id}`, params);
+export const updateMenu = async (params: MenuUpdateParams): Promise<Menu> => {
+  const response = await api.put<Menu>(`/system/menus/${params.id}`, params);
   return response.data;
 };
 
 // 删除菜单
-export const deleteMenu = async (id: number) => {
-  const response = await api.delete(`/system/menus/${id}`);
+export const deleteMenu = async (id: number): Promise<void> => {
+  const response = await api.delete<void>(`/system/menus/${id}`);
   return response.data;
 };
 
 // 获取角色的菜单列表
-export const getRoleMenus = async (roleId: number) => {
-  const response = await api.get(`/system/menus/role/${roleId}`);
+export const getRoleMenus = async (roleId: number): Promise<Menu[]> => {
+  const response = await api.get<Menu[]>(`/system/menus/role/${roleId}`);
   return response.data;
 };
 

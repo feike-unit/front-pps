@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Card, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../../services/auth';
+import { login } from '../../services/auth';
 import styles from './index.module.css';
 
 // 登录表单数据接口定义
@@ -23,7 +23,7 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       // 调用登录API
-      await authService.login(values);
+      await login(values);
       message.success('登录成功');
       // 登录成功后跳转到仪表盘
       navigate('/dashboard');

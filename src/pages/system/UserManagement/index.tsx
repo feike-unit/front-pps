@@ -40,7 +40,6 @@ import type { Department } from '../../../services/department';
 import { getAllDepartments, assignUsersToDepartment } from '../../../services/department';
 import { Role, getRoles } from '../../../services/role';
 import type { ApiError } from '../../../types/api';
-import ReactDOM from 'react-dom';
 
 // 用户所属部门组件
 const UserDepartments: React.FC<{ userId: number; refreshKey: number }> = ({ userId, refreshKey }) => {
@@ -119,9 +118,9 @@ const UserManagement: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [passwordModalVisible, setPasswordModalVisible] = useState<boolean>(false);
   const [roleModalVisible, setRoleModalVisible] = useState<boolean>(false);
-  const [selectedUserRoles, setSelectedUserRoles] = useState<number[]>([]);
+  const [setSelectedUserRoles] = useState<number[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [lastSelectedKey, setLastSelectedKey] = useState<React.Key | null>(null);
+  const [setLastSelectedKey] = useState<React.Key | null>(null);
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 10,
