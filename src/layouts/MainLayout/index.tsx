@@ -206,7 +206,9 @@ const MainLayoutContent: React.FC = () => {
               navigate(path);
             }}
           >
-            {dom}
+            <Space>
+            {item.icon}{dom}
+            </Space>
           </div>
         )}
       >
