@@ -12,6 +12,7 @@ import {
   Radio,
   Tree,
   Tag,
+  Table,
 } from 'antd';
 import type { TreeProps } from 'antd/es/tree';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
@@ -532,7 +533,6 @@ const UserManagement: React.FC = () => {
               sortOrder: sortOrder === 'descend' ? 'desc' : sortOrder === 'ascend' ? 'asc' : undefined,
               departmentStatus,
             });
-            console.log('当前选中的行:', selectedRowKeys); // 添加这行日志
             return {
               data: result.list,
               success: true,
@@ -557,6 +557,44 @@ const UserManagement: React.FC = () => {
         }}
         rowKey="id"
         search={false}
+        rowSelection={{
+          selections: [Table.SELECTION_ALL, Table.SELECTION_INVERT],
+          selectedRowKeys,
+          onChange: (selectedKeys) => {
+            setSelectedRowKeys(selectedKeys);
+          },
+        }}
+        tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
+          <Space size={24}>
+            <span>
+              已选 {selectedRowKeys.length} 项
+              <a style={{ marginInlineStart: 8 }} onClick={onCleanSelected}>
+                取消选择
+              </a>
+            </span>
+          </Space>
+        )}
+        tableAlertOptionRender={() => {
+          return (
+            <Space size={16}>
+              <a onClick={() => {
+                Modal.confirm({
+                  title: '批量删除',
+                  content: '确定要删除选中的用户吗？',
+                  onOk: handleBatchDelete,
+                });
+              }}>
+                批量删除
+              </a>
+              <a onClick={showBatchRoleModal}>
+                批量分配角色
+              </a>
+              <a onClick={() => showAssignDepartmentModal()}>
+                批量加入部门
+              </a>
+            </Space>
+          );
+        }}
         toolbar={{
           menu: {
             type: 'tab',
@@ -599,36 +637,6 @@ const UserManagement: React.FC = () => {
             >
               添加用户
             </Button>,
-            selectedRowKeys.length > 0 && [
-              <Button
-                key="batchDelete"
-                danger
-                onClick={() => {
-                  Modal.confirm({
-                    title: '批量删除',
-                    content: '确定要删除选中的用户吗？',
-                    onOk: handleBatchDelete,
-                  });
-                }}
-                icon={<DeleteOutlined />}
-              >
-                批量删除
-              </Button>,
-              <Button
-                key="batchRole"
-                onClick={showBatchRoleModal}
-                icon={<UserSwitchOutlined />}
-              >
-                批量分配角色
-              </Button>,
-              <Button
-                key="batchDepartment"
-                onClick={() => showAssignDepartmentModal()}
-                icon={<TeamOutlined />}
-              >
-                批量加入部门
-              </Button>,
-            ],
           ],
         }}
         options={{
@@ -643,13 +651,6 @@ const UserManagement: React.FC = () => {
         }}
         dateFormatter="string"
         headerTitle="用户管理"
-        rowSelection={{
-          selectedRowKeys,
-          onChange: (selectedKeys) => {
-            console.log('选择变化:', selectedKeys); // 添加这行日志
-            setSelectedRowKeys(selectedKeys);
-          },
-        }}
       />
 
       {/* 添加/编辑用户对话框 */}
@@ -773,9 +774,6 @@ const UserManagement: React.FC = () => {
           setDepartmentModalVisible(false);
           setSelectedDepartmentId(null);
           setCurrentAssignUserId(null);
-          if (!currentAssignUserId) {
-            setSelectedRowKeys([]);
-          }
         }}
         width={400}
       >
