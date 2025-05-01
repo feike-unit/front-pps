@@ -196,9 +196,9 @@ const MenuManagement: React.FC = () => {
             key="edit"
             title="编辑菜单"
             trigger={
-              <Tooltip title="编辑">
-                <a><EditOutlined /></a>
-              </Tooltip>
+              <Button type="link" style={{ padding: 0 }}>
+                <EditOutlined />
+              </Button>
             }
             initialValues={{
               ...record,
@@ -290,9 +290,9 @@ const MenuManagement: React.FC = () => {
             title="确定要删除该菜单吗？"
             onConfirm={() => handleDelete(record.id)}
           >
-            <Tooltip title="删除">
-              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
-            </Tooltip>
+            <Button type="link" style={{ padding: 0 }}>
+              <DeleteOutlined style={{ color: '#ff4d4f' }} />
+            </Button>
           </Popconfirm>
         </Space>
       ),
@@ -342,8 +342,8 @@ const MenuManagement: React.FC = () => {
               key="add"
               title="添加菜单"
               trigger={
-                <Button type="primary" icon={<PlusOutlined />}>
-                  添加菜单
+                <Button key="button" type="primary">
+                  <PlusOutlined /> 添加菜单
                 </Button>
               }
               initialValues={{
@@ -433,6 +433,7 @@ const MenuManagement: React.FC = () => {
               </ProForm.Group>
             </ModalForm>,
           ],
+          settings: []
         }}
         options={{
           setting: {

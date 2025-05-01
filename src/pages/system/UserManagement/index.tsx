@@ -656,44 +656,31 @@ const UserManagement: React.FC = () => {
             };
           }
         }}
-        editable={{
-          type: 'multiple',
-        }}
         columnsState={{
           persistenceKey: 'user-management-table',
           persistenceType: 'localStorage',
         }}
         rowKey="id"
         search={false}
-        rowSelection={{
-          selections: [Table.SELECTION_ALL, Table.SELECTION_INVERT],
-          selectedRowKeys,
-          onChange: (selectedKeys) => {
-            setSelectedRowKeys(selectedKeys);
-          },
-        }}
-        tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
+        tableAlertRender={({ selectedRowKeys, onCleanSelected }) => (
           <Space size={24}>
             <span>
               已选 {selectedRowKeys.length} 项
-              <a style={{ marginInlineStart: 8 }} onClick={onCleanSelected}>
+              <Button type="link" style={{ padding: '0 4px' }} onClick={onCleanSelected}>
                 取消选择
-              </a>
+              </Button>
             </span>
           </Space>
         )}
         tableAlertOptionRender={() => {
           return (
             <Space size={16}>
-              <Popconfirm
-                title="确定要删除选中的用户吗？"
-                onConfirm={handleBatchDelete}
-              >
-                <a>批量删除</a>
-              </Popconfirm>
+              <Button type="link" style={{ padding: 0 }} onClick={handleBatchDelete}>
+                批量删除
+              </Button>
               <ModalForm
                 title="批量分配角色"
-                trigger={<a>批量分配角色</a>}
+                trigger={<Button type="link" style={{ padding: 0 }}>批量分配角色</Button>}
                 onFinish={handleSaveBatchRoles}
                 modalProps={{
                   destroyOnClose: true,
@@ -713,11 +700,22 @@ const UserManagement: React.FC = () => {
                   rules={[{ required: true, message: '请选择角色' }]}
                 />
               </ModalForm>
-              <a onClick={() => showAssignDepartmentModal()}>
+              <Button 
+                type="link" 
+                style={{ padding: 0 }} 
+                onClick={() => showAssignDepartmentModal()}
+              >
                 批量加入部门
-              </a>
+              </Button>
             </Space>
           );
+        }}
+        rowSelection={{
+          selections: [Table.SELECTION_ALL, Table.SELECTION_INVERT],
+          selectedRowKeys,
+          onChange: (selectedKeys) => {
+            setSelectedRowKeys(selectedKeys);
+          },
         }}
         toolbar={{
           menu: {
@@ -757,8 +755,8 @@ const UserManagement: React.FC = () => {
               key="add"
               title="添加用户"
               trigger={
-                <Button type="primary" icon={<PlusOutlined />}>
-                  添加用户
+                <Button key="button" type="primary">
+                  <PlusOutlined /> 添加用户
                 </Button>
               }
               initialValues={{
@@ -813,11 +811,13 @@ const UserManagement: React.FC = () => {
               </ProForm.Group>
             </ModalForm>,
           ],
+          settings: []
         }}
         options={{
-          setting: {
-            listsHeight: 400,
-          },
+          setting: false,
+          density: false,
+          fullScreen: false,
+          reload: false,
         }}
         pagination={{
           pageSize: 10,

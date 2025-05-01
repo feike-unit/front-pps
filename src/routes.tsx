@@ -143,7 +143,6 @@ export const generateRouteMetadata = (routes: ExtendedRouteObject[]): Record<str
 
     // 保存元数据
     if (route.metadata) {
-      console.log('Adding metadata for path:', fullPath, route.metadata);
       metadata[fullPath] = route.metadata;
     }
 
@@ -154,7 +153,6 @@ export const generateRouteMetadata = (routes: ExtendedRouteObject[]): Record<str
   };
 
   routes.forEach(route => processRoute(route));
-  console.log('Final route metadata:', metadata);
   return metadata;
 };
 

@@ -340,23 +340,27 @@ const DepartmentManagement: React.FC = () => {
       width: 180,
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="编辑">
-            <a onClick={() => handleAddOrEdit(record)}>
-              <EditOutlined />
-            </a>
-          </Tooltip>
-          <Tooltip title="分配用户">
-            <a onClick={() => handleAssignUsers(record)}>
-              <TeamOutlined />
-            </a>
-          </Tooltip>
+          <Button 
+            type="link" 
+            style={{ padding: 0 }} 
+            onClick={() => handleAddOrEdit(record)}
+          >
+            <EditOutlined />
+          </Button>
+          <Button 
+            type="link" 
+            style={{ padding: 0 }} 
+            onClick={() => handleAssignUsers(record)}
+          >
+            <TeamOutlined />
+          </Button>
           <Popconfirm
             title="确定要删除该部门吗？"
             onConfirm={() => handleDelete(record.id)}
           >
-            <Tooltip title="删除">
-              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
-            </Tooltip>
+            <Button type="link" style={{ padding: 0 }}>
+              <DeleteOutlined style={{ color: '#ff4d4f' }} />
+            </Button>
           </Popconfirm>
         </Space>
       ),
@@ -403,14 +407,14 @@ const DepartmentManagement: React.FC = () => {
         toolbar={{
           actions: [
             <Button
-              key="add"
+              key="button"
               type="primary"
               onClick={() => handleAddOrEdit()}
-              icon={<PlusOutlined />}
             >
-              添加部门
+              <PlusOutlined /> 添加部门
             </Button>,
           ],
+          settings: []
         }}
         options={{
           setting: {

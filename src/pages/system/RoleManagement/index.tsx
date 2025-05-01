@@ -189,9 +189,9 @@ const RoleManagement: React.FC = () => {
             key="edit"
             title="编辑角色"
             trigger={
-              <Tooltip title="编辑">
-                <a><EditOutlined /></a>
-              </Tooltip>
+              <Button type="link" style={{ padding: 0 }}>
+                <EditOutlined />
+              </Button>
             }
             initialValues={record}
             onFinish={handleSaveRole}
@@ -217,18 +217,20 @@ const RoleManagement: React.FC = () => {
               hidden
             />
           </ModalForm>
-          <Tooltip title="菜单权限">
-            <a onClick={() => handleMenuSetting(record)}>
-              <MenuOutlined />
-            </a>
-          </Tooltip>
+          <Button 
+            type="link" 
+            style={{ padding: 0 }} 
+            onClick={() => handleMenuSetting(record)}
+          >
+            <MenuOutlined />
+          </Button>
           <Popconfirm
             title="确定要删除该角色吗？"
             onConfirm={() => handleDelete(record.id)}
           >
-            <Tooltip title="删除">
-              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
-            </Tooltip>
+            <Button type="link" style={{ padding: 0 }}>
+              <DeleteOutlined style={{ color: '#ff4d4f' }} />
+            </Button>
           </Popconfirm>
         </Space>
       ),
@@ -283,8 +285,8 @@ const RoleManagement: React.FC = () => {
               key="add"
               title="添加角色"
               trigger={
-                <Button type="primary" icon={<PlusOutlined />}>
-                  添加角色
+                <Button key="button" type="primary">
+                  <PlusOutlined /> 添加角色
                 </Button>
               }
               onFinish={handleSaveRole}
@@ -307,6 +309,7 @@ const RoleManagement: React.FC = () => {
               />
             </ModalForm>,
           ],
+          settings: []
         }}
         options={{
           setting: {
