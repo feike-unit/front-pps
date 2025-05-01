@@ -50,14 +50,47 @@ const MenuManagement: React.FC = () => {
 
   // 将菜单列表转换为TreeSelect需要的数据格式
   const formatTreeSelectData = (data: Menu[]): any[] => {
-    return data.map(item => ({
-      title: item.name,
-      value: item.id,
-      key: item.id,
-      children: item.children && item.children.length > 0 
-        ? formatTreeSelectData(item.children) 
-        : undefined,
-    }));
+    const map = new Map<number, any>();
+    const result: any[] = [];
+
+    // 先创建所有节点
+    data.forEach(menu => {
+      map.set(menu.id, {
+        title: menu.name,
+        value: menu.id,
+        key: menu.id,
+        children: [],
+      });
+    });
+
+    // 构建树形结构
+    data.forEach(menu => {
+      const node = map.get(menu.id);
+      if (menu.parentId === 0) {
+        result.push(node);
+      } else {
+        const parent = map.get(menu.parentId);
+        if (parent) {
+          parent.children.push(node);
+        }
+      }
+    });
+
+    // 移除空的 children 数组
+    const removeEmptyChildren = (nodes: any[]): any[] => {
+      return nodes.map(node => {
+        if (node.children.length === 0) {
+          const { children, ...rest } = node;
+          return rest;
+        }
+        return {
+          ...node,
+          children: removeEmptyChildren(node.children),
+        };
+      });
+    };
+
+    return removeEmptyChildren(result);
   };
 
   // 保存菜单
@@ -209,7 +242,7 @@ const MenuManagement: React.FC = () => {
             modalProps={{
               destroyOnClose: true,
             }}
-            width={700}
+            width={800}
           >
             <ProForm.Group>
               <ProFormText
@@ -229,23 +262,32 @@ const MenuManagement: React.FC = () => {
                 width="md"
               />
             </ProForm.Group>
-            <ProFormTreeSelect
-              name="parentId"
-              label="上级菜单"
-              rules={[{ required: true, message: '请选择上级菜单' }]}
-              width="xl"
-              request={async () => {
-                const menus = await getAllMenus();
-                return [{ title: '根菜单', value: 0, key: 0 }, ...formatTreeSelectData(menus)];
-              }}
-            />
             <ProForm.Group>
+              <ProFormTreeSelect
+                name="parentId"
+                label="上级菜单"
+                tooltip="不选择则为顶级菜单"
+                width="md"
+                fieldProps={{
+                  treeDefaultExpandAll: true,
+                  showSearch: true,
+                  treeNodeFilterProp: 'title',
+                  placeholder: '不选择则为顶级菜单',
+                  allowClear: true,
+                }}
+                request={async () => {
+                  const menus = await getAllMenus();
+                  return formatTreeSelectData(menus);
+                }}
+              />
               <ProFormText
                 name="path"
                 label="路由路径"
                 placeholder="如: /system/user"
                 width="md"
               />
+            </ProForm.Group>
+            <ProForm.Group>
               <ProFormText
                 name="urlPattern"
                 label="URL权限路径"
@@ -253,8 +295,6 @@ const MenuManagement: React.FC = () => {
                 tooltip="用于后台接口权限控制的URL匹配模式"
                 width="md"
               />
-            </ProForm.Group>
-            <ProForm.Group>
               <ProFormText
                 name="icon"
                 label="图标"
@@ -265,19 +305,18 @@ const MenuManagement: React.FC = () => {
               <ProFormText
                 name="permission"
                 label="权限标识"
+                placeholder="如: system:menu:list"
+                width="md"
+              />
+              <ProFormDigit
+                name="sort"
+                label="排序"
+                rules={[{ required: true, message: '请输入排序值' }]}
+                min={0}
                 width="md"
               />
             </ProForm.Group>
             <ProForm.Group>
-              <ProFormDigit
-                name="sort"
-                label="排序号"
-                width="md"
-                fieldProps={{
-                  precision: 0,
-                  min: 0,
-                }}
-              />
               <ProFormSwitch
                 name="status"
                 label="状态"
@@ -363,7 +402,7 @@ const MenuManagement: React.FC = () => {
                   setCurrentMenu(null);
                 },
               }}
-              width={700}
+              width={800}
             >
               <ProForm.Group>
                 <ProFormText
@@ -383,23 +422,32 @@ const MenuManagement: React.FC = () => {
                   width="md"
                 />
               </ProForm.Group>
-              <ProFormTreeSelect
-                name="parentId"
-                label="上级菜单"
-                rules={[{ required: true, message: '请选择上级菜单' }]}
-                width="xl"
-                request={async () => {
-                  const menus = await getAllMenus();
-                  return [{ title: '根菜单', value: 0, key: 0 }, ...formatTreeSelectData(menus)];
-                }}
-              />
               <ProForm.Group>
+                <ProFormTreeSelect
+                  name="parentId"
+                  label="上级菜单"
+                  tooltip="不选择则为顶级菜单"
+                  width="md"
+                  fieldProps={{
+                    treeDefaultExpandAll: true,
+                    showSearch: true,
+                    treeNodeFilterProp: 'title',
+                    placeholder: '不选择则为顶级菜单',
+                    allowClear: true,
+                  }}
+                  request={async () => {
+                    const menus = await getAllMenus();
+                    return formatTreeSelectData(menus);
+                  }}
+                />
                 <ProFormText
                   name="path"
                   label="路由路径"
                   placeholder="如: /system/user"
                   width="md"
                 />
+              </ProForm.Group>
+              <ProForm.Group>
                 <ProFormText
                   name="urlPattern"
                   label="URL权限路径"
@@ -407,8 +455,6 @@ const MenuManagement: React.FC = () => {
                   tooltip="用于后台接口权限控制的URL匹配模式"
                   width="md"
                 />
-              </ProForm.Group>
-              <ProForm.Group>
                 <ProFormText
                   name="icon"
                   label="图标"
@@ -422,8 +468,6 @@ const MenuManagement: React.FC = () => {
                   placeholder="如: system:menu:list"
                   width="md"
                 />
-              </ProForm.Group>
-              <ProForm.Group>
                 <ProFormDigit
                   name="sort"
                   label="排序"
@@ -431,6 +475,8 @@ const MenuManagement: React.FC = () => {
                   min={0}
                   width="md"
                 />
+              </ProForm.Group>
+              <ProForm.Group>
                 <ProFormSwitch
                   name="status"
                   label="状态"
