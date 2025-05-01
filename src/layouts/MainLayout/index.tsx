@@ -143,7 +143,6 @@ const MainLayoutContent: React.FC = () => {
         siderWidth={220}
         token={{
           sider: {
-            colorMenuBackground: '#fff',
             colorMenuItemDivider: '#dfdfdf',
             colorTextMenu: '#595959',
             colorTextMenuSelected: 'rgba(42,122,251,1)',
