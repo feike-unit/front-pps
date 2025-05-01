@@ -433,9 +433,11 @@ const MenuManagement: React.FC = () => {
               </ProForm.Group>
             </ModalForm>,
           ],
-          settings: []
         }}
         options={{
+          density: true,
+          fullScreen: true,
+          reload: true,
           setting: {
             listsHeight: 400,
           },

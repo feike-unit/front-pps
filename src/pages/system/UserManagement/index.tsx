@@ -811,13 +811,14 @@ const UserManagement: React.FC = () => {
               </ProForm.Group>
             </ModalForm>,
           ],
-          settings: []
         }}
         options={{
-          setting: false,
-          density: false,
-          fullScreen: false,
-          reload: false,
+          density: true,
+          fullScreen: true,
+          reload: true,
+          setting: {
+            listsHeight: 400,
+          },
         }}
         pagination={{
           pageSize: 10,

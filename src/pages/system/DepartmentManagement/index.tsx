@@ -411,9 +411,11 @@ const DepartmentManagement: React.FC = () => {
               <PlusOutlined /> 添加部门
             </Button>,
           ],
-          settings: []
         }}
         options={{
+          density: true,
+          fullScreen: true,
+          reload: true,
           setting: {
             listsHeight: 400,
           },

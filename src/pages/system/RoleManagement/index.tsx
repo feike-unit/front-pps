@@ -309,9 +309,11 @@ const RoleManagement: React.FC = () => {
               />
             </ModalForm>,
           ],
-          settings: []
         }}
         options={{
+          density: true,
+          fullScreen: true,
+          reload: true,
           setting: {
             listsHeight: 400,
           },
