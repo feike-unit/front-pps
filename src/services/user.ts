@@ -140,7 +140,7 @@ export const assignRolesBatch = async (userIds: number[], roleIds: number[]): Pr
 
 // 获取用户所属部门
 export const getUserDepartments = async (userId: number): Promise<Department[]> => {
-  const response = await api.get<Department[]>(`/system/departments/users/${userId}/departments`);
+  const response = await api.get<Department[]>(`/system/users/${userId}/departments`);
   return response.data;
 };
 
