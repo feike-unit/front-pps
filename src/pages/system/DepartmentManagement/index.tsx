@@ -205,9 +205,6 @@ const DepartmentManagement: React.FC = () => {
     return removeEmptyChildren(result);
   };
 
-  React.useEffect(() => {
-    fetchTreeSelectData();
-  }, []);
 
   // 添加或编辑部门
   const handleAddOrEdit = async (department?: Department) => {
