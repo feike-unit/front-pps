@@ -138,11 +138,12 @@ const MenuManagement: React.FC = () => {
       ellipsis: true,
     },
     {
-      title: '组件',
-      dataIndex: 'component',
-      key: 'component',
+      title: 'URL权限路径',
+      dataIndex: 'urlPattern',
+      key: 'urlPattern',
       copyable: true,
       ellipsis: true,
+      tooltip: '用于后台接口权限控制的URL匹配模式',
     },
     {
       title: '图标',
@@ -246,9 +247,10 @@ const MenuManagement: React.FC = () => {
                 width="md"
               />
               <ProFormText
-                name="component"
-                label="组件路径"
-                placeholder="如: system/user/index"
+                name="urlPattern"
+                label="URL权限路径"
+                placeholder="如: /api/system/users/**"
+                tooltip="用于后台接口权限控制的URL匹配模式"
                 width="md"
               />
             </ProForm.Group>
@@ -258,6 +260,8 @@ const MenuManagement: React.FC = () => {
                 label="图标"
                 width="md"
               />
+            </ProForm.Group>
+            <ProForm.Group>
               <ProFormText
                 name="permission"
                 label="权限标识"
@@ -397,9 +401,10 @@ const MenuManagement: React.FC = () => {
                   width="md"
                 />
                 <ProFormText
-                  name="component"
-                  label="组件路径"
-                  placeholder="如: system/user/index"
+                  name="urlPattern"
+                  label="URL权限路径"
+                  placeholder="如: /api/system/users/**"
+                  tooltip="用于后台接口权限控制的URL匹配模式"
                   width="md"
                 />
               </ProForm.Group>
@@ -409,6 +414,8 @@ const MenuManagement: React.FC = () => {
                   label="图标"
                   width="md"
                 />
+              </ProForm.Group>
+              <ProForm.Group>
                 <ProFormText
                   name="permission"
                   label="权限标识"
