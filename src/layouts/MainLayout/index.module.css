@@ -14,6 +14,18 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* 左侧菜单样式 */
+:global(.ant-menu-item .ant-menu-item-title), 
+:global(.ant-menu-submenu-title .ant-menu-item-title),
+:global(.ant-menu-item .ant-menu-title-content), 
+:global(.ant-menu-submenu-title .ant-menu-title-content) {
+  font-weight: 500 !important;
+}
+
+:global(.ant-space-item) {
+  font-weight: 500 !important;
+}
+
 /* 退出登录按钮样式 */
 /* 位于顶部导航栏右侧 */
 .logoutButton {
