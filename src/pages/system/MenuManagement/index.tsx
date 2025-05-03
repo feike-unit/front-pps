@@ -169,6 +169,13 @@ const MenuManagement: React.FC = () => {
       key: 'path',
       copyable: true,
       ellipsis: true,
+      tooltip: '前端菜单/按钮路径,子菜单路径为父菜单路径+路径',
+    },
+    {
+      title: '图标',
+      dataIndex: 'icon',
+      key: 'icon',
+      search: false,
     },
     {
       title: 'URL权限路径',
@@ -179,17 +186,12 @@ const MenuManagement: React.FC = () => {
       tooltip: '用于后台接口权限控制的URL匹配模式',
     },
     {
-      title: '图标',
-      dataIndex: 'icon',
-      key: 'icon',
-      search: false,
-    },
-    {
       title: '权限标识',
       dataIndex: 'permission',
       key: 'permission',
       copyable: true,
       ellipsis: true,
+      tooltip: '拥有该权限标识才可以请求URL权限路径',
     },
     {
       title: '创建时间',

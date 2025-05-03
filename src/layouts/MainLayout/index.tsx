@@ -57,7 +57,7 @@ const MainLayoutContent: React.FC = () => {
     if (userInfo) {
       const reloadMenus = async () => {
         try {
-          console.log('Reloading menus for user:', userInfo.username);
+          // console.log('Reloading menus for user:', userInfo.username);
           const props = await getDefaultProps();
           setMenuProps(props);
         } catch (error) {
