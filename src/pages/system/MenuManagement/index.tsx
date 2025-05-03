@@ -172,12 +172,6 @@ const MenuManagement: React.FC = () => {
       tooltip: '前端菜单/按钮路径,子菜单路径为父菜单路径+路径',
     },
     {
-      title: '图标',
-      dataIndex: 'icon',
-      key: 'icon',
-      search: false,
-    },
-    {
       title: 'URL权限路径',
       dataIndex: 'urlPattern',
       key: 'urlPattern',
@@ -298,18 +292,14 @@ const MenuManagement: React.FC = () => {
                 width="md"
               />
               <ProFormText
-                name="icon"
-                label="图标"
+                name="permission"
+                label="权限标识"
+                placeholder="如: system:menu:list"
+                tooltip="拥有该权限标识才可以请求URL权限路径"
                 width="md"
               />
             </ProForm.Group>
             <ProForm.Group>
-              <ProFormText
-                name="permission"
-                label="权限标识"
-                placeholder="如: system:menu:list"
-                width="md"
-              />
               <ProFormDigit
                 name="sort"
                 label="排序"
@@ -317,8 +307,6 @@ const MenuManagement: React.FC = () => {
                 min={0}
                 width="md"
               />
-            </ProForm.Group>
-            <ProForm.Group>
               <ProFormSwitch
                 name="status"
                 label="状态"
@@ -458,18 +446,14 @@ const MenuManagement: React.FC = () => {
                   width="md"
                 />
                 <ProFormText
-                  name="icon"
-                  label="图标"
+                  name="permission"
+                  label="权限标识"
+                  tooltip="拥有该权限标识才可以请求URL权限路径"
+                  placeholder="如: system:menu:list"
                   width="md"
                 />
               </ProForm.Group>
               <ProForm.Group>
-                <ProFormText
-                  name="permission"
-                  label="权限标识"
-                  placeholder="如: system:menu:list"
-                  width="md"
-                />
                 <ProFormDigit
                   name="sort"
                   label="排序"
@@ -477,8 +461,6 @@ const MenuManagement: React.FC = () => {
                   min={0}
                   width="md"
                 />
-              </ProForm.Group>
-              <ProForm.Group>
                 <ProFormSwitch
                   name="status"
                   label="状态"
