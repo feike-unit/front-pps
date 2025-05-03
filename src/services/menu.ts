@@ -6,7 +6,6 @@ export interface Menu {
   type: number; // 0-菜单，1-按钮
   parentId: number;
   path?: string;
-  component?: string;
   icon?: string;
   sort: number;
   permission?: string;
@@ -23,7 +22,6 @@ export interface MenuCreateParams {
   type: number;
   parentId: number;
   path?: string;
-  component?: string;
   icon?: string;
   sort: number;
   permission?: string;
@@ -38,7 +36,6 @@ export interface MenuUpdateParams {
   type?: number;
   parentId?: number;
   path?: string;
-  component?: string;
   icon?: string;
   sort?: number;
   permission?: string;
