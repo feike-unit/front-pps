@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Avatar, Space, message, Tooltip } from 'antd';
+import { Avatar, Space, message, Tooltip, Spin } from 'antd';
 import type { MenuProps } from 'antd';
 import { PageContainer, ProLayout, ProCard } from '@ant-design/pro-components';
 import type { ProLayoutProps } from '@ant-design/pro-components';
@@ -10,23 +10,11 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
 import { getProfile, logout } from '../../services/auth';
-import { TabsProvider, useTabs } from './TabsContext';
+import { TabsProvider, useTabs, UserInfo } from './TabsContext';
 import defaultProps, { getDefaultProps } from '../_defaultProps';
 import { routeMetadata } from '../../routes';
 
-interface UserInfo {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: number;
-  createdAt: string;
-  roles: string[];
-}
-
-const MainLayoutContent: React.FC = () => {
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+const MainLayoutContent: React.FC<{ userInfo: UserInfo }> = ({ userInfo }) => {
   const [menuProps, setMenuProps] = useState<ProLayoutProps>(defaultProps);
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,22 +39,6 @@ const MainLayoutContent: React.FC = () => {
     };
     initMenuProps();
   }, []);
-
-  // 当用户信息更新时重新加载菜单
-  useEffect(() => {
-    if (userInfo) {
-      const reloadMenus = async () => {
-        try {
-          // console.log('Reloading menus for user:', userInfo.username);
-          const props = await getDefaultProps();
-          setMenuProps(props);
-        } catch (error) {
-          console.error('重新加载菜单失败:', error);
-        }
-      };
-      reloadMenus();
-    }
-  }, [userInfo]);
 
   // 处理用户头像点击事件
   const handleAvatarClick = () => {
@@ -145,20 +117,6 @@ const MainLayoutContent: React.FC = () => {
       navigate('/dashboard');
     }
   }, [location.pathname, navigate]);
-
-  useEffect(() => {
-    fetchUserInfo();
-  }, []);
-
-  const fetchUserInfo = async () => {
-    try {
-      const data = await getProfile();
-      setUserInfo(data);
-    } catch (error) {
-      console.error('获取用户信息失败:', error);
-      navigate('/login');
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -317,9 +275,46 @@ const MainLayoutContent: React.FC = () => {
 };
 
 const MainLayout: React.FC = () => {
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // 获取用户信息
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const data = await getProfile();
+        setUserInfo(data);
+      } catch (error) {
+        console.error('获取用户信息失败:', error);
+        navigate('/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserInfo();
+  }, [navigate]);
+
+  if (loading) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+      }}>
+        <Spin size="large" tip="加载中..." />
+      </div>
+    );
+  }
+
+  if (!userInfo) {
+    return null;
+  }
+
   return (
     <TabsProvider>
-      <MainLayoutContent />
+      <MainLayoutContent userInfo={userInfo} />
     </TabsProvider>
   );
 };
