@@ -10,7 +10,8 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.css';
 import { getProfile, logout } from '../../services/auth';
-import { TabsProvider, useTabs, UserInfo } from './TabsContext';
+import { TabsProvider, useTabs } from './TabsContext';
+import type { UserInfo } from '../../services/user';
 import defaultProps, { getDefaultProps } from '../_defaultProps';
 import { routeMetadata } from '../../routes';
 
@@ -313,7 +314,7 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <TabsProvider>
+    <TabsProvider userInfo={userInfo}>
       <MainLayoutContent userInfo={userInfo} />
     </TabsProvider>
   );

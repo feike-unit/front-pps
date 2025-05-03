@@ -1,6 +1,17 @@
 import api from './api';
 import type { Department } from './department';
 
+export interface UserInfo {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  phone: string;
+  status: number;
+  createdAt: string;
+  roles: string[];
+} 
+
 export interface User {
   id: number;
   username: string;

@@ -104,23 +104,23 @@ class Database {
   }
 
   // Tab 相关方法
-  async saveTabs(tabs: TabItem[]): Promise<void> {
+  async saveTabs(tabs: TabItem[], userId: number): Promise<void> {
     try {
       const tabsToSave = tabs.map(tab => ({
         key: tab.key,
         label: tab.label,
         closable: tab.closable
       }));
-      await this.db.put(STORE_NAMES.TABS, { key: KEY_NAMES.TABS, value: tabsToSave });
+      await this.db.put(STORE_NAMES.TABS, { key: KEY_NAMES.TABS + '|' + userId, value: tabsToSave });
     } catch (error) {
       console.error('Error saving tabs:', error);
       throw error;
     }
   }
 
-  async getTabs(): Promise<TabItem[]> {
+  async getTabs(userId: number): Promise<TabItem[]> {
     try {
-      const tabs = await this.db.get<TabItem[]>(STORE_NAMES.TABS, KEY_NAMES.TABS);
+      const tabs = await this.db.get<TabItem[]>(STORE_NAMES.TABS, KEY_NAMES.TABS + '|' + userId);
       return tabs ?? [];
     } catch (error) {
       console.error('Error getting tabs:', error);
@@ -128,18 +128,18 @@ class Database {
     }
   }
 
-  async saveActiveTab(activeTab: string): Promise<void> {
+  async saveActiveTab(activeTab: string, userId: number): Promise<void> {
     try {
-      await this.db.put(STORE_NAMES.TABS, { key: KEY_NAMES.ACTIVE_TAB, value: activeTab });
+      await this.db.put(STORE_NAMES.TABS, { key: KEY_NAMES.ACTIVE_TAB + '|' + userId , value: activeTab});
     } catch (error) {
       console.error('Error saving active tab:', error);
       throw error;
     }
   }
 
-  async getActiveTab(): Promise<string | null> {
+  async getActiveTab(userId: number): Promise<string | null> {
     try {
-      const activeTab = await this.db.get<string>(STORE_NAMES.TABS, KEY_NAMES.ACTIVE_TAB);
+      const activeTab = await this.db.get<string>(STORE_NAMES.TABS, KEY_NAMES.ACTIVE_TAB + '|' + userId);
       return activeTab ?? null;
     } catch (error) {
       console.error('Error getting active tab:', error);
