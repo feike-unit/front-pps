@@ -48,7 +48,7 @@ export const getAllMenus = async (): Promise<Menu[]> => {
 
 // 获取当前用户菜单
 export const getCurrentUserMenus = async (): Promise<Menu[]> => {
-  const response = await api.get<Menu[]>('/system/menus/current');
+  const response = await api.get<Menu[]>('/auth/menus');
   return response.data;
 };
 
