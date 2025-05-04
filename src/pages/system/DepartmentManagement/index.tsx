@@ -465,7 +465,7 @@ const DepartmentManagement: React.FC = () => {
             treeDefaultExpandAll: true,
             disabled: currentDepartment?.id === 1,
           }}
-          rules={[{ required: true, message: '请选择上级部门' }]}
+          rules={[{ required: false }]}
         />
         <ProFormText
           name="name"
