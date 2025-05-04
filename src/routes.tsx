@@ -64,51 +64,6 @@ export const routes: ExtendedRouteObject[] = [
         }
       },
       {
-        path: 'system',
-        metadata: {
-          label: '系统管理',
-          icon: <SettingOutlined />
-        },
-        children: [
-          {
-            path: 'departments',
-            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/DepartmentManagement')))}</Suspense>,
-            metadata: {
-              label: '部门管理',
-              icon: <BankOutlined />,
-              closable: true
-            }
-          },
-          {
-            path: 'users',
-            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/UserManagement')))}</Suspense>,
-            metadata: {
-              label: '用户管理',
-              icon: <UserOutlined />,
-              closable: true
-            }
-          },
-          {
-            path: 'roles',
-            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/RoleManagement')))}</Suspense>,
-            metadata: {
-              label: '角色管理',
-              icon: <TeamOutlined />,
-              closable: true
-            }
-          },
-          {
-            path: 'menus',
-            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/MenuManagement')))}</Suspense>,
-            metadata: {
-              label: '菜单管理',
-              icon: <MenuOutlined />,
-              closable: true
-            }
-          }
-        ]
-      },
-      {
         path: 'production',
         metadata: {
           label: '生产管理',
@@ -148,6 +103,51 @@ export const routes: ExtendedRouteObject[] = [
             metadata: {
               label: '产能规则',
               icon: <ControlOutlined />,
+              closable: true
+            }
+          }
+        ]
+      },
+      {
+        path: 'system',
+        metadata: {
+          label: '系统管理',
+          icon: <SettingOutlined />
+        },
+        children: [
+          {
+            path: 'departments',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/DepartmentManagement')))}</Suspense>,
+            metadata: {
+              label: '部门管理',
+              icon: <BankOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'users',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/UserManagement')))}</Suspense>,
+            metadata: {
+              label: '用户管理',
+              icon: <UserOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'roles',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/RoleManagement')))}</Suspense>,
+            metadata: {
+              label: '角色管理',
+              icon: <TeamOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'menus',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/system/MenuManagement')))}</Suspense>,
+            metadata: {
+              label: '菜单管理',
+              icon: <MenuOutlined />,
               closable: true
             }
           }

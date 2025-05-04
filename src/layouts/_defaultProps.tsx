@@ -94,10 +94,10 @@ const convertRoutesToProLayoutFormat = async (routes: any[]) => {
 
       // 检查路径是否在用户菜单中
       const hasPermission = isPathInUserMenus(route.path, userMenus);
-      // console.log(`Route ${route.path} permission check: ${hasPermission}`);
+      console.log(`Route ${route.path} permission check: ${hasPermission}`);
 
       if (!hasPermission) {
-        // console.log(`No permission for route: ${route.path}`);
+        console.log(`No permission for route: ${route.path}`);
         return null;
       }
 
@@ -134,7 +134,7 @@ const layoutRoutes = mainLayoutRoute?.children || [];
 // 由于 convertRoutesToProLayoutFormat 现在是异步的，我们需要一个函数来获取配置
 export const getDefaultProps = async () => {
   const menuRoutes = await convertRoutesToProLayoutFormat(layoutRoutes);
-  
+  console.log('Final menu routes:', menuRoutes);
   return {
     route: {
       path: '/',
