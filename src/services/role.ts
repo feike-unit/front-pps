@@ -3,9 +3,9 @@ import api, {PageResponse} from './api';
 export interface Role {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   createdAt: string;
-  updatedAt: string;
+  status: number;  // 1: 启用, 0: 禁用
 }
 
 export interface RoleCreateParams {
@@ -65,8 +65,14 @@ export const getRoleMenuIds = async (id: number): Promise<number[]> => {
   return response.data;
 };
 
-// 分配菜单给角色
+// 为角色分配菜单
 export const assignMenusToRole = async (roleId: number, menuIds: number[]): Promise<void> => {
-  const response = await api.post<void>(`/system/roles/${roleId}/menus`, menuIds);
+  const response = await api.put<void>(`/system/roles/${roleId}/menus`, { menuIds });
+  return response.data;
+};
+
+// 更新角色状态
+export const updateRoleStatus = async (roleId: number, status: number): Promise<void> => {
+  const response = await api.put<void>(`/system/roles/${roleId}/status?status=${status}`);
   return response.data;
 };

@@ -7,6 +7,7 @@ import {
   Modal,
   Popconfirm,
   Tooltip,
+  Switch,
 } from 'antd';
 import type { TreeProps } from 'antd/es/tree';
 import type { DataNode } from 'antd/es/tree';
@@ -19,7 +20,7 @@ import {
   ProFormTextArea 
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MenuOutlined } from '@ant-design/icons';
-import { Role, getRolePage, createRole, updateRole, deleteRole, getRoleMenuIds, assignMenusToRole } from '../../../services/role';
+import { Role, getRolePage, createRole, updateRole, deleteRole, getRoleMenuIds, assignMenusToRole, updateRoleStatus } from '../../../services/role';
 import { Menu, getAllMenus } from '../../../services/menu';
 import { ApiError } from '../../../services/api';
 
@@ -170,6 +171,34 @@ const RoleManagement: React.FC = () => {
       search: false,
       sorter: true,
       copyable: true,
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      filters: true,
+      onFilter: true,
+      valueType: 'select',
+      valueEnum: {
+        1: { text: '启用', status: 'Success' },
+        0: { text: '禁用', status: 'Error' },
+      },
+      render: (_, record) => (
+        <Switch
+          checked={record.status === 1}
+          onChange={async (checked) => {
+            try {
+              await updateRoleStatus(record.id, checked ? 1 : 0);
+              message.success('角色状态更新成功');
+              actionRef.current?.reload();
+            } catch (error) {
+              const apiError = error as ApiError;
+              message.error(apiError.response?.data?.message || apiError.message || '角色状态更新失败');
+            }
+          }}
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+        />
+      ),
     },
     {
       title: '创建时间',
