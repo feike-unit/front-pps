@@ -8,7 +8,12 @@ import {
   MenuOutlined,
   BankOutlined,
   UserSwitchOutlined,
-  SettingOutlined
+  SettingOutlined,
+  ToolOutlined,
+  ApartmentOutlined,
+  ShoppingOutlined,
+  ProfileOutlined,
+  ControlOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 
@@ -104,6 +109,51 @@ export const routes: ExtendedRouteObject[] = [
         ]
       },
       {
+        path: 'production',
+        metadata: {
+          label: '生产管理',
+          icon: <ToolOutlined />
+        },
+        children: [
+          {
+            path: 'lines',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/production/LineManagement')))}</Suspense>,
+            metadata: {
+              label: '拉线管理',
+              icon: <ApartmentOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'products',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/production/ProductManagement')))}</Suspense>,
+            metadata: {
+              label: '货品管理',
+              icon: <ShoppingOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'boms',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/production/BomManagement')))}</Suspense>,
+            metadata: {
+              label: 'BOM管理',
+              icon: <ProfileOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'capacity-rules',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/production/CapacityRuleManagement')))}</Suspense>,
+            metadata: {
+              label: '产能规则',
+              icon: <ControlOutlined />,
+              closable: true
+            }
+          }
+        ]
+      },
+      {
         path: 'profile',
         element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/Profile')))}</Suspense>,
         metadata: {
@@ -187,7 +237,6 @@ export const convertRoutesToMenuItems = (routes: ExtendedRouteObject[]): MenuPro
         menuItem.children = childrenItems;
       }
     }
-
     return menuItem;
   };
 
