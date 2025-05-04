@@ -279,7 +279,13 @@ const UserManagement: React.FC = () => {
       if (result && Array.isArray(result)) {
         setRoles(result);
         setCurrentUser(user);
-        const userRoleIds = user.roles?.map(role => result.find(r => r.name === role)?.id).filter(Boolean) as number[];
+        // 找到用户当前角色对应的ID
+        const userRoleIds = user.roles?.map(roleName => 
+          result.find(r => r.name === roleName)?.id
+        ).filter(Boolean) as number[];
+        
+        // 重置表单并设置初始值
+        roleForm.resetFields();
         roleForm.setFieldsValue({ roleIds: userRoleIds });
         setRoleModalVisible(true);
       } else {
@@ -574,17 +580,7 @@ const UserManagement: React.FC = () => {
             <a
               key="assign_role"
               onClick={async () => {
-                try {
-                  const result = await getRoles();
-                  if (result && Array.isArray(result)) {
-                    setRoles(result);
-                    setCurrentUser(record);
-                  } else {
-                    message.warning('获取角色列表数据格式不正确');
-                  }
-                } catch (error) {
-                  message.error('获取角色列表失败');
-                }
+                await showRoleModal(record);
               }}
             >
               <UserSwitchOutlined />
@@ -875,13 +871,16 @@ const UserManagement: React.FC = () => {
       {/* 分配角色对话框 */}
       <ModalForm
         title={currentUser ? "分配角色" : "批量分配角色"}
-        open={!!currentUser && roles.length > 0}
+        open={roleModalVisible}
+        form={roleForm}
         onFinish={handleSaveUserRoles}
         modalProps={{
           destroyOnClose: true,
           onCancel: () => {
+            setRoleModalVisible(false);
             setCurrentUser(null);
             setRoles([]);
+            roleForm.resetFields();
           },
         }}
       >
