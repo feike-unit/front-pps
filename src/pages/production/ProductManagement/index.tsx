@@ -16,6 +16,7 @@ import {
   ProFormTextArea,
   ProFormDigit,
   ProFormSelect,
+  ProFormSwitch,
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
@@ -136,7 +137,11 @@ const ProductManagement: React.FC = () => {
             initialValues={record}
             onFinish={async (values) => {
               try {
-                await updateProduct(record.id!, values);
+                const params = {
+                  ...values,
+                  status: values.status ? ProductStatus.ENABLED : ProductStatus.DISABLED,
+                };
+                await updateProduct(record.id!, params);
                 message.success('更新成功');
                 actionRef.current?.reload();
                 return true;
@@ -200,6 +205,15 @@ const ProductManagement: React.FC = () => {
               label="备注"
               width="xl"
             />
+            <ProForm.Group>
+              <ProFormSwitch
+                name="status"
+                label="状态"
+                checkedChildren="启用"
+                unCheckedChildren="禁用"
+                initialValue={true}
+              />
+            </ProForm.Group>
           </ModalForm>
           <Popconfirm
             title="确定要删除该货品吗？"
@@ -279,7 +293,11 @@ const ProductManagement: React.FC = () => {
           }
           onFinish={async (values) => {
             try {
-              await createProduct(values);
+              const params = {
+                ...values,
+                status: values.status ? ProductStatus.ENABLED : ProductStatus.DISABLED,
+              };
+              await createProduct(params);
               message.success('创建成功');
               actionRef.current?.reload();
               return true;
@@ -343,6 +361,15 @@ const ProductManagement: React.FC = () => {
             label="备注"
             width="xl"
           />
+          <ProForm.Group>
+            <ProFormSwitch
+              name="status"
+              label="状态"
+              checkedChildren="启用"
+              unCheckedChildren="禁用"
+              initialValue={true}
+            />
+          </ProForm.Group>
         </ModalForm>,
       ]}
     />
