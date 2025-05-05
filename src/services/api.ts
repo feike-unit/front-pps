@@ -25,6 +25,8 @@ export interface PageResponse<T> {
   total: number;
   pages: number;
   list: T[];
+  first: boolean;
+  last: boolean;
 }
 
 // 创建axios实例

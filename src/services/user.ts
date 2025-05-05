@@ -44,16 +44,6 @@ export interface UserUpdateParams {
   roleIds?: number[];
 }
 
-export interface PageResponse<T> {
-  pageNum: number;
-  pageSize: number;
-  total: number;
-  pages: number;
-  list: T[];
-  first: boolean;
-  last: boolean;
-}
-
 export interface UserInfo {
   id: number;
   username: string;

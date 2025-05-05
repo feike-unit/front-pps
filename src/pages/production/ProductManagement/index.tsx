@@ -19,7 +19,17 @@ import {
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
-import { Product, getProducts, createProduct, updateProduct, deleteProduct, updateProductStatus } from '../../../services/product';
+import { 
+  Product, 
+  getProductPage, 
+  createProduct, 
+  updateProduct, 
+  deleteProduct, 
+  updateProductStatus, 
+  ProductPageRequest, 
+  ProductType,
+  ProductStatus
+} from '../../../services/product';
 
 const ProductManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
@@ -58,9 +68,9 @@ const ProductManagement: React.FC = () => {
       ellipsis: true,
       valueType: 'select',
       valueEnum: {
-        1: { text: '采购件' },
-        2: { text: '自制件' },
-        3: { text: '委外件' },
+        [ProductType.PURCHASE]: { text: '采购件' },
+        [ProductType.SELF_MADE]: { text: '自制件' },
+        [ProductType.OUTSOURCED]: { text: '委外件' },
       },
     },
     {
@@ -82,15 +92,15 @@ const ProductManagement: React.FC = () => {
       onFilter: true,
       valueType: 'select',
       valueEnum: {
-        1: { text: '启用', status: 'Success' },
-        0: { text: '禁用', status: 'Error' },
+        [ProductStatus.ENABLED]: { text: '启用', status: 'Success' },
+        [ProductStatus.DISABLED]: { text: '禁用', status: 'Error' },
       },
       render: (_, record) => (
         <Switch
-          checked={record.status === 1}
+          checked={record.status === ProductStatus.ENABLED}
           onChange={async (checked) => {
             try {
-              await updateProductStatus(record.id, checked ? 1 : 0);
+              await updateProductStatus(record.id!, checked ? ProductStatus.ENABLED : ProductStatus.DISABLED);
               message.success('状态更新成功');
               actionRef.current?.reload();
             } catch (error) {
@@ -126,7 +136,7 @@ const ProductManagement: React.FC = () => {
             initialValues={record}
             onFinish={async (values) => {
               try {
-                await updateProduct(record.id, values);
+                await updateProduct(record.id!, values);
                 message.success('更新成功');
                 actionRef.current?.reload();
                 return true;
@@ -171,9 +181,9 @@ const ProductManagement: React.FC = () => {
                 name="productType"
                 label="货品类型"
                 options={[
-                  { label: '采购件', value: 1 },
-                  { label: '自制件', value: 2 },
-                  { label: '委外件', value: 3 },
+                  { label: '采购件', value: ProductType.PURCHASE },
+                  { label: '自制件', value: ProductType.SELF_MADE },
+                  { label: '委外件', value: ProductType.OUTSOURCED },
                 ]}
                 rules={[{ required: true, message: '请选择货品类型' }]}
                 width="md"
@@ -195,7 +205,7 @@ const ProductManagement: React.FC = () => {
             title="确定要删除该货品吗？"
             onConfirm={async () => {
               try {
-                await deleteProduct(record.id);
+                await deleteProduct(record.id!);
                 message.success('删除成功');
                 actionRef.current?.reload();
               } catch (error) {
@@ -218,25 +228,23 @@ const ProductManagement: React.FC = () => {
       columns={columns}
       actionRef={actionRef}
       cardBordered
-      request={async (params = {}, sort, filter) => {
+      request={async (params = {}, sort) => {
         try {
           const { current, pageSize, ...restParams } = params;
-          // 处理排序参数
-          const sortParams = Object.entries(sort || {}).map(([key, value]) => ({
-            field: key,
-            order: value === 'ascend' ? 'asc' : 'desc',
-          }));
           
-          const result = await getProducts({
-            page: current,
-            size: pageSize,
+          // 构建请求参数
+          const requestParams: ProductPageRequest = {
+            pageNum: current || 1,
+            pageSize: pageSize || 10,
             ...restParams,
-            sort: sortParams,
-            ...filter,
-          });
+            sortField: Object.keys(sort || {})[0],
+            sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
+          };
+          
+          const result = await getProductPage(requestParams);
           
           return {
-            data: result.data,
+            data: result.list,
             success: true,
             total: result.total,
           };
@@ -316,9 +324,9 @@ const ProductManagement: React.FC = () => {
               name="productType"
               label="货品类型"
               options={[
-                { label: '采购件', value: 1 },
-                { label: '自制件', value: 2 },
-                { label: '委外件', value: 3 },
+                { label: '采购件', value: ProductType.PURCHASE },
+                { label: '自制件', value: ProductType.SELF_MADE },
+                { label: '委外件', value: ProductType.OUTSOURCED },
               ]}
               rules={[{ required: true, message: '请选择货品类型' }]}
               width="md"
