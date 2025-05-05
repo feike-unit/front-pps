@@ -19,19 +19,7 @@ import {
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
-
-// 定义货品数据类型
-interface Product {
-  id: number;
-  code: string;
-  name: string;
-  specification: string;
-  unit: string;
-  category: string;
-  description?: string;
-  status: number;
-  createdAt: string;
-}
+import { Product, getProducts, createProduct, updateProduct, deleteProduct, updateProductStatus } from '../../../services/product';
 
 const ProductManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
@@ -40,21 +28,21 @@ const ProductManagement: React.FC = () => {
   const columns: ProColumns<Product>[] = [
     {
       title: '货品编号',
-      dataIndex: 'code',
+      dataIndex: 'productCode',
       copyable: true,
       ellipsis: true,
       sorter: true,
     },
     {
       title: '货品名称',
-      dataIndex: 'name',
+      dataIndex: 'productName',
       copyable: true,
       ellipsis: true,
       sorter: true,
     },
     {
       title: '规格型号',
-      dataIndex: 'specification',
+      dataIndex: 'model',
       ellipsis: true,
       search: false,
     },
@@ -65,19 +53,25 @@ const ProductManagement: React.FC = () => {
       search: false,
     },
     {
-      title: '类别',
-      dataIndex: 'category',
+      title: '货品类型',
+      dataIndex: 'productType',
       ellipsis: true,
       valueType: 'select',
       valueEnum: {
-        'RAW': { text: '原材料' },
-        'SEMI': { text: '半成品' },
-        'FINISHED': { text: '成品' },
+        1: { text: '采购件' },
+        2: { text: '自制件' },
+        3: { text: '委外件' },
       },
     },
     {
-      title: '描述',
-      dataIndex: 'description',
+      title: '交货周期(天)',
+      dataIndex: 'deliveryCycle',
+      ellipsis: true,
+      search: false,
+    },
+    {
+      title: '备注',
+      dataIndex: 'remark',
       ellipsis: true,
       search: false,
     },
@@ -94,8 +88,15 @@ const ProductManagement: React.FC = () => {
       render: (_, record) => (
         <Switch
           checked={record.status === 1}
-          onChange={(checked) => {
-            message.info('功能开发中...');
+          onChange={async (checked) => {
+            try {
+              await updateProductStatus(record.id, checked ? 1 : 0);
+              message.success('状态更新成功');
+              actionRef.current?.reload();
+            } catch (error) {
+              const apiError = error as ApiError;
+              message.error(apiError.response?.data?.message || apiError.message || '状态更新失败');
+            }
           }}
           checkedChildren="启用"
           unCheckedChildren="禁用"
@@ -124,8 +125,16 @@ const ProductManagement: React.FC = () => {
             }
             initialValues={record}
             onFinish={async (values) => {
-              message.info('功能开发中...');
-              return true;
+              try {
+                await updateProduct(record.id, values);
+                message.success('更新成功');
+                actionRef.current?.reload();
+                return true;
+              } catch (error) {
+                const apiError = error as ApiError;
+                message.error(apiError.response?.data?.message || apiError.message || '更新失败');
+                return false;
+              }
             }}
             modalProps={{
               destroyOnClose: true,
@@ -133,13 +142,13 @@ const ProductManagement: React.FC = () => {
           >
             <ProForm.Group>
               <ProFormText
-                name="code"
+                name="productCode"
                 label="货品编号"
                 rules={[{ required: true, message: '请输入货品编号' }]}
                 width="md"
               />
               <ProFormText
-                name="name"
+                name="productName"
                 label="货品名称"
                 rules={[{ required: true, message: '请输入货品名称' }]}
                 width="md"
@@ -147,39 +156,52 @@ const ProductManagement: React.FC = () => {
             </ProForm.Group>
             <ProForm.Group>
               <ProFormText
-                name="specification"
+                name="model"
                 label="规格型号"
-                rules={[{ required: true, message: '请输入规格型号' }]}
                 width="md"
               />
               <ProFormText
                 name="unit"
                 label="单位"
-                rules={[{ required: true, message: '请输入单位' }]}
                 width="md"
               />
             </ProForm.Group>
-            <ProFormSelect
-              name="category"
-              label="类别"
-              options={[
-                { label: '原材料', value: 'RAW' },
-                { label: '半成品', value: 'SEMI' },
-                { label: '成品', value: 'FINISHED' },
-              ]}
-              rules={[{ required: true, message: '请选择类别' }]}
-              width="md"
-            />
+            <ProForm.Group>
+              <ProFormSelect
+                name="productType"
+                label="货品类型"
+                options={[
+                  { label: '采购件', value: 1 },
+                  { label: '自制件', value: 2 },
+                  { label: '委外件', value: 3 },
+                ]}
+                rules={[{ required: true, message: '请选择货品类型' }]}
+                width="md"
+              />
+              <ProFormDigit
+                name="deliveryCycle"
+                label="交货周期(天)"
+                min={0}
+                width="md"
+              />
+            </ProForm.Group>
             <ProFormTextArea
-              name="description"
-              label="描述"
+              name="remark"
+              label="备注"
               width="xl"
             />
           </ModalForm>
           <Popconfirm
             title="确定要删除该货品吗？"
-            onConfirm={() => {
-              message.info('功能开发中...');
+            onConfirm={async () => {
+              try {
+                await deleteProduct(record.id);
+                message.success('删除成功');
+                actionRef.current?.reload();
+              } catch (error) {
+                const apiError = error as ApiError;
+                message.error(apiError.response?.data?.message || apiError.message || '删除失败');
+              }
             }}
           >
             <Tooltip title="删除">
@@ -197,36 +219,43 @@ const ProductManagement: React.FC = () => {
       actionRef={actionRef}
       cardBordered
       request={async (params = {}, sort, filter) => {
-        // TODO: 替换为实际的API调用
-        return {
-          data: [],
-          success: true,
-          total: 0,
-        };
-      }}
-      editable={{
-        type: 'multiple',
-      }}
-      columnsState={{
-        persistenceKey: 'production-product-table',
-        persistenceType: 'localStorage',
+        try {
+          const { current, pageSize, ...restParams } = params;
+          // 处理排序参数
+          const sortParams = Object.entries(sort || {}).map(([key, value]) => ({
+            field: key,
+            order: value === 'ascend' ? 'asc' : 'desc',
+          }));
+          
+          const result = await getProducts({
+            page: current,
+            size: pageSize,
+            ...restParams,
+            sort: sortParams,
+            ...filter,
+          });
+          
+          return {
+            data: result.data,
+            success: true,
+            total: result.total,
+          };
+        } catch (error) {
+          const apiError = error as ApiError;
+          message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
+          return {
+            data: [],
+            success: false,
+            total: 0,
+          };
+        }
       }}
       rowKey="id"
       search={{
         labelWidth: 'auto',
       }}
-      options={{
-        density: true,
-        fullScreen: true,
-        reload: true,
-        setting: {
-          listsHeight: 400,
-        },
-      }}
       pagination={{
         pageSize: 10,
-        showQuickJumper: true,
-        showSizeChanger: true,
       }}
       dateFormatter="string"
       headerTitle="货品管理"
@@ -236,12 +265,21 @@ const ProductManagement: React.FC = () => {
           title="新建货品"
           trigger={
             <Button type="primary">
-              <PlusOutlined /> 新建货品
+              <PlusOutlined />
+              新建
             </Button>
           }
           onFinish={async (values) => {
-            message.info('功能开发中...');
-            return true;
+            try {
+              await createProduct(values);
+              message.success('创建成功');
+              actionRef.current?.reload();
+              return true;
+            } catch (error) {
+              const apiError = error as ApiError;
+              message.error(apiError.response?.data?.message || apiError.message || '创建失败');
+              return false;
+            }
           }}
           modalProps={{
             destroyOnClose: true,
@@ -249,13 +287,13 @@ const ProductManagement: React.FC = () => {
         >
           <ProForm.Group>
             <ProFormText
-              name="code"
+              name="productCode"
               label="货品编号"
               rules={[{ required: true, message: '请输入货品编号' }]}
               width="md"
             />
             <ProFormText
-              name="name"
+              name="productName"
               label="货品名称"
               rules={[{ required: true, message: '请输入货品名称' }]}
               width="md"
@@ -263,32 +301,38 @@ const ProductManagement: React.FC = () => {
           </ProForm.Group>
           <ProForm.Group>
             <ProFormText
-              name="specification"
+              name="model"
               label="规格型号"
-              rules={[{ required: true, message: '请输入规格型号' }]}
               width="md"
             />
             <ProFormText
               name="unit"
               label="单位"
-              rules={[{ required: true, message: '请输入单位' }]}
               width="md"
             />
           </ProForm.Group>
-          <ProFormSelect
-            name="category"
-            label="类别"
-            options={[
-              { label: '原材料', value: 'RAW' },
-              { label: '半成品', value: 'SEMI' },
-              { label: '成品', value: 'FINISHED' },
-            ]}
-            rules={[{ required: true, message: '请选择类别' }]}
-            width="md"
-          />
+          <ProForm.Group>
+            <ProFormSelect
+              name="productType"
+              label="货品类型"
+              options={[
+                { label: '采购件', value: 1 },
+                { label: '自制件', value: 2 },
+                { label: '委外件', value: 3 },
+              ]}
+              rules={[{ required: true, message: '请选择货品类型' }]}
+              width="md"
+            />
+            <ProFormDigit
+              name="deliveryCycle"
+              label="交货周期(天)"
+              min={0}
+              width="md"
+            />
+          </ProForm.Group>
           <ProFormTextArea
-            name="description"
-            label="描述"
+            name="remark"
+            label="备注"
             width="xl"
           />
         </ModalForm>,
