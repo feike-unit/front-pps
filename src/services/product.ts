@@ -1,8 +1,6 @@
 import { PageResponse } from './api';
 import api from './api';
 
-const BASE_URL = '/production/products';
-
 export interface Product {
   id?: number;
   productCode: string;
@@ -43,48 +41,48 @@ export enum ProductStatus {
 
 // 分页查询产品列表
 export const getProductPage = async (params: ProductPageRequest): Promise<PageResponse<Product>> => {
-  const response = await api.get<PageResponse<Product>>(BASE_URL, { params });
+  const response = await api.get<PageResponse<Product>>('/production/products', { params });
   return response.data;
 };
 
 // 创建产品
 export const createProduct = async (product: Product): Promise<Product> => {
-  const response = await api.post<Product>(BASE_URL, product);
+  const response = await api.post<Product>('/production/products', product);
   return response.data;
 };
 
 // 更新产品
 export const updateProduct = async (id: number, product: Product): Promise<Product> => {
-  const response = await api.put<Product>(`${BASE_URL}/${id}`, product);
+  const response = await api.put<Product>(`/production/products/${id}`, product);
   return response.data;
 };
 
 // 删除产品
 export const deleteProduct = async (id: number): Promise<void> => {
-  await api.delete(`${BASE_URL}/${id}`);
+  await api.delete(`/production/products/${id}`);
 };
 
 // 获取产品详情
 export const getProductById = async (id: number): Promise<Product> => {
-  const response = await api.get<Product>(`${BASE_URL}/${id}`);
+  const response = await api.get<Product>(`/production/products/${id}`);
   return response.data;
 };
 
 // 获取所有产品
 export const getAllProducts = async (): Promise<Product[]> => {
-  const response = await api.get<Product[]>(`${BASE_URL}/all`);
+  const response = await api.get<Product[]>(`/production/products/all`);
   return response.data;
 };
 
 // 根据产品类型获取产品列表
 export const getProductsByType = async (productType: number): Promise<Product[]> => {
-  const response = await api.get<Product[]>(`${BASE_URL}/by-type/${productType}`);
+  const response = await api.get<Product[]>(`/production/products/by-type/${productType}`);
   return response.data;
 };
 
 // 更新产品状态
 export const updateProductStatus = async (id: number, status: number): Promise<Product> => {
-  const response = await api.patch<Product>(`${BASE_URL}/${id}/status`, null, {
+  const response = await api.patch<Product>(`/production/products/${id}/status`, null, {
     params: { status }
   });
   return response.data;

@@ -14,52 +14,51 @@ import {
   ProForm,
   ProFormText,
   ProFormTextArea,
-  ProFormDigit,
+  ProFormSwitch,
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
-
-// 定义拉线数据类型
-interface ProductionLine {
-  id: number;
-  name: string;
-  code: string;
-  description?: string;
-  capacity: number;
-  status: number;
-  createdAt: string;
-}
+import { 
+  Line, 
+  LinePageRequest, 
+  LineStatus,
+} from '../../../services/line';
+import { 
+  getLinePage, 
+  createLine, 
+  updateLine, 
+  deleteLine, 
+  updateLineStatus,
+} from '../../../services/line';
 
 const LineManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
 
   // ProTable 列定义
-  const columns: ProColumns<ProductionLine>[] = [
+  const columns: ProColumns<Line>[] = [
     {
-      title: '拉线编号',
-      dataIndex: 'code',
+      title: '下拉线编号',
+      dataIndex: 'lineCode',
       copyable: true,
       ellipsis: true,
       sorter: true,
     },
     {
-      title: '拉线名称',
-      dataIndex: 'name',
+      title: '下拉线名称',
+      dataIndex: 'lineName',
       copyable: true,
       ellipsis: true,
       sorter: true,
     },
     {
-      title: '描述',
-      dataIndex: 'description',
+      title: '负责人',
+      dataIndex: 'leader',
       ellipsis: true,
-      search: false,
     },
     {
-      title: '标准产能',
-      dataIndex: 'capacity',
-      sorter: true,
-      search: false,
+      title: '联系电话',
+      dataIndex: 'phone',
+      ellipsis: true,
     },
     {
       title: '状态',
@@ -68,19 +67,32 @@ const LineManagement: React.FC = () => {
       onFilter: true,
       valueType: 'select',
       valueEnum: {
-        1: { text: '启用', status: 'Success' },
-        0: { text: '禁用', status: 'Error' },
+        [LineStatus.ENABLED]: { text: '启用', status: 'Success' },
+        [LineStatus.DISABLED]: { text: '禁用', status: 'Error' },
       },
       render: (_, record) => (
         <Switch
-          checked={record.status === 1}
-          onChange={(checked) => {
-            message.info('功能开发中...');
+          checked={record.status === LineStatus.ENABLED}
+          onChange={async (checked) => {
+            try {
+              await updateLineStatus(record.id!, checked ? LineStatus.ENABLED : LineStatus.DISABLED);
+              message.success('状态更新成功');
+              actionRef.current?.reload();
+            } catch (error) {
+              const apiError = error as ApiError;
+              message.error(apiError.response?.data?.message || apiError.message || '状态更新失败');
+            }
           }}
           checkedChildren="启用"
           unCheckedChildren="禁用"
         />
       ),
+    },
+    {
+      title: '备注',
+      dataIndex: 'remark',
+      ellipsis: true,
+      search: false,
     },
     {
       title: '创建时间',
@@ -95,8 +107,8 @@ const LineManagement: React.FC = () => {
       key: 'option',
       render: (_, record) => (
         <Space size="middle">
-          <ModalForm<ProductionLine>
-            title="编辑拉线"
+          <ModalForm<Line>
+            title="编辑下拉线"
             trigger={
               <Tooltip title="编辑">
                 <Button type="link" icon={<EditOutlined />} />
@@ -104,8 +116,20 @@ const LineManagement: React.FC = () => {
             }
             initialValues={record}
             onFinish={async (values) => {
-              message.info('功能开发中...');
-              return true;
+              try {
+                const params = {
+                  ...values,
+                  status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
+                };
+                await updateLine(record.id!, params);
+                message.success('更新成功');
+                actionRef.current?.reload();
+                return true;
+              } catch (error) {
+                const apiError = error as ApiError;
+                message.error(apiError.response?.data?.message || apiError.message || '更新失败');
+                return false;
+              }
             }}
             modalProps={{
               destroyOnClose: true,
@@ -113,35 +137,55 @@ const LineManagement: React.FC = () => {
           >
             <ProForm.Group>
               <ProFormText
-                name="code"
-                label="拉线编号"
-                rules={[{ required: true, message: '请输入拉线编号' }]}
+                name="lineCode"
+                label="下拉线编号"
+                rules={[{ required: true, message: '请输入下拉线编号' }]}
                 width="md"
               />
               <ProFormText
-                name="name"
-                label="拉线名称"
-                rules={[{ required: true, message: '请输入拉线名称' }]}
+                name="lineName"
+                label="下拉线名称"
+                rules={[{ required: true, message: '请输入下拉线名称' }]}
+                width="md"
+              />
+            </ProForm.Group>
+            <ProForm.Group>
+              <ProFormText
+                name="leader"
+                label="负责人"
+                width="md"
+              />
+              <ProFormText
+                name="phone"
+                label="联系电话"
                 width="md"
               />
             </ProForm.Group>
             <ProFormTextArea
-              name="description"
-              label="描述"
+              name="remark"
+              label="备注"
               width="xl"
             />
-            <ProFormDigit
-              name="capacity"
-              label="标准产能"
-              rules={[{ required: true, message: '请输入标准产能' }]}
-              min={0}
-              width="md"
-            />
+            <ProForm.Group>
+              <ProFormSwitch
+                name="status"
+                label="状态"
+                checkedChildren="启用"
+                unCheckedChildren="禁用"
+              />
+            </ProForm.Group>
           </ModalForm>
           <Popconfirm
-            title="确定要删除该拉线吗？"
-            onConfirm={() => {
-              message.info('功能开发中...');
+            title="确定要删除该下拉线吗？"
+            onConfirm={async () => {
+              try {
+                await deleteLine(record.id!);
+                message.success('删除成功');
+                actionRef.current?.reload();
+              } catch (error) {
+                const apiError = error as ApiError;
+                message.error(apiError.response?.data?.message || apiError.message || '删除失败');
+              }
             }}
           >
             <Tooltip title="删除">
@@ -154,87 +198,121 @@ const LineManagement: React.FC = () => {
   ];
 
   return (
-    <ProTable<ProductionLine>
+    <ProTable<Line>
       columns={columns}
       actionRef={actionRef}
       cardBordered
-      request={async (params = {}, sort, filter) => {
-        // TODO: 替换为实际的API调用
-        return {
-          data: [],
-          success: true,
-          total: 0,
-        };
-      }}
-      editable={{
-        type: 'multiple',
-      }}
-      columnsState={{
-        persistenceKey: 'production-line-table',
-        persistenceType: 'localStorage',
+      request={async (params = {}, sort) => {
+        try {
+          const { current, pageSize, ...restParams } = params;
+          
+          // 构建请求参数
+          const requestParams: LinePageRequest = {
+            pageNum: current || 1,
+            pageSize: pageSize || 10,
+            ...restParams,
+            sortField: Object.keys(sort || {})[0],
+            sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
+          };
+          
+          const result = await getLinePage(requestParams);
+          
+          return {
+            data: result.list,
+            success: true,
+            total: result.total,
+          };
+        } catch (error) {
+          const apiError = error as ApiError;
+          message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
+          return {
+            data: [],
+            success: false,
+            total: 0,
+          };
+        }
       }}
       rowKey="id"
       search={{
         labelWidth: 'auto',
       }}
-      options={{
-        density: true,
-        fullScreen: true,
-        reload: true,
-        setting: {
-          listsHeight: 400,
-        },
-      }}
       pagination={{
         pageSize: 10,
-        showQuickJumper: true,
-        showSizeChanger: true,
       }}
       dateFormatter="string"
-      headerTitle="拉线管理"
+      headerTitle="下拉线管理"
       toolBarRender={() => [
-        <ModalForm<ProductionLine>
+        <ModalForm<Line>
           key="create"
-          title="新建拉线"
+          title="新建下拉线"
           trigger={
             <Button type="primary">
-              <PlusOutlined /> 新建拉线
+              <PlusOutlined />
+              新建
             </Button>
           }
           onFinish={async (values) => {
-            message.info('功能开发中...');
-            return true;
+            try {
+              const params = {
+                ...values,
+                status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
+              };
+              await createLine(params);
+              message.success('创建成功');
+              actionRef.current?.reload();
+              return true;
+            } catch (error) {
+              const apiError = error as ApiError;
+              message.error(apiError.response?.data?.message || apiError.message || '创建失败');
+              return false;
+            }
           }}
           modalProps={{
             destroyOnClose: true,
           }}
+          initialValues={{
+            status: true,
+          }}
         >
           <ProForm.Group>
             <ProFormText
-              name="code"
-              label="拉线编号"
-              rules={[{ required: true, message: '请输入拉线编号' }]}
+              name="lineCode"
+              label="下拉线编号"
+              rules={[{ required: true, message: '请输入下拉线编号' }]}
               width="md"
             />
             <ProFormText
-              name="name"
-              label="拉线名称"
-              rules={[{ required: true, message: '请输入拉线名称' }]}
+              name="lineName"
+              label="下拉线名称"
+              rules={[{ required: true, message: '请输入下拉线名称' }]}
+              width="md"
+            />
+          </ProForm.Group>
+          <ProForm.Group>
+            <ProFormText
+              name="leader"
+              label="负责人"
+              width="md"
+            />
+            <ProFormText
+              name="phone"
+              label="联系电话"
               width="md"
             />
           </ProForm.Group>
           <ProFormTextArea
-            name="description"
-            label="描述"
+            name="remark"
+            label="备注"
             width="xl"
           />
-          <ProFormDigit
-            name="capacity"
-            label="标准产能"
-            rules={[{ required: true, message: '请输入标准产能' }]}
-            min={0}
-            width="md"
-          />
+          <ProForm.Group>
+            <ProFormSwitch
+              name="status"
+              label="状态"
+              checkedChildren="启用"
+              unCheckedChildren="禁用"
+            />
+          </ProForm.Group>
         </ModalForm>,
       ]}
     />
