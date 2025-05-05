@@ -138,8 +138,14 @@ const ProductManagement: React.FC = () => {
             onFinish={async (values) => {
               try {
                 const params = {
-                  ...values,
+                  productCode: values.productCode,
+                  productName: values.productName,
+                  model: values.model,
+                  unit: values.unit,
+                  productType: values.productType,
+                  deliveryCycle: values.deliveryCycle,
                   status: values.status ? ProductStatus.ENABLED : ProductStatus.DISABLED,
+                  remark: values.remark,
                 };
                 await updateProduct(record.id!, params);
                 message.success('更新成功');

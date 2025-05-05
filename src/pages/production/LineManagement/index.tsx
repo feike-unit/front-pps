@@ -120,8 +120,12 @@ const LineManagement: React.FC = () => {
             onFinish={async (values) => {
               try {
                 const params = {
-                  ...values,
+                  lineCode: values.lineCode,
+                  lineName: values.lineName,
+                  deptId: values.deptId,
+                  workstationCount: values.workstationCount,
                   status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
+                  remark: values.remark,
                 };
                 await updateLine(record.id!, params);
                 message.success('更新成功');
@@ -259,8 +263,12 @@ const LineManagement: React.FC = () => {
           onFinish={async (values) => {
             try {
               const params = {
-                ...values,
+                lineCode: values.lineCode,
+                lineName: values.lineName,
+                deptId: values.deptId,
+                workstationCount: values.workstationCount,
                 status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
+                remark: values.remark,
               };
               await createLine(params);
               message.success('创建成功');

@@ -16,6 +16,18 @@ export interface Line {
   updatedAt?: string;
 }
 
+/**
+ * 生产拉线更新类型定义
+ */
+export interface LineUpdate {
+  lineCode?: string;
+  lineName?: string;
+  deptId?: number;
+  workstationCount?: number;
+  status?: number;
+  remark?: string;
+}
+
 export interface LinePageRequest {
   pageNum: number;
   pageSize: number;
@@ -45,7 +57,7 @@ export const createLine = async (line: Line): Promise<Line> => {
 };
 
 // 更新下拉线
-export const updateLine = async (id: number, line: Line): Promise<Line> => {
+export const updateLine = async (id: number, line: LineUpdate): Promise<Line> => {
   const response = await api.put<Line>(`/production/lines/${id}`, line);
   return response.data;
 };
