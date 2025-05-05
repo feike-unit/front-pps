@@ -1,33 +1,36 @@
 import api, { PageResponse } from './api';
 
+/**
+ * 生产拉线类型定义
+ */
 export interface Line {
-    id?: number;
-    lineCode: string;
-    lineName: string;
-    leader?: string;
-    phone?: string;
-    status: number;
-    remark?: string;
-    createdAt?: string;
-    updatedAt?: string;
-  }
-  
-  export interface LinePageRequest {
-    pageNum: number;
-    pageSize: number;
-    lineCode?: string;
-    lineName?: string;
-    leader?: string;
-    status?: number;
-    sortField?: string;
-    sortOrder?: 'asc' | 'desc';
-  }
-  
-  // 状态枚举
-  export enum LineStatus {
-    DISABLED = 0, // 禁用
-    ENABLED = 1, // 启用
-  } 
+  id?: number;
+  lineCode: string;
+  lineName: string;
+  deptId: number;
+  deptName?: string;
+  workstationCount: number;
+  status: number;
+  remark?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LinePageRequest {
+  pageNum: number;
+  pageSize: number;
+  lineCode?: string;
+  lineName?: string;
+  status?: number;
+  sortField?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+// 状态枚举
+export enum LineStatus {
+  DISABLED = 0, // 禁用
+  ENABLED = 1, // 启用
+}
 
 // 分页查询下拉线列表
 export const getLinePage = async (params: LinePageRequest): Promise<PageResponse<Line>> => {

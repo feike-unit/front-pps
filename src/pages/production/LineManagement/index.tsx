@@ -15,6 +15,7 @@ import {
   ProFormText,
   ProFormTextArea,
   ProFormSwitch,
+  ProFormDigit,
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
@@ -51,14 +52,15 @@ const LineManagement: React.FC = () => {
       sorter: true,
     },
     {
-      title: '负责人',
-      dataIndex: 'leader',
+      title: '所属部门',
+      dataIndex: 'deptName',
       ellipsis: true,
     },
     {
-      title: '联系电话',
-      dataIndex: 'phone',
+      title: '工位数量',
+      dataIndex: 'workstationCount',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: '状态',
@@ -150,14 +152,17 @@ const LineManagement: React.FC = () => {
               />
             </ProForm.Group>
             <ProForm.Group>
-              <ProFormText
-                name="leader"
-                label="负责人"
+              <ProFormDigit
+                name="deptId"
+                label="所属部门ID"
+                rules={[{ required: true, message: '请选择所属部门' }]}
                 width="md"
               />
-              <ProFormText
-                name="phone"
-                label="联系电话"
+              <ProFormDigit
+                name="workstationCount"
+                label="工位数量"
+                rules={[{ required: true, message: '请输入工位数量' }]}
+                min={0}
                 width="md"
               />
             </ProForm.Group>
@@ -272,6 +277,7 @@ const LineManagement: React.FC = () => {
           }}
           initialValues={{
             status: true,
+            workstationCount: 0,
           }}
         >
           <ProForm.Group>
@@ -289,14 +295,17 @@ const LineManagement: React.FC = () => {
             />
           </ProForm.Group>
           <ProForm.Group>
-            <ProFormText
-              name="leader"
-              label="负责人"
+            <ProFormDigit
+              name="deptId"
+              label="所属部门ID"
+              rules={[{ required: true, message: '请选择所属部门' }]}
               width="md"
             />
-            <ProFormText
-              name="phone"
-              label="联系电话"
+            <ProFormDigit
+              name="workstationCount"
+              label="工位数量"
+              rules={[{ required: true, message: '请输入工位数量' }]}
+              min={0}
               width="md"
             />
           </ProForm.Group>
