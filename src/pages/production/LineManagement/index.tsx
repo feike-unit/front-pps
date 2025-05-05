@@ -16,6 +16,7 @@ import {
   ProFormTextArea,
   ProFormSwitch,
   ProFormDigit,
+  ProFormTreeSelect,
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
@@ -31,9 +32,72 @@ import {
   deleteLine, 
   updateLineStatus,
 } from '../../../services/line';
+import { getAllDepartments } from '../../../services/department';
 
 const LineManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
+  const [treeData, setTreeData] = React.useState<any[]>([]);
+
+  // 将部门列表转换为TreeSelect需要的数据格式
+  const formatTreeSelectData = (data: any[]): any[] => {
+    const map = new Map<number, any>();
+    const result: any[] = [];
+
+    // 先创建所有节点
+    data.forEach(dept => {
+      map.set(dept.id, {
+        title: dept.name,
+        value: dept.id,
+        key: dept.id,
+        children: [],
+      });
+    });
+
+    // 构建树形结构
+    data.forEach(dept => {
+      const node = map.get(dept.id);
+      if (dept.parentId === 0) {
+        result.push(node);
+      } else {
+        const parent = map.get(dept.parentId);
+        if (parent) {
+          parent.children.push(node);
+        }
+      }
+    });
+
+    // 移除空的 children 数组
+    const removeEmptyChildren = (nodes: any[]): any[] => {
+      return nodes.map(node => {
+        if (node.children.length === 0) {
+          const { children, ...rest } = node;
+          return rest;
+        }
+        return {
+          ...node,
+          children: removeEmptyChildren(node.children),
+        };
+      });
+    };
+
+    return removeEmptyChildren(result);
+  };
+
+  // 获取部门树形选择数据
+  const fetchTreeSelectData = async () => {
+    try {
+      const result = await getAllDepartments();
+      if (result && Array.isArray(result)) {
+        const treeData = formatTreeSelectData(result);
+        setTreeData(treeData);
+      } else {
+        setTreeData([]);
+      }
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取部门列表失败');
+    }
+  };
 
   // ProTable 列定义
   const columns: ProColumns<Line>[] = [
@@ -140,6 +204,11 @@ const LineManagement: React.FC = () => {
             modalProps={{
               destroyOnClose: true,
             }}
+            onOpenChange={(visible) => {
+              if (visible) {
+                fetchTreeSelectData();
+              }
+            }}
           >
             <ProForm.Group>
               <ProFormText
@@ -156,11 +225,19 @@ const LineManagement: React.FC = () => {
               />
             </ProForm.Group>
             <ProForm.Group>
-              <ProFormDigit
+              <ProFormTreeSelect
                 name="deptId"
-                label="所属部门ID"
-                rules={[{ required: true, message: '请选择所属部门' }]}
+                label="所属部门"
+                tooltip="请选择所属部门"
                 width="md"
+                fieldProps={{
+                  treeData,
+                  treeDefaultExpandAll: true,
+                  showSearch: true,
+                  treeNodeFilterProp: 'title',
+                  placeholder: '请选择所属部门',
+                }}
+                rules={[{ required: true, message: '请选择所属部门' }]}
               />
               <ProFormDigit
                 name="workstationCount"
@@ -287,6 +364,11 @@ const LineManagement: React.FC = () => {
             status: true,
             workstationCount: 0,
           }}
+          onOpenChange={(visible) => {
+            if (visible) {
+              fetchTreeSelectData();
+            }
+          }}
         >
           <ProForm.Group>
             <ProFormText
@@ -303,11 +385,19 @@ const LineManagement: React.FC = () => {
             />
           </ProForm.Group>
           <ProForm.Group>
-            <ProFormDigit
+            <ProFormTreeSelect
               name="deptId"
-              label="所属部门ID"
-              rules={[{ required: true, message: '请选择所属部门' }]}
+              label="所属部门"
+              tooltip="请选择所属部门"
               width="md"
+              fieldProps={{
+                treeData,
+                treeDefaultExpandAll: true,
+                showSearch: true,
+                treeNodeFilterProp: 'title',
+                placeholder: '请选择所属部门',
+              }}
+              rules={[{ required: true, message: '请选择所属部门' }]}
             />
             <ProFormDigit
               name="workstationCount"
