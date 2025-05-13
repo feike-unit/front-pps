@@ -237,6 +237,7 @@ const DemandManagement: React.FC = () => {
       valueType: 'option',
       key: 'option',
       width: 120,
+      fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
           <Popconfirm
@@ -270,7 +271,7 @@ const DemandManagement: React.FC = () => {
       cardBordered
       bordered
       defaultSize="small"
-      scroll={{ x: 'max-content' }}
+      scroll={{ x: 1500 }}
       components={components}
       onRow={(record) => {
         const completionQuantity = record.completionQuantity || 0;
@@ -321,24 +322,13 @@ const DemandManagement: React.FC = () => {
             allowClear
           />
           <Input.Search
-            placeholder="业务单号/客户订单号"
-            style={{ width: 200 }}
+            placeholder="业务单号/客户订单号/客户编号/名称"
+            style={{ width: 300 }}
             onSearch={(value) => {
               setSearchParams(prev => ({
                 ...prev,
                 businessDocNo: value || undefined,
-                customerOrderDocNo: value || undefined
-              }));
-              actionRef.current?.reload();
-            }}
-            allowClear
-          />
-          <Input.Search
-            placeholder="客户编号/名称"
-            style={{ width: 200 }}
-            onSearch={(value) => {
-              setSearchParams(prev => ({
-                ...prev,
+                customerOrderDocNo: value || undefined,
                 customerCode: value || undefined,
                 customerName: value || undefined
               }));
