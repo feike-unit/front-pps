@@ -28,6 +28,8 @@ export interface Demand {
   customerOrderDocNo?: string;
   customerCode?: string;
   customerName?: string;
+  bomId?: string;
+  parentBomId?: string;
   status: string;
   remark?: string;
   createdAt?: string;

@@ -192,6 +192,20 @@ const DemandManagement: React.FC = () => {
       width: 150,
     },
     {
+      title: 'BOM ID',
+      dataIndex: 'bomId',
+      ellipsis: true,
+      width: 200,
+      hideInTable: true,
+    },
+    {
+      title: '父BOM ID',
+      dataIndex: 'parentBomId',
+      ellipsis: true,
+      width: 200,
+      hideInTable: true,
+    },
+    {
       title: '客户编号',
       dataIndex: 'customerCode',
       ellipsis: true,
@@ -225,147 +239,6 @@ const DemandManagement: React.FC = () => {
       width: 120,
       render: (_, record) => (
         <Space size="middle">
-          <ModalForm<Demand>
-            title="编辑需求"
-            trigger={
-              <Tooltip title="编辑">
-                <a>
-                  <EditOutlined />
-                </a>
-              </Tooltip>
-            }
-            initialValues={{
-              ...record,
-              parentId: record.parentId || undefined,
-            }}
-            modalProps={{
-              destroyOnClose: true,
-              width: 800,
-            }}
-            onFinish={async (values) => {
-              try {
-                const params = {
-                  ...values,
-                  parentId: values.parentId || 0,
-                };
-                await updateDemand(record.id!, params);
-                message.success('更新成功');
-                actionRef.current?.reload();
-                return true;
-              } catch (error) {
-                const apiError = error as ApiError;
-                message.error(apiError.response?.data?.message || apiError.message || '更新失败');
-                return false;
-              }
-            }}
-          >
-            <ProForm.Group>
-              <ProFormTreeSelect
-                name="parentId"
-                label="上级需求"
-                tooltip="不选择则为顶级需求"
-                width="md"
-                fieldProps={{
-                  treeData,
-                  treeDefaultExpandAll: true,
-                  showSearch: true,
-                  treeNodeFilterProp: 'title',
-                  placeholder: '不选择则为顶级需求',
-                  allowClear: true,
-                }}
-              />
-            </ProForm.Group>
-            <ProForm.Group>
-              <ProFormDigit
-                name="productId"
-                label="货品ID"
-                rules={[{ required: true, message: '请输入货品ID' }]}
-                width="md"
-              />
-              <ProFormSelect
-                name="productType"
-                label="货品类型"
-                rules={[{ required: true, message: '请选择货品类型' }]}
-                width="md"
-                options={[
-                  { label: '采购件', value: 1 },
-                  { label: '自制件', value: 2 },
-                  { label: '委外件', value: 3 },
-                ]}
-              />
-            </ProForm.Group>
-            <ProForm.Group>
-              <ProFormDigit
-                name="demandQuantity"
-                label="需求数量"
-                rules={[{ required: true, message: '请输入需求数量' }]}
-                min={0}
-                width="md"
-              />
-              <ProFormDatePicker
-                name="deliveryDate"
-                label="交期"
-                rules={[{ required: true, message: '请选择交期' }]}
-                width="md"
-              />
-            </ProForm.Group>
-            <ProForm.Group>
-              <ProFormText
-                name="businessKey"
-                label="业务标识"
-                width="md"
-              />
-              <ProFormText
-                name="businessType"
-                label="业务类型"
-                width="md"
-              />
-            </ProForm.Group>
-            <ProForm.Group>
-              <ProFormText
-                name="businessDocNo"
-                label="业务单号"
-                width="md"
-              />
-              <ProFormText
-                name="customerOrderDocNo"
-                label="客户订单号"
-                width="md"
-              />
-            </ProForm.Group>
-            <ProForm.Group>
-              <ProFormText
-                name="customerCode"
-                label="客户编号"
-                width="md"
-              />
-              <ProFormText
-                name="customerName"
-                label="客户名称"
-                width="md"
-              />
-            </ProForm.Group>
-            <ProForm.Group>
-              <ProFormSelect
-                name="status"
-                label="状态"
-                rules={[{ required: true, message: '请选择状态' }]}
-                width="md"
-                options={[
-                  { label: '草稿', value: 'DRAFT' },
-                  { label: '已确认', value: 'CONFIRMED' },
-                  { label: '执行中', value: 'EXECUTING' },
-                  { label: '已完成', value: 'COMPLETED' },
-                  { label: '已取消', value: 'CANCELLED' },
-                ]}
-              />
-            </ProForm.Group>
-            <ProFormTextArea
-              name="remark"
-              label="备注"
-              width="xl"
-            />
-          </ModalForm>
           <Popconfirm
             title="确定要删除该需求吗？"
             onConfirm={async () => {
@@ -493,19 +366,18 @@ const DemandManagement: React.FC = () => {
       }
       request={async (params = {}, sort, filter) => {
         try {
+          // 注意：ProTable的 current 参数对应后端的 pageNum
           const { current, pageSize, ...restParams } = params;
           
           // 构建请求参数
           const pageParams: DemandPageRequest = {
-            pageNum: current || 1,
-            pageSize: pageSize || 10,
+            pageNum: current || 1,  // 确保传递页码
+            pageSize: pageSize || 10, // 确保传递每页条数
             ...restParams,
             ...searchParams,
             sortField: Object.keys(sort || {})[0],
             sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
           };
-          
-          console.log('查询参数:', pageParams);
           
           const result = await getDemandPage(pageParams);
           
@@ -582,9 +454,9 @@ const DemandManagement: React.FC = () => {
         },
       }}
       pagination={{
-        pageSize: 10,
-        showQuickJumper: true,
+        defaultPageSize: 10,
         showSizeChanger: true,
+        pageSizeOptions: ['10', '20', '50', '100'],
       }}
       dateFormatter="string"
       expandable={{
@@ -603,145 +475,7 @@ const DemandManagement: React.FC = () => {
       }}
       childrenColumnName="children"
       indentSize={24}
-      toolBarRender={() => [
-        <ModalForm<Demand>
-          key="create"
-          title="新建需求"
-          trigger={
-            <Button type="primary">
-              <PlusOutlined /> 新建需求
-            </Button>
-          }
-          modalProps={{
-            destroyOnClose: true,
-            width: 800,
-          }}
-          initialValues={{
-            status: DemandStatus.DRAFT,
-            productType: 1,
-          }}
-          onFinish={async (values) => {
-            try {
-              const params = {
-                ...values,
-                parentId: values.parentId || 0,
-              };
-              await createDemand(params);
-              message.success('创建成功');
-              actionRef.current?.reload();
-              return true;
-            } catch (error) {
-              const apiError = error as ApiError;
-              message.error(apiError.response?.data?.message || apiError.message || '创建失败');
-              return false;
-            }
-          }}
-        >
-          <ProForm.Group>
-            <ProFormTreeSelect
-              name="parentId"
-              label="上级需求"
-              tooltip="不选择则为顶级需求"
-              width="md"
-              fieldProps={{
-                treeData,
-                treeDefaultExpandAll: true,
-                showSearch: true,
-                treeNodeFilterProp: 'title',
-                placeholder: '不选择则为顶级需求',
-                allowClear: true,
-              }}
-            />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormDigit
-              name="productId"
-              label="货品ID"
-              rules={[{ required: true, message: '请输入货品ID' }]}
-              width="md"
-            />
-            <ProFormSelect
-              name="productType"
-              label="货品类型"
-              rules={[{ required: true, message: '请选择货品类型' }]}
-              width="md"
-              options={[
-                { label: '采购件', value: 1 },
-                { label: '自制件', value: 2 },
-                { label: '委外件', value: 3 },
-              ]}
-            />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormDigit
-              name="demandQuantity"
-              label="需求数量"
-              rules={[{ required: true, message: '请输入需求数量' }]}
-              min={0}
-              width="md"
-            />
-            <ProFormDatePicker
-              name="deliveryDate"
-              label="交期"
-              rules={[{ required: true, message: '请选择交期' }]}
-              width="md"
-            />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormText
-              name="businessKey"
-              label="业务标识"
-              width="md"
-            />
-            <ProFormText
-              name="businessType"
-              label="业务类型"
-              width="md"
-            />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormText
-              name="businessDocNo"
-              label="业务单号"
-              width="md"
-            />
-            <ProFormText
-              name="customerOrderDocNo"
-              label="客户订单号"
-              width="md"
-            />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormText
-              name="customerCode"
-              label="客户编号"
-              width="md"
-            />
-            <ProFormText
-              name="customerName"
-              label="客户名称"
-              width="md"
-            />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormSelect
-              name="status"
-              label="状态"
-              rules={[{ required: true, message: '请选择状态' }]}
-              width="md"
-              options={[
-                { label: '草稿', value: 'DRAFT' },
-                { label: '已确认', value: 'CONFIRMED' },
-              ]}
-            />
-          </ProForm.Group>
-          <ProFormTextArea
-            name="remark"
-            label="备注"
-            width="xl"
-          />
-        </ModalForm>,
-      ]}
+      toolBarRender={() => []}
     />
   );
 };
