@@ -17,14 +17,16 @@ export interface RoleUpdateParams extends RoleCreateParams {
   id: number;
 }
 
-// 获取角色分页列表
-export const getRolePage = async (params: {
+export interface RolePageRequest {
   pageNum: number;
   pageSize: number;
+  keyword?: string;
   sortField?: string;
   sortOrder?: string;
-  keyword?: string;
-}): Promise<PageResponse<Role>> => {
+}
+
+// 获取角色分页列表
+export const getRolePage = async (params: RolePageRequest): Promise<PageResponse<Role>> => {
   const response = await api.get<PageResponse<Role>>('/system/roles/page', { params });
   return response.data;
 };
@@ -67,7 +69,7 @@ export const getRoleMenuIds = async (id: number): Promise<number[]> => {
 
 // 为角色分配菜单
 export const assignMenusToRole = async (roleId: number, menuIds: number[]): Promise<void> => {
-  const response = await api.put<void>(`/system/roles/${roleId}/menus`, { menuIds });
+  const response = await api.post<void>(`/system/roles/${roleId}/menus`, { menuIds });
   return response.data;
 };
 

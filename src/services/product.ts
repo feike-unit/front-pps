@@ -102,4 +102,12 @@ export const updateProductStatus = async (id: number, status: number): Promise<P
     params: { status }
   });
   return response.data;
+};
+
+// 根据关键字搜索产品
+export const searchProducts = async (keyword: string): Promise<Product[]> => {
+  const response = await api.get<Product[]>('/production/capacity-rules/products/search', {
+    params: { keyword }
+  });
+  return response.data;
 }; 

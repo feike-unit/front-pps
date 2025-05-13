@@ -338,6 +338,8 @@ const MenuManagement: React.FC = () => {
         columns={columns}
         actionRef={actionRef}
         cardBordered
+        bordered
+        defaultSize="small"
         request={async (params = {}, sort, filter) => {
           try {
             const result = await getAllMenus();
@@ -472,7 +474,7 @@ const MenuManagement: React.FC = () => {
           ],
         }}
         options={{
-          density: true,
+          density: false,
           fullScreen: true,
           reload: true,
           setting: {

@@ -8,6 +8,7 @@ import {
   Popconfirm,
   Tooltip,
   Switch,
+  Input,
 } from 'antd';
 import type { TreeProps } from 'antd/es/tree';
 import type { DataNode } from 'antd/es/tree';
@@ -37,6 +38,7 @@ const RoleManagement: React.FC = () => {
   const [menus, setMenus] = React.useState<TreeMenu[]>([]);
   const [checkedMenuIds, setCheckedMenuIds] = React.useState<React.Key[]>([]);
   const [expandedKeys, setExpandedKeys] = React.useState<React.Key[]>([]);
+  const [searchKeyword, setSearchKeyword] = React.useState<string>('');
 
   // 将菜单列表转换为树形结构
   const formatMenuTree = (menus: Menu[]): Menu[] => {
@@ -272,17 +274,20 @@ const RoleManagement: React.FC = () => {
         columns={columns}
         actionRef={actionRef}
         cardBordered
+        bordered
+        defaultSize="small"
         request={async (params = {}, sort, filter) => {
-          const { current = 1, pageSize = 10, ...restParams } = params;
+          const { current = 1, ...restParams } = params;
           const sortField = Object.keys(sort || {})[0];
           const sortOrder = sortField ? sort[sortField] : undefined;
 
           try {
             const result = await getRolePage({
               pageNum: current,
-              pageSize,
+              pageSize: params.pageSize || 10,
               sortField,
               sortOrder: sortOrder === 'descend' ? 'desc' : sortOrder === 'ascend' ? 'asc' : undefined,
+              keyword: searchKeyword,
             });
             return {
               data: result.list,
@@ -308,6 +313,23 @@ const RoleManagement: React.FC = () => {
         }}
         rowKey="id"
         search={false}
+        headerTitle={
+          <Space>
+            <Input.Search
+              placeholder="请输入关键字搜索"
+              onSearch={(value) => {
+                setSearchKeyword(value);
+                actionRef.current?.reloadAndRest?.();
+              }}
+              style={{ width: 300 }}
+              allowClear
+              onReset={() => {
+                setSearchKeyword('');
+                actionRef.current?.reloadAndRest?.();
+              }}
+            />
+          </Space>
+        }
         toolbar={{
           actions: [
             <ModalForm<Role>
@@ -340,7 +362,7 @@ const RoleManagement: React.FC = () => {
           ],
         }}
         options={{
-          density: true,
+          density: false,
           fullScreen: true,
           reload: true,
           setting: {
@@ -348,9 +370,9 @@ const RoleManagement: React.FC = () => {
           },
         }}
         pagination={{
-          pageSize: 10,
-          showQuickJumper: true,
+          defaultPageSize: 10,
           showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100', '200'],
         }}
         dateFormatter="string"
       />

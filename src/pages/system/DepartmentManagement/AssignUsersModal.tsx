@@ -3,12 +3,13 @@ import { Modal, Transfer, message } from 'antd';
 import type { TransferDirection, TransferProps } from 'antd/es/transfer';
 import type { Key } from 'antd/es/table/interface';
 import { getDepartmentUsers, assignUsersToDepartment } from '../../../services/department';
-import { getUsers } from '../../../services/user';
+import { getUnassignedDepartmentUsers } from '../../../services/user';
 import { ApiError } from '../../../services/api';
 
 interface User {
   id: number;
   username: string;
+  name?: string;
   nickname?: string;
 }
 
@@ -41,21 +42,26 @@ const AssignUsersModal: React.FC<AssignUsersModalProps> = ({
     
     setLoading(true);
     try {
-      const [allUsers, departmentUsers] = await Promise.all([
-        getUsers({ pageNum: 1, pageSize: 1000, keyword: '' }),
+      // 获取未分配用户和当前部门已分配用户
+      const [unassignedUsers, departmentUsers] = await Promise.all([
+        getUnassignedDepartmentUsers(),
         getDepartmentUsers(departmentId),
       ]);
 
+      // 合并未分配用户和已分配用户
+      const allUsers = [...unassignedUsers, ...departmentUsers];
+
       // 转换用户数据为 Transfer 需要的格式
-      const transferUsers = allUsers.list.map((user: User) => ({
+      const transferUsers = allUsers.map((user: User) => ({
         key: user.id,
-        title: user.username,
-        description: user.nickname || user.username,
+        title: user.name || user.username,
+        description: user.name || user.username,
       }));
       setUsers(transferUsers);
 
-      // 设置已选中的用户，确保 departmentUsers 是数组
-      setSelectedKeys(Array.isArray(departmentUsers) ? departmentUsers.map(user => user.id) : []);
+      // 设置已选中的用户（当前部门的用户）
+      const selectedUserIds = departmentUsers.map(user => user.id);
+      setSelectedKeys(selectedUserIds);
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取用户数据失败');

@@ -17,4 +17,7 @@ export default defineConfig({
       },
     },
   },
+  html: {
+    title: 'PPS 管理系统',
+  },
 });

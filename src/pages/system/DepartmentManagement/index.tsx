@@ -28,6 +28,7 @@ const DepartmentUsers: React.FC<{ departmentId: number; refreshKey: number }> = 
   const [users, setUsers] = React.useState<UserInfo[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [popconfirmVisible, setPopconfirmVisible] = React.useState<number | null>(null);
+  const actionRef = useRef<ActionType>();
 
   const fetchUsers = React.useCallback(async () => {
     try {
@@ -50,7 +51,12 @@ const DepartmentUsers: React.FC<{ departmentId: number; refreshKey: number }> = 
     try {
       await removeUserFromDepartment(userId, departmentId);
       message.success('移除用户关系成功');
+      // 刷新用户列表
       fetchUsers();
+      // 刷新整个表格
+      if (actionRef.current) {
+        actionRef.current.reload();
+      }
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '移除用户关系失败');
@@ -370,6 +376,8 @@ const DepartmentManagement: React.FC = () => {
         columns={columns}
         actionRef={actionRef}
         cardBordered
+        bordered
+        defaultSize="small"
         request={async (params = {}, sort, filter) => {
           try {
             const result = await getAllDepartments();
@@ -413,7 +421,7 @@ const DepartmentManagement: React.FC = () => {
           ],
         }}
         options={{
-          density: true,
+          density: false,
           fullScreen: true,
           reload: true,
           setting: {

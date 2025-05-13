@@ -1,4 +1,4 @@
-import api from './api';
+import api, { PageResponse } from './api';
 import type { Department } from './department';
 
 export interface UserInfo {
@@ -20,6 +20,7 @@ export interface User {
   phone: string;
   status: number; // 0-禁用，1-启用
   roles?: string[];
+  departments?: Department[];
   roleIds?: number[];
   createdAt?: string;
   updatedAt?: string;
@@ -42,6 +43,7 @@ export interface UserUpdateParams {
   phone?: string;
   status?: number;
   roleIds?: number[];
+  departmentIds?: number[];
 }
 
 export interface UserInfo {
@@ -54,16 +56,19 @@ export interface UserInfo {
   roles: string[];
   createdAt: string;
 }
-// 获取用户列表（分页）
-export const getUsers = async (params: { 
-  pageNum: number; 
-  pageSize: number; 
+
+export interface UserPageParams {
+  pageNum?: number;
+  pageSize?: number;
   keyword?: string;
+  departmentStatus?: string;
   sortField?: string;
   sortOrder?: string;
-  departmentStatus?: 'all' | 'in' | 'out';
-}): Promise<PageResponse<User>> => {
-  const response = await api.get<PageResponse<User>>('/system/users', { params });
+}
+
+// 获取未分配部门的用户列表
+export const getUnassignedDepartmentUsers = async (): Promise<User[]> => {
+  const response = await api.get<User[]>('/system/users/unassigned-departments');
   return response.data;
 };
 
@@ -148,5 +153,11 @@ export const getUserDepartments = async (userId: number): Promise<Department[]> 
 // 移除用户与部门的关联
 export const removeUserFromDepartment = async (userId: number, departmentId: number): Promise<void> => {
   const response = await api.delete<void>(`/system/users/${userId}/departments/${departmentId}`);
+  return response.data;
+};
+
+// 分页获取用户列表
+export const getUserPage = async (params: UserPageParams): Promise<PageResponse<User>> => {
+  const response = await api.get<PageResponse<User>>('/system/users', { params });
   return response.data;
 };

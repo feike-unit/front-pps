@@ -72,4 +72,9 @@ export const getDepartmentUsers = async (departmentId: number): Promise<UserInfo
 export const assignUsersToDepartment = async (id: number, userIds: number[]): Promise<void> => {
   const response = await api.put<void>(`/system/departments/${id}/users`, userIds);
   return response.data;
+};
+
+// 移除用户与部门的关联
+export const removeUserFromDepartment = async (userId: number, departmentId: number): Promise<void> => {
+  await api.delete(`/system/users/${userId}/departments/${departmentId}`);
 }; 

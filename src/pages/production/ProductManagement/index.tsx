@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Button,
   Space,
@@ -6,6 +6,8 @@ import {
   Popconfirm,
   Switch,
   Tooltip,
+  Input,
+  Select,
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { 
@@ -34,6 +36,11 @@ import {
 
 const ProductManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
+  const [searchParams, setSearchParams] = useState<{
+    productCode?: string;
+    productName?: string;
+    productType?: ProductType;
+  }>({});
 
   // ProTable 列定义
   const columns: ProColumns<Product>[] = [
@@ -248,7 +255,9 @@ const ProductManagement: React.FC = () => {
       columns={columns}
       actionRef={actionRef}
       cardBordered
-      request={async (params = {}, sort) => {
+      bordered
+      defaultSize="small"
+      request={async (params = {}, sort, filter) => {
         try {
           const { current, pageSize, ...restParams } = params;
           
@@ -257,6 +266,7 @@ const ProductManagement: React.FC = () => {
             pageNum: current || 1,
             pageSize: pageSize || 10,
             ...restParams,
+            ...searchParams,
             sortField: Object.keys(sort || {})[0],
             sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
           };
@@ -279,14 +289,58 @@ const ProductManagement: React.FC = () => {
         }
       }}
       rowKey="id"
-      search={{
-        labelWidth: 'auto',
+      search={false}
+      options={{
+        density: false,
+        fullScreen: true,
+        reload: true,
+        setting: {
+          listsHeight: 400,
+        },
       }}
+      headerTitle={
+        <Space>
+          <Input.Search
+            placeholder="货品编号"
+            onSearch={(value) => {
+              setSearchParams(prev => ({ ...prev, productCode: value }));
+              actionRef.current?.reload();
+            }}
+            style={{ width: 200 }}
+            allowClear
+          />
+          <Input.Search
+            placeholder="货品名称"
+            onSearch={(value) => {
+              setSearchParams(prev => ({ ...prev, productName: value }));
+              actionRef.current?.reload();
+            }}
+            style={{ width: 200 }}
+            allowClear
+          />
+          <Select
+            placeholder="货品类型"
+            style={{ width: 200 }}
+            allowClear
+            options={[
+              { label: '采购件', value: ProductType.PURCHASE },
+              { label: '自制件', value: ProductType.SELF_MADE },
+              { label: '委外件', value: ProductType.OUTSOURCED },
+            ]}
+            onChange={(value: ProductType | undefined) => {
+              setSearchParams(prev => ({ ...prev, productType: value }));
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      }
       pagination={{
-        pageSize: 10,
+        defaultPageSize: 10,
+        showQuickJumper: true,
+        showSizeChanger: true,
+        pageSizeOptions: ['10', '20', '50', '100'],
       }}
       dateFormatter="string"
-      headerTitle="货品管理"
       toolBarRender={() => [
         <ModalForm<Product>
           key="create"

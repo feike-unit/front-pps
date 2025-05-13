@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Button,
   Space,
@@ -6,6 +6,8 @@ import {
   Popconfirm,
   Switch,
   Tooltip,
+  Input,
+  TreeSelect,
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { 
@@ -20,16 +22,16 @@ import {
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
-import { 
-  Line, 
-  LinePageRequest, 
+import {
+  Line,
+  LinePageRequest,
   LineStatus,
 } from '../../../services/line';
-import { 
-  getLinePage, 
-  createLine, 
-  updateLine, 
-  deleteLine, 
+import {
+  getLinePage,
+  createLine,
+  updateLine,
+  deleteLine,
   updateLineStatus,
 } from '../../../services/line';
 import { getAllDepartments } from '../../../services/department';
@@ -37,6 +39,11 @@ import { getAllDepartments } from '../../../services/department';
 const LineManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [treeData, setTreeData] = React.useState<any[]>([]);
+  const [searchParams, setSearchParams] = useState<{
+    lineCode?: string;
+    lineName?: string;
+    deptId?: number;
+  }>({});
 
   // 将部门列表转换为TreeSelect需要的数据格式
   const formatTreeSelectData = (data: any[]): any[] => {
@@ -99,17 +106,22 @@ const LineManagement: React.FC = () => {
     }
   };
 
+  // 在组件挂载时获取部门数据
+  React.useEffect(() => {
+    fetchTreeSelectData();
+  }, []);
+
   // ProTable 列定义
   const columns: ProColumns<Line>[] = [
     {
-      title: '下拉线编号',
+      title: '拉线编号',
       dataIndex: 'lineCode',
       copyable: true,
       ellipsis: true,
       sorter: true,
     },
     {
-      title: '下拉线名称',
+      title: '拉线名称',
       dataIndex: 'lineName',
       copyable: true,
       ellipsis: true,
@@ -117,14 +129,26 @@ const LineManagement: React.FC = () => {
     },
     {
       title: '所属部门',
-      dataIndex: 'deptName',
-      ellipsis: true,
+      dataIndex: 'deptId',
+      hideInTable: true,
+      renderFormItem: () => (
+        <ProFormTreeSelect
+          name="deptId"
+          placeholder="请选择所属部门"
+          fieldProps={{
+            treeData,
+            treeDefaultExpandAll: true,
+            showSearch: true,
+            treeNodeFilterProp: 'title',
+          }}
+        />
+      ),
     },
     {
-      title: '工位数量',
-      dataIndex: 'workstationCount',
+      title: '所属部门',
+      dataIndex: 'deptName',
       ellipsis: true,
-      sorter: true,
+      hideInSearch: true,
     },
     {
       title: '状态',
@@ -174,7 +198,7 @@ const LineManagement: React.FC = () => {
       render: (_, record) => (
         <Space size="middle">
           <ModalForm<Line>
-            title="编辑下拉线"
+            title="编辑拉线"
             trigger={
               <Tooltip title="编辑">
                 <Button type="link" icon={<EditOutlined />} />
@@ -187,7 +211,6 @@ const LineManagement: React.FC = () => {
                   lineCode: values.lineCode,
                   lineName: values.lineName,
                   deptId: values.deptId,
-                  workstationCount: values.workstationCount,
                   status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
                   remark: values.remark,
                 };
@@ -213,14 +236,14 @@ const LineManagement: React.FC = () => {
             <ProForm.Group>
               <ProFormText
                 name="lineCode"
-                label="下拉线编号"
-                rules={[{ required: true, message: '请输入下拉线编号' }]}
+                label="拉线编号"
+                rules={[{ required: true, message: '请输入拉线编号' }]}
                 width="md"
               />
               <ProFormText
                 name="lineName"
-                label="下拉线名称"
-                rules={[{ required: true, message: '请输入下拉线名称' }]}
+                label="拉线名称"
+                rules={[{ required: true, message: '请输入拉线名称' }]}
                 width="md"
               />
             </ProForm.Group>
@@ -239,20 +262,6 @@ const LineManagement: React.FC = () => {
                 }}
                 rules={[{ required: true, message: '请选择所属部门' }]}
               />
-              <ProFormDigit
-                name="workstationCount"
-                label="工位数量"
-                rules={[{ required: true, message: '请输入工位数量' }]}
-                min={0}
-                width="md"
-              />
-            </ProForm.Group>
-            <ProFormTextArea
-              name="remark"
-              label="备注"
-              width="xl"
-            />
-            <ProForm.Group>
               <ProFormSwitch
                 name="status"
                 label="状态"
@@ -260,9 +269,14 @@ const LineManagement: React.FC = () => {
                 unCheckedChildren="禁用"
               />
             </ProForm.Group>
+            <ProFormTextArea
+              name="remark"
+              label="备注"
+              width="xl"
+            />
           </ModalForm>
           <Popconfirm
-            title="确定要删除该下拉线吗？"
+            title="确定要删除该拉线吗？"
             onConfirm={async () => {
               try {
                 await deleteLine(record.id!);
@@ -288,21 +302,24 @@ const LineManagement: React.FC = () => {
       columns={columns}
       actionRef={actionRef}
       cardBordered
-      request={async (params = {}, sort) => {
+      bordered
+      defaultSize="small"
+      request={async (params = {}, sort, filter) => {
         try {
           const { current, pageSize, ...restParams } = params;
-          
+
           // 构建请求参数
           const requestParams: LinePageRequest = {
             pageNum: current || 1,
             pageSize: pageSize || 10,
             ...restParams,
+            ...searchParams,
             sortField: Object.keys(sort || {})[0],
             sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
           };
-          
+
           const result = await getLinePage(requestParams);
-          
+
           return {
             data: result.list,
             success: true,
@@ -319,18 +336,61 @@ const LineManagement: React.FC = () => {
         }
       }}
       rowKey="id"
-      search={{
-        labelWidth: 'auto',
+      search={false}
+      options={{
+        density: false,
+        fullScreen: true,
+        reload: true,
+        setting: {
+          listsHeight: 400,
+        },
       }}
+      headerTitle={
+        <Space>
+          <Input.Search
+            placeholder="拉线编号"
+            onSearch={(value) => {
+              setSearchParams(prev => ({ ...prev, lineCode: value }));
+              actionRef.current?.reload();
+            }}
+            style={{ width: 200 }}
+            allowClear
+          />
+          <Input.Search
+            placeholder="拉线名称"
+            onSearch={(value) => {
+              setSearchParams(prev => ({ ...prev, lineName: value }));
+              actionRef.current?.reload();
+            }}
+            style={{ width: 200 }}
+            allowClear
+          />
+          <TreeSelect
+            placeholder="所属部门"
+            style={{ width: 200 }}
+            allowClear
+            showSearch
+            treeData={treeData}
+            onChange={(value: number) => {
+              setSearchParams(prev => ({ ...prev, deptId: value }));
+              actionRef.current?.reload();
+            }}
+            treeDefaultExpandAll
+            treeNodeFilterProp="title"
+          />
+        </Space>
+      }
       pagination={{
-        pageSize: 10,
+        defaultPageSize: 10,
+        showQuickJumper: true,
+        showSizeChanger: true,
+        pageSizeOptions: ['10', '20', '50', '100'],
       }}
       dateFormatter="string"
-      headerTitle="下拉线管理"
       toolBarRender={() => [
         <ModalForm<Line>
           key="create"
-          title="新建下拉线"
+          title="新建拉线"
           trigger={
             <Button type="primary">
               <PlusOutlined />
@@ -343,7 +403,6 @@ const LineManagement: React.FC = () => {
                 lineCode: values.lineCode,
                 lineName: values.lineName,
                 deptId: values.deptId,
-                workstationCount: values.workstationCount,
                 status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
                 remark: values.remark,
               };
@@ -362,7 +421,6 @@ const LineManagement: React.FC = () => {
           }}
           initialValues={{
             status: true,
-            workstationCount: 0,
           }}
           onOpenChange={(visible) => {
             if (visible) {
@@ -373,14 +431,14 @@ const LineManagement: React.FC = () => {
           <ProForm.Group>
             <ProFormText
               name="lineCode"
-              label="下拉线编号"
-              rules={[{ required: true, message: '请输入下拉线编号' }]}
+              label="拉线编号"
+              rules={[{ required: true, message: '请输入拉线编号' }]}
               width="md"
             />
             <ProFormText
               name="lineName"
-              label="下拉线名称"
-              rules={[{ required: true, message: '请输入下拉线名称' }]}
+              label="拉线名称"
+              rules={[{ required: true, message: '请输入拉线名称' }]}
               width="md"
             />
           </ProForm.Group>
@@ -399,20 +457,6 @@ const LineManagement: React.FC = () => {
               }}
               rules={[{ required: true, message: '请选择所属部门' }]}
             />
-            <ProFormDigit
-              name="workstationCount"
-              label="工位数量"
-              rules={[{ required: true, message: '请输入工位数量' }]}
-              min={0}
-              width="md"
-            />
-          </ProForm.Group>
-          <ProFormTextArea
-            name="remark"
-            label="备注"
-            width="xl"
-          />
-          <ProForm.Group>
             <ProFormSwitch
               name="status"
               label="状态"
@@ -420,6 +464,11 @@ const LineManagement: React.FC = () => {
               unCheckedChildren="禁用"
             />
           </ProForm.Group>
+          <ProFormTextArea
+            name="remark"
+            label="备注"
+            width="xl"
+          />
         </ModalForm>,
       ]}
     />

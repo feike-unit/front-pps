@@ -1,0 +1,16 @@
+@keyframes highlight {
+  0%, 100% {
+    background-color: transparent;
+  }
+  16.67%, 50%, 83.33% {
+    background-color: #fff1f0;
+  }
+  33.33%, 66.67% {
+    background-color: transparent;
+  }
+}
+
+.highlight-row {
+  animation: highlight 3s ease-in-out;
+  animation-iteration-count: 1;
+} 

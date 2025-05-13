@@ -12,8 +12,13 @@ import {
   ToolOutlined,
   ApartmentOutlined,
   ShoppingOutlined,
-  ProfileOutlined,
-  ControlOutlined
+  ControlOutlined,
+  ScheduleOutlined,
+  AccountBookOutlined,
+  RotateRightOutlined,
+  OrderedListOutlined,
+  ShoppingCartOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 
@@ -64,6 +69,51 @@ export const routes: ExtendedRouteObject[] = [
         }
       },
       {
+        path: 'execution',
+        metadata: {
+          label: '执行计划',
+          icon: <ScheduleOutlined />
+        },
+        children: [
+          {
+            path: 'demands',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/execution/DemandManagement')))}</Suspense>,
+            metadata: {
+              label: '需求管理',
+              icon: <AccountBookOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'production-plans',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/execution/ProductionPlanManagement')))}</Suspense>,
+            metadata: {
+              label: '生产计划',
+              icon: <OrderedListOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'purchase-plans',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/execution/PurchasePlanManagement')))}</Suspense>,
+            metadata: {
+              label: '采购计划',
+              icon: <ShoppingCartOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'outsourcing-plans',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/execution/OutsourcingPlanManagement')))}</Suspense>,
+            metadata: {
+              label: '委外计划',
+              icon: <GlobalOutlined />,
+              closable: true
+            }
+          }
+        ]
+      },
+      {
         path: 'production',
         metadata: {
           label: '生产管理',
@@ -85,15 +135,6 @@ export const routes: ExtendedRouteObject[] = [
             metadata: {
               label: '货品管理',
               icon: <ShoppingOutlined />,
-              closable: true
-            }
-          },
-          {
-            path: 'boms',
-            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/production/BomManagement')))}</Suspense>,
-            metadata: {
-              label: 'BOM管理',
-              icon: <ProfileOutlined />,
               closable: true
             }
           },
