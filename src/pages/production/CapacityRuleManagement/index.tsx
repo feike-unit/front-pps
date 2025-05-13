@@ -76,7 +76,7 @@ const CapacityRuleManagement: React.FC = () => {
     }
   };
 
-  // 获取拉线和产品列表
+  // 获取拉线和货品列表
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -107,7 +107,7 @@ const CapacityRuleManagement: React.FC = () => {
     }
   };
 
-  // 获取产品选项
+  // 获取货品选项
   const fetchProductOptions = async (keyword: string): Promise<{ label: string; value: number; }[]> => {
     try {
       const products = await searchProducts(keyword);
@@ -116,7 +116,7 @@ const CapacityRuleManagement: React.FC = () => {
         value: product.id!,
       }));
     } catch (apiError: any) {
-      message.error(apiError.response?.data?.message || apiError.message || '获取产品列表失败');
+      message.error(apiError.response?.data?.message || apiError.message || '获取货品列表失败');
       return [];
     }
   };
@@ -139,7 +139,7 @@ const CapacityRuleManagement: React.FC = () => {
     }
   }, 500);
 
-  // 处理产品搜索
+  // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
     try {
       const products = await searchProducts(value || '');
@@ -149,7 +149,7 @@ const CapacityRuleManagement: React.FC = () => {
       }));
       setSearchProductOptions(options);
     } catch (error: any) {
-      message.error('搜索产品失败');
+      message.error('搜索货品失败');
     }
   }, 500);
 
@@ -190,17 +190,17 @@ const CapacityRuleManagement: React.FC = () => {
       hideInTable: true,
     },
     {
-      title: '产品编号/名称',
+      title: '货品编号/名称',
       dataIndex: 'productCode',
       copyable: true,
       ellipsis: true,
       sorter: true,
-      tip: '支持产品编号或名称模糊搜索',
+      tip: '支持货品编号或名称模糊搜索',
       render: (_, record) => `${record.productCode} - ${record.productName}`,
       valueType: 'select',
       fieldProps: {
         showSearch: true,
-        placeholder: '请输入产品编号或名称搜索',
+        placeholder: '请输入货品编号或名称搜索',
         defaultActiveFirstOption: false,
         filterOption: false,
         onSearch: handleProductSearch,
@@ -366,11 +366,11 @@ const CapacityRuleManagement: React.FC = () => {
               />
               <ProFormSelect
                 name="productId"
-                label="产品"
-                rules={[{ required: true, message: '请选择产品' }]}
+                label="货品"
+                rules={[{ required: true, message: '请选择货品' }]}
                 width="md"
                 showSearch
-                placeholder="请输入产品编号或名称搜索"
+                placeholder="请输入货品编号或名称搜索"
                 debounceTime={500}
                 fieldProps={{
                   showSearch: true,
@@ -550,7 +550,7 @@ const CapacityRuleManagement: React.FC = () => {
             onClick={() => handleLineSearch('')}
           />
           <Select
-            placeholder="产品编号/名称"
+            placeholder="货品编号/名称"
             style={{ width: 200 }}
             showSearch
             allowClear
@@ -631,11 +631,11 @@ const CapacityRuleManagement: React.FC = () => {
             />
             <ProFormSelect
               name="productId"
-              label="产品"
-              rules={[{ required: true, message: '请选择产品' }]}
+              label="货品"
+              rules={[{ required: true, message: '请选择货品' }]}
               width="md"
               showSearch
-              placeholder="请输入产品编号或名称搜索"
+              placeholder="请输入货品编号或名称搜索"
               debounceTime={500}
               fieldProps={{
                 showSearch: true,
