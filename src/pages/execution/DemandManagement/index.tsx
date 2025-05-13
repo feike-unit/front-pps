@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import {
   Button,
@@ -56,8 +56,13 @@ const DemandManagement: React.FC = () => {
     productId?: number;
     status?: DemandStatus;
     deliveryDate?: string;
+    businessDocNo?: string;
+    customerOrderDocNo?: string;
+    customerCode?: string;
+    customerName?: string;
   }>({});
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
+  const [localDeliveryDate, setLocalDeliveryDate] = useState<string | undefined>(undefined);
   const [form] = Form.useForm();
 
   // 处理货品搜索
@@ -73,6 +78,11 @@ const DemandManagement: React.FC = () => {
       message.error('搜索货品失败');
     }
   }, 500);
+
+  // 初始加载默认选项
+  useEffect(() => {
+    handleProductSearch('');
+  }, []);
 
   // 定义表格列头单元格的通用样式
   const components: TableComponents<Demand> = {
@@ -408,7 +418,7 @@ const DemandManagement: React.FC = () => {
         };
       }}
       headerTitle={
-        <Space>
+        <Space wrap>
           <Select
             placeholder="货品编号/名称"
             style={{ width: 200 }}
@@ -423,6 +433,45 @@ const DemandManagement: React.FC = () => {
             }}
             options={searchProductOptions}
             onClick={() => handleProductSearch('')}
+          />
+          <DatePicker
+            placeholder="交期"
+            style={{ width: 200 }}
+            onChange={(date) => {
+              const dateString = date ? date.format('YYYY-MM-DD') : undefined;
+              console.log('选择日期:', dateString);
+              // 设置本地状态用于前端过滤
+              setLocalDeliveryDate(dateString);
+              // 触发表格刷新
+              actionRef.current?.reload();
+            }}
+            allowClear
+          />
+          <Input.Search
+            placeholder="业务单号/客户订单号"
+            style={{ width: 200 }}
+            onSearch={(value) => {
+              setSearchParams(prev => ({
+                ...prev,
+                businessDocNo: value || undefined,
+                customerOrderDocNo: value || undefined
+              }));
+              actionRef.current?.reload();
+            }}
+            allowClear
+          />
+          <Input.Search
+            placeholder="客户编号/名称"
+            style={{ width: 200 }}
+            onSearch={(value) => {
+              setSearchParams(prev => ({
+                ...prev,
+                customerCode: value || undefined,
+                customerName: value || undefined
+              }));
+              actionRef.current?.reload();
+            }}
+            allowClear
           />
           <Select
             placeholder="状态"
@@ -440,18 +489,6 @@ const DemandManagement: React.FC = () => {
               actionRef.current?.reload();
             }}
           />
-          <DatePicker
-            placeholder="交期"
-            style={{ width: 200 }}
-            onChange={(date) => {
-              setSearchParams(prev => ({
-                ...prev,
-                deliveryDate: date ? date.format('YYYY-MM-DD') : undefined,
-              }));
-              actionRef.current?.reload();
-            }}
-            allowClear
-          />
         </Space>
       }
       request={async (params = {}, sort, filter) => {
@@ -468,11 +505,54 @@ const DemandManagement: React.FC = () => {
             sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
           };
           
+          console.log('查询参数:', pageParams);
+          
           const result = await getDemandPage(pageParams);
+          
+          // 前端过滤逻辑
+          let filteredData = result.list;
+          
+          // 交期过滤
+          if (localDeliveryDate) {
+            filteredData = filteredData.filter(item => 
+              item.deliveryDate && item.deliveryDate.substring(0, 10) === localDeliveryDate
+            );
+          }
+          
+          // 如果后端接口没有实现这些参数的过滤，则在前端进行过滤
+          // 业务单号过滤
+          if (searchParams.businessDocNo) {
+            filteredData = filteredData.filter(item =>
+              item.businessDocNo && item.businessDocNo.includes(searchParams.businessDocNo!)
+            );
+          }
+          
+          // 客户订单号过滤
+          if (searchParams.customerOrderDocNo) {
+            filteredData = filteredData.filter(item =>
+              item.customerOrderDocNo && item.customerOrderDocNo.includes(searchParams.customerOrderDocNo!)
+            );
+          }
+          
+          // 客户编号过滤
+          if (searchParams.customerCode) {
+            filteredData = filteredData.filter(item =>
+              item.customerCode && item.customerCode.includes(searchParams.customerCode!)
+            );
+          }
+          
+          // 客户名称过滤
+          if (searchParams.customerName) {
+            filteredData = filteredData.filter(item =>
+              item.customerName && item.customerName.includes(searchParams.customerName!)
+            );
+          }
+          
           return {
-            data: result.list,
+            data: filteredData,
             success: true,
-            total: result.total,
+            total: (localDeliveryDate || searchParams.businessDocNo || searchParams.customerOrderDocNo || 
+                    searchParams.customerCode || searchParams.customerName) ? filteredData.length : result.total,
           };
         } catch (error) {
           const apiError = error as ApiError;

@@ -53,6 +53,11 @@ export interface DemandPageRequest {
   demandCode?: string;
   productId?: number;
   status?: DemandStatus;
+  deliveryDate?: string;
+  businessDocNo?: string;
+  customerOrderDocNo?: string;
+  customerCode?: string;
+  customerName?: string;
   sortField?: string;
   sortOrder?: string;
 }
