@@ -36,6 +36,8 @@ import {
   DemandPageRequest,
   deleteDemand,
 } from '../../../services/demand';
+import { searchProducts } from '../../../services/product';
+import debounce from 'lodash/debounce';
 
 // 定义状态颜色映射
 const statusColorMap: Record<string, string> = {
@@ -55,7 +57,22 @@ const DemandManagement: React.FC = () => {
     status?: DemandStatus;
     deliveryDate?: string;
   }>({});
+  const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [form] = Form.useForm();
+
+  // 处理货品搜索
+  const handleProductSearch = debounce(async (value: string) => {
+    try {
+      const products = await searchProducts(value || '');
+      const options = products.map(product => ({
+        label: `${product.productCode} - ${product.productName}`,
+        value: product.id!
+      }));
+      setSearchProductOptions(options);
+    } catch (error: any) {
+      message.error('搜索货品失败');
+    }
+  }, 500);
 
   // 定义表格列头单元格的通用样式
   const components: TableComponents<Demand> = {
@@ -392,14 +409,20 @@ const DemandManagement: React.FC = () => {
       }}
       headerTitle={
         <Space>
-          <Input.Search
-            placeholder="货品ID"
-            onSearch={(value) => {
-              setSearchParams(prev => ({ ...prev, productId: value ? Number(value) : undefined }));
+          <Select
+            placeholder="货品编号/名称"
+            style={{ width: 200 }}
+            showSearch
+            allowClear
+            defaultActiveFirstOption={false}
+            filterOption={false}
+            onSearch={handleProductSearch}
+            onChange={(value: number) => {
+              setSearchParams(prev => ({ ...prev, productId: value }));
               actionRef.current?.reload();
             }}
-            style={{ width: 200 }}
-            allowClear
+            options={searchProductOptions}
+            onClick={() => handleProductSearch('')}
           />
           <Select
             placeholder="状态"
