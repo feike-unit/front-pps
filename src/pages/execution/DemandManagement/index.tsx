@@ -111,6 +111,14 @@ const DemandManagement: React.FC = () => {
       width: 120,
     },
     {
+      title: '货品名称',
+      dataIndex: 'productName',
+      copyable: true,
+      ellipsis: true,
+      sorter: true,
+      width: 150,
+    },
+    {
       title: '货品类型',
       dataIndex: 'productType',
       valueType: 'select',

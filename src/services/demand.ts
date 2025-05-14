@@ -16,6 +16,7 @@ export interface Demand {
   parentId?: number;
   productId: number;
   productCode?: string;
+  productName?: string;
   productType: number;
   deliveryDate: string;
   demandQuantity: number;
