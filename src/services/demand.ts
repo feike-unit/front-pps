@@ -14,8 +14,8 @@ export enum DemandStatus {
 export interface Demand {
   id?: number;
   parentId?: number;
-  demandCode: string;
   productId: number;
+  productCode?: string;
   productType: number;
   deliveryDate: string;
   demandQuantity: number;
