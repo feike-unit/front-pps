@@ -25,7 +25,7 @@ import {
   ProFormDatePicker,
   ProFormTreeSelect,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Demand, 
@@ -37,6 +37,7 @@ import {
   deleteDemand,
   updateDemandStatus,
   confirmAndExecuteDemand,
+  syncDemands,
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
@@ -481,7 +482,30 @@ const DemandManagement: React.FC = () => {
       }}
       childrenColumnName="children"
       indentSize={24}
-      toolBarRender={() => []}
+      toolBarRender={() => [
+        <Popconfirm
+          key="syncConfirm"
+          title="确定要同步需求数据吗？"
+          onConfirm={async () => {
+            try {
+              await syncDemands();
+              message.success('需求同步成功');
+              actionRef.current?.reload();
+            } catch (error) {
+              const apiError = error as ApiError;
+              message.error(apiError.response?.data?.message || apiError.message || '需求同步失败');
+            }
+          }}
+        >
+          <Button
+            key="sync"
+            type="primary"
+            icon={<SyncOutlined />}
+          >
+            同步需求
+          </Button>
+        </Popconfirm>
+      ]}
     />
   );
 };

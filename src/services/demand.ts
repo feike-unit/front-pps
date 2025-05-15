@@ -103,4 +103,10 @@ export const updateDemandStatus = async (id: number, status: DemandStatus): Prom
 export const confirmAndExecuteDemand = async (id: number): Promise<Demand> => {
   const response = await api.patch(`/execution/demands/${id}/confirm-execute`);
   return response.data;
+};
+
+// 同步需求
+export const syncDemands = async (): Promise<void> => {
+  const response = await api.post('/execution/demands/sync');
+  return response.data;
 }; 
