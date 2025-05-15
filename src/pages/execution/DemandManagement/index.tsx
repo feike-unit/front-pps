@@ -55,11 +55,11 @@ const DemandManagement: React.FC = () => {
   const [searchParams, setSearchParams] = useState<{
     productId?: number;
     status?: DemandStatus;
-    deliveryDate?: string;
+    deliveryDateStart?: string;
+    deliveryDateEnd?: string;
     keyword?: string;
   }>({});
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
-  const [localDeliveryDate, setLocalDeliveryDate] = useState<string | undefined>(undefined);
   const [form] = Form.useForm();
 
   // 处理货品搜索
@@ -307,20 +307,39 @@ const DemandManagement: React.FC = () => {
             options={searchProductOptions}
             onClick={() => handleProductSearch('')}
           />
-          <DatePicker
-            placeholder="交期"
-            style={{ width: 200 }}
-            onChange={(date) => {
-              const dateString = date ? date.format('YYYY-MM-DD') : undefined;
-              setLocalDeliveryDate(dateString);
-              setSearchParams(prev => ({ ...prev, deliveryDate: dateString }));
+          <DatePicker.RangePicker
+            placeholder={['开始交期', '结束交期']}
+            style={{ width: 250 }}
+            onChange={(dates) => {
+              // 只有当两个日期都选择了，才设置日期区间参数
+              if (dates && dates[0] && dates[1]) {
+                const startDate = dates[0]?.format('YYYY-MM-DD');
+                const endDate = dates[1]?.format('YYYY-MM-DD');
+                
+                if (startDate && endDate) {
+                  setSearchParams(prev => ({
+                    ...prev,
+                    deliveryDateStart: startDate,
+                    deliveryDateEnd: endDate,
+                    deliveryDate: undefined
+                  }));
+                }
+              } else {
+                // 如果没有选择完整的日期区间，则清空所有日期参数
+                setSearchParams(prev => ({
+                  ...prev,
+                  deliveryDateStart: undefined,
+                  deliveryDateEnd: undefined,
+                  deliveryDate: undefined
+                }));
+              }
               actionRef.current?.reload();
             }}
             allowClear
           />
           <Select
             placeholder="状态"
-            style={{ width: 200 }}
+            style={{ width: 150 }}
             allowClear
             options={[
               { label: '草稿', value: DemandStatus.DRAFT },
@@ -363,18 +382,10 @@ const DemandManagement: React.FC = () => {
           
           const result = await getDemandPage(pageParams);
           
-          let filteredData = result.list;
-          
-          if (localDeliveryDate) {
-            filteredData = filteredData.filter(item => 
-              item.deliveryDate && item.deliveryDate.substring(0, 10) === localDeliveryDate
-            );
-          }
-          
           return {
-            data: filteredData,
+            data: result.list,
             success: true,
-            total: localDeliveryDate ? filteredData.length : result.total,
+            total: result.total,
           };
         } catch (error) {
           const apiError = error as ApiError;

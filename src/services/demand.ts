@@ -56,6 +56,8 @@ export interface DemandPageRequest {
   productId?: number;
   status?: DemandStatus;
   deliveryDate?: string;
+  deliveryDateStart?: string;
+  deliveryDateEnd?: string;
   keyword?: string;
   sortField?: string;
   sortOrder?: string;
