@@ -31,7 +31,7 @@ export interface Demand {
   customerName?: string;
   bomId?: string;
   parentBomId?: string;
-  status: string;
+  status: number;
   remark?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -53,14 +53,10 @@ export interface PageResponse<T> {
 export interface DemandPageRequest {
   pageNum?: number;
   pageSize?: number;
-  demandCode?: string;
   productId?: number;
   status?: DemandStatus;
   deliveryDate?: string;
-  businessDocNo?: string;
-  customerOrderDocNo?: string;
-  customerCode?: string;
-  customerName?: string;
+  keyword?: string;
   sortField?: string;
   sortOrder?: string;
 }

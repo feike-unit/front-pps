@@ -40,12 +40,12 @@ import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
 
 // 定义状态颜色映射
-const statusColorMap: Record<string, string> = {
-  'DRAFT': 'rgba(217, 217, 217, 0.15)', 
-  'CONFIRMED': 'rgba(24, 144, 255, 0.15)', 
-  'EXECUTING': 'rgba(24, 144, 255, 0.15)', 
-  'COMPLETED': 'rgba(82, 196, 26, 0.15)', 
-  'CANCELLED': 'rgba(255, 77, 79, 0.15)', 
+const statusColorMap: Record<number, string> = {
+  [1]: 'rgba(217, 217, 217, 0.15)', 
+  [2]: 'rgba(24, 144, 255, 0.15)', 
+  [3]: 'rgba(24, 144, 255, 0.15)', 
+  [4]: 'rgba(82, 196, 26, 0.15)', 
+  [5]: 'rgba(255, 77, 79, 0.15)', 
 };
 
 const DemandManagement: React.FC = () => {
@@ -56,10 +56,7 @@ const DemandManagement: React.FC = () => {
     productId?: number;
     status?: DemandStatus;
     deliveryDate?: string;
-    businessDocNo?: string;
-    customerOrderDocNo?: string;
-    customerCode?: string;
-    customerName?: string;
+    keyword?: string;
   }>({});
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [localDeliveryDate, setLocalDeliveryDate] = useState<string | undefined>(undefined);
@@ -111,14 +108,6 @@ const DemandManagement: React.FC = () => {
       width: 120,
     },
     {
-      title: '货品名称',
-      dataIndex: 'productName',
-      copyable: true,
-      ellipsis: true,
-      sorter: true,
-      width: 150,
-    },
-    {
       title: '货品类型',
       dataIndex: 'productType',
       valueType: 'select',
@@ -167,11 +156,11 @@ const DemandManagement: React.FC = () => {
       onFilter: true,
       valueType: 'select',
       valueEnum: {
-        DRAFT: { text: '草稿', status: 'default' },
-        CONFIRMED: { text: '已确认', status: 'processing' },
-        EXECUTING: { text: '执行中', status: 'processing' },
-        COMPLETED: { text: '已完成', status: 'success' },
-        CANCELLED: { text: '已取消', status: 'error' },
+        1: { text: '草稿', status: 'default' },
+        2: { text: '已确认', status: 'processing' },
+        3: { text: '执行中', status: 'processing' },
+        4: { text: '已完成', status: 'success' },
+        5: { text: '已取消', status: 'error' },
       },
       width: 100,
     },
@@ -285,9 +274,11 @@ const DemandManagement: React.FC = () => {
         const completionQuantity = record.completionQuantity || 0;
         const purgeQuantity = record.purgeQuantity || 0;
         const progress = purgeQuantity > 0 ? (completionQuantity / purgeQuantity) * 100 : 0;
+
+        // console.log('record.status', statusColorMap[record.status]);
         
         // 使用状态颜色映射获取背景色
-        const bgColor = statusColorMap[record.status] || statusColorMap['DRAFT'];
+        const bgColor = statusColorMap[record.status] || statusColorMap[DemandStatus.DRAFT];
 
         return {
           style: {
@@ -321,25 +312,8 @@ const DemandManagement: React.FC = () => {
             style={{ width: 200 }}
             onChange={(date) => {
               const dateString = date ? date.format('YYYY-MM-DD') : undefined;
-              console.log('选择日期:', dateString);
-              // 设置本地状态用于前端过滤
               setLocalDeliveryDate(dateString);
-              // 触发表格刷新
-              actionRef.current?.reload();
-            }}
-            allowClear
-          />
-          <Input.Search
-            placeholder="业务单号/客户订单号/客户编号/名称"
-            style={{ width: 300 }}
-            onSearch={(value) => {
-              setSearchParams(prev => ({
-                ...prev,
-                businessDocNo: value || undefined,
-                customerOrderDocNo: value || undefined,
-                customerCode: value || undefined,
-                customerName: value || undefined
-              }));
+              setSearchParams(prev => ({ ...prev, deliveryDate: dateString }));
               actionRef.current?.reload();
             }}
             allowClear
@@ -360,17 +334,27 @@ const DemandManagement: React.FC = () => {
               actionRef.current?.reload();
             }}
           />
+          <Input.Search
+            placeholder="业务单号/客户订单号/客户编号/名称"
+            style={{ width: 300 }}
+            onSearch={(value) => {
+              setSearchParams(prev => ({
+                ...prev,
+                keyword: value || undefined
+              }));
+              actionRef.current?.reload();
+            }}
+            allowClear
+          />
         </Space>
       }
       request={async (params = {}, sort, filter) => {
         try {
-          // 注意：ProTable的 current 参数对应后端的 pageNum
           const { current, pageSize, ...restParams } = params;
           
-          // 构建请求参数
           const pageParams: DemandPageRequest = {
-            pageNum: current || 1,  // 确保传递页码
-            pageSize: pageSize || 10, // 确保传递每页条数
+            pageNum: current || 1,
+            pageSize: pageSize || 10,
             ...restParams,
             ...searchParams,
             sortField: Object.keys(sort || {})[0],
@@ -379,50 +363,18 @@ const DemandManagement: React.FC = () => {
           
           const result = await getDemandPage(pageParams);
           
-          // 前端过滤逻辑
           let filteredData = result.list;
           
-          // 交期过滤
           if (localDeliveryDate) {
             filteredData = filteredData.filter(item => 
               item.deliveryDate && item.deliveryDate.substring(0, 10) === localDeliveryDate
             );
           }
           
-          // 如果后端接口没有实现这些参数的过滤，则在前端进行过滤
-          // 业务单号过滤
-          if (searchParams.businessDocNo) {
-            filteredData = filteredData.filter(item =>
-              item.businessDocNo && item.businessDocNo.includes(searchParams.businessDocNo!)
-            );
-          }
-          
-          // 客户订单号过滤
-          if (searchParams.customerOrderDocNo) {
-            filteredData = filteredData.filter(item =>
-              item.customerOrderDocNo && item.customerOrderDocNo.includes(searchParams.customerOrderDocNo!)
-            );
-          }
-          
-          // 客户编号过滤
-          if (searchParams.customerCode) {
-            filteredData = filteredData.filter(item =>
-              item.customerCode && item.customerCode.includes(searchParams.customerCode!)
-            );
-          }
-          
-          // 客户名称过滤
-          if (searchParams.customerName) {
-            filteredData = filteredData.filter(item =>
-              item.customerName && item.customerName.includes(searchParams.customerName!)
-            );
-          }
-          
           return {
             data: filteredData,
             success: true,
-            total: (localDeliveryDate || searchParams.businessDocNo || searchParams.customerOrderDocNo || 
-                    searchParams.customerCode || searchParams.customerName) ? filteredData.length : result.total,
+            total: localDeliveryDate ? filteredData.length : result.total,
           };
         } catch (error) {
           const apiError = error as ApiError;
