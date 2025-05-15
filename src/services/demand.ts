@@ -97,4 +97,10 @@ export const getDemandById = async (id: number): Promise<Demand> => {
 export const updateDemandStatus = async (id: number, status: DemandStatus): Promise<Demand> => {
   const response = await api.patch(`/execution/demands/${id}/status?status=${status}`);
   return response.data;
+};
+
+// 确认执行需求
+export const confirmAndExecuteDemand = async (id: number): Promise<Demand> => {
+  const response = await api.patch(`/execution/demands/${id}/confirm-execute`);
+  return response.data;
 }; 

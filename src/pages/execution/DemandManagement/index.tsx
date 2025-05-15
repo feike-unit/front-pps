@@ -25,7 +25,7 @@ import {
   ProFormDatePicker,
   ProFormTreeSelect,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Demand, 
@@ -36,6 +36,7 @@ import {
   DemandPageRequest,
   deleteDemand,
   updateDemandStatus,
+  confirmAndExecuteDemand,
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
@@ -238,23 +239,23 @@ const DemandManagement: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
-          {/* 草稿状态可以修改为已确认 */}
+          {/* 草稿状态可以确认执行 */}
           {record.status === DemandStatus.DRAFT && (
             <Popconfirm
-              title="确认将状态修改为已确认？"
+              title="确认执行该需求？"
               onConfirm={async () => {
                 try {
-                  await updateDemandStatus(record.id!, DemandStatus.CONFIRMED);
-                  message.success('状态修改成功');
+                  await confirmAndExecuteDemand(record.id!);
+                  message.success('确认执行成功');
                   actionRef.current?.reload();
                 } catch (error) {
                   const apiError = error as ApiError;
-                  message.error(apiError.response?.data?.message || apiError.message || '状态修改失败');
+                  message.error(apiError.response?.data?.message || apiError.message || '确认执行失败');
                 }
               }}
             >
-              <Tooltip title="修改为已确认">
-                <a><CheckOutlined style={{ color: '#52c41a' }} /></a>
+              <Tooltip title="确认执行">
+                <a><PlayCircleOutlined style={{ color: '#1890ff' }} /></a>
               </Tooltip>
             </Popconfirm>
           )}
