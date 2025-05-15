@@ -95,6 +95,6 @@ export const getDemandById = async (id: number): Promise<Demand> => {
 
 // 更新需求状态
 export const updateDemandStatus = async (id: number, status: DemandStatus): Promise<Demand> => {
-  const response = await api.put(`/execution/demands/${id}/status`, { status });
+  const response = await api.patch(`/execution/demands/${id}/status?status=${status}`);
   return response.data;
 }; 

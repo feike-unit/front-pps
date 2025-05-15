@@ -25,7 +25,7 @@ import {
   ProFormDatePicker,
   ProFormTreeSelect,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Demand, 
@@ -35,6 +35,7 @@ import {
   getDemandPage, 
   DemandPageRequest,
   deleteDemand,
+  updateDemandStatus,
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
@@ -233,29 +234,72 @@ const DemandManagement: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      width: 120,
+      width: 90,
       fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
-          <Popconfirm
-            title="确定要删除该需求吗？"
-            onConfirm={async () => {
-              try {
-                await deleteDemand(record.id!);
-                message.success('删除成功');
-                actionRef.current?.reload();
-              } catch (error) {
-                const apiError = error as ApiError;
-                message.error(apiError.response?.data?.message || apiError.message || '删除失败');
-              }
-            }}
-          >
-            <Tooltip title="删除">
-              <a>
-                <DeleteOutlined style={{ color: '#ff4d4f' }} />
-              </a>
-            </Tooltip>
-          </Popconfirm>
+          {/* 草稿状态可以修改为已确认 */}
+          {record.status === DemandStatus.DRAFT && (
+            <Popconfirm
+              title="确认将状态修改为已确认？"
+              onConfirm={async () => {
+                try {
+                  await updateDemandStatus(record.id!, DemandStatus.CONFIRMED);
+                  message.success('状态修改成功');
+                  actionRef.current?.reload();
+                } catch (error) {
+                  const apiError = error as ApiError;
+                  message.error(apiError.response?.data?.message || apiError.message || '状态修改失败');
+                }
+              }}
+            >
+              <Tooltip title="修改为已确认">
+                <a><CheckOutlined style={{ color: '#52c41a' }} /></a>
+              </Tooltip>
+            </Popconfirm>
+          )}
+          
+          {/* 已确认或执行中状态可以修改为已取消 */}
+          {(record.status === DemandStatus.CONFIRMED || record.status === DemandStatus.EXECUTING) && (
+            <Popconfirm
+              title="确认将状态修改为已取消？"
+              onConfirm={async () => {
+                try {
+                  await updateDemandStatus(record.id!, DemandStatus.CANCELLED);
+                  message.success('状态修改成功');
+                  actionRef.current?.reload();
+                } catch (error) {
+                  const apiError = error as ApiError;
+                  message.error(apiError.response?.data?.message || apiError.message || '状态修改失败');
+                }
+              }}
+            >
+              <Tooltip title="修改为已取消">
+                <a><StopOutlined style={{ color: '#ff4d4f' }} /></a>
+              </Tooltip>
+            </Popconfirm>
+          )}
+          
+          {/* 只有草稿和已取消状态才可以删除 */}
+          {(record.status === DemandStatus.DRAFT || record.status === DemandStatus.CANCELLED) && (
+            <Popconfirm
+              title="确定要删除该需求吗？"
+              onConfirm={async () => {
+                try {
+                  await deleteDemand(record.id!);
+                  message.success('删除成功');
+                  actionRef.current?.reload();
+                } catch (error) {
+                  const apiError = error as ApiError;
+                  message.error(apiError.response?.data?.message || apiError.message || '删除失败');
+                }
+              }}
+            >
+              <Tooltip title="删除">
+                <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
+              </Tooltip>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
