@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { Button, Space, message, Popconfirm, Switch, Tooltip, Input, Select, DatePicker, Modal, Form } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { TableComponents } from 'rc-table/lib/interface';
 import { ProTable, ModalForm, ProForm, ProFormText, ProFormDigit, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
@@ -62,6 +64,22 @@ const ProductionPlanManagement: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<PlanRuntime | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<PlanRuntime | null>(null);
+  
+  // 定义表格列头单元格的通用样式
+  const components: TableComponents<PlanRuntime> = {
+    header: {
+      cell: (props: React.ThHTMLAttributes<HTMLTableHeaderCellElement>) => (
+        <th
+          {...props}
+          style={{
+            ...props.style,
+            whiteSpace: 'nowrap',
+            maxWidth: 200,
+          }}
+        />
+      ),
+    },
+  };
 
   // 处理拉线搜索
   const handleLineSearch = debounce(async (value: string) => {
@@ -81,7 +99,7 @@ const ProductionPlanManagement: React.FC = () => {
   const handleProductSearch = debounce(async (value: string) => {
     try {
       // 只搜索自制件类型的货品
-      const products = await searchProducts(value || '', ProductType.SELF_MADE);
+      const products = await searchProducts(value || '');
       const options = products.map(product => ({
         label: `${product.productCode} - ${product.productName}`,
         value: product.id!
@@ -159,18 +177,21 @@ const ProductionPlanManagement: React.FC = () => {
       ellipsis: true,
       tip: '批次号是唯一的',
       sorter: true,
+      width: 120,
     },
     {
       title: '需求ID',
       dataIndex: 'demandId',
       ellipsis: true,
       sorter: true,
+      width: 100,
     },
     {
       title: '货品名称',
       dataIndex: 'productName',
       ellipsis: true,
       sorter: true,
+      width: 150,
     },
     {
       title: '拉线',
@@ -178,6 +199,7 @@ const ProductionPlanManagement: React.FC = () => {
       ellipsis: true,
       sorter: true,
       valueType: 'select',
+      width: 120,
       fieldProps: {
         showSearch: true,
         placeholder: '请输入拉线编号或名称搜索',
@@ -194,6 +216,7 @@ const ProductionPlanManagement: React.FC = () => {
       title: '货品类型',
       dataIndex: 'productType',
       valueType: 'select',
+      width: 100,
       valueEnum: {
         [ProductType.SELF_MADE]: { text: '自制件', status: 'Processing' },
       },
@@ -202,22 +225,26 @@ const ProductionPlanManagement: React.FC = () => {
       title: '任务数量',
       dataIndex: 'taskQuantity',
       sorter: true,
+      width: 100,
     },
     {
       title: '登记数量',
       dataIndex: 'registeredQuantity',
       sorter: true,
+      width: 100,
     },
     {
       title: '完成数量',
       dataIndex: 'completionQuantity',
       sorter: true,
+      width: 100,
     },
     {
       title: '开始日期',
       dataIndex: 'startAt',
       valueType: 'date',
       sorter: true,
+      width: 120,
       render: (_, record) => record.startAt ? record.startAt.substring(0, 10) : '-',
     },
     {
@@ -225,12 +252,14 @@ const ProductionPlanManagement: React.FC = () => {
       dataIndex: 'endAt',
       valueType: 'date',
       sorter: true,
+      width: 120,
       render: (_, record) => record.endAt ? record.endAt.substring(0, 10) : '-',
     },
     {
       title: '状态',
       dataIndex: 'taskStatus',
       valueType: 'select',
+      width: 150,
       valueEnum: {
         [TaskStatus.CONFIRMED]: { text: '已确认', status: 'Default' },
         [TaskStatus.EXECUTING]: { text: '执行中', status: 'Processing' },
@@ -271,11 +300,14 @@ const ProductionPlanManagement: React.FC = () => {
       valueType: 'dateTime',
       sorter: true,
       search: false,
+      width: 150,
     },
     {
       title: '操作',
       valueType: 'option',
       key: 'option',
+      width: 90,
+      fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
           <Tooltip title="查看详情">
@@ -314,6 +346,8 @@ const ProductionPlanManagement: React.FC = () => {
         cardBordered
         bordered
         defaultSize="small"
+        scroll={{ x: 1500 }}
+        components={components}
         request={async (params = {}, sort, filter) => {
           try {
             const { current, pageSize, ...restParams } = params;
