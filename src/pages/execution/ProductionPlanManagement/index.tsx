@@ -1,9 +1,25 @@
-import React, { useRef, useState } from 'react';
-import { Button, Space, message, Popconfirm, Switch, Tooltip, Input, Select, DatePicker } from 'antd';
+import React, { useRef, useState, useEffect } from 'react';
+import { Button, Space, message, Popconfirm, Switch, Tooltip, Input, Select, DatePicker, Modal, Form } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { ProTable, ModalForm, ProForm, ProFormText, ProFormDigit, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-components';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
+
+// 引入计划运行时任务相关服务
+import {
+  PlanRuntime,
+  TaskStatus,
+  ProductType,
+  getPlanRuntimePage,
+  createPlanRuntime, 
+  updatePlanRuntime,
+  deletePlanRuntime,
+  updatePlanRuntimeStatus,
+  getPlanRuntimeById,
+  PlanRuntimePageRequest,
+  PlanRuntimeUpdate
+} from '../../../services/planRuntime';
+
 import {
   ProductionPlan,
   ProductionPlanStatus,
@@ -14,20 +30,38 @@ import {
   deleteProductionPlan,
   updateProductionPlanStatus,
 } from '../../../services/productionPlan';
+
 import { searchLines } from '../../../services/line';
+import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
 
 const ProductionPlanManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
+  const [form] = Form.useForm();
   const [searchParams, setSearchParams] = useState<{
     planCode?: string;
     demandCode?: string;
     lineCode?: string;
+    productId?: number;
     status?: number;
     startDate?: string;
     endDate?: string;
-  }>({});
+    productType?: number;
+    batchCode?: string;
+    demandId?: number;
+    taskStatus?: number;
+    startAtBegin?: string;
+    endAtBegin?: string;
+  }>({
+    // 默认只显示自制件类型
+    productType: ProductType.SELF_MADE,
+  });
   const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: string }[]>([]);
+  const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
+  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+  const [currentRecord, setCurrentRecord] = useState<PlanRuntime | null>(null);
+  const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
+  const [detailRecord, setDetailRecord] = useState<PlanRuntime | null>(null);
 
   // 处理拉线搜索
   const handleLineSearch = debounce(async (value: string) => {
@@ -43,23 +77,92 @@ const ProductionPlanManagement: React.FC = () => {
     }
   }, 500);
 
+  // 处理货品搜索
+  const handleProductSearch = debounce(async (value: string) => {
+    try {
+      // 只搜索自制件类型的货品
+      const products = await searchProducts(value || '', ProductType.SELF_MADE);
+      const options = products.map(product => ({
+        label: `${product.productCode} - ${product.productName}`,
+        value: product.id!
+      }));
+      setSearchProductOptions(options);
+    } catch (error: any) {
+      message.error('搜索货品失败');
+    }
+  }, 500);
+
   // 初始加载默认选项
-  React.useEffect(() => {
+  useEffect(() => {
     handleLineSearch('');
+    handleProductSearch('');
   }, []);
 
-  const columns: ProColumns<ProductionPlan>[] = [
+  // 处理查看详情
+  const handleViewDetails = async (record: PlanRuntime) => {
+    try {
+      const detailData = await getPlanRuntimeById(record.id);
+      setDetailRecord(detailData);
+      setDetailModalVisible(true);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取详情失败');
+    }
+  };
+
+  // 处理编辑
+  const handleEdit = (record: PlanRuntime) => {
+    setCurrentRecord(record);
+    form.setFieldsValue({
+      batchCode: record.batchCode,
+      taskQuantity: record.taskQuantity,
+      registeredQuantity: record.registeredQuantity,
+      completionQuantity: record.completionQuantity,
+      startAt: record.startAt ? record.startAt.substring(0, 10) : undefined,
+      endAt: record.endAt ? record.endAt.substring(0, 10) : undefined,
+      taskStatus: record.taskStatus
+    });
+    setEditModalVisible(true);
+  };
+
+  // 处理保存编辑
+  const handleSaveEdit = async () => {
+    try {
+      const values = await form.validateFields();
+      if (!currentRecord?.id) return;
+
+      const updateData: PlanRuntimeUpdate = {
+        batchCode: values.batchCode,
+        taskQuantity: values.taskQuantity,
+        registeredQuantity: values.registeredQuantity,
+        completionQuantity: values.completionQuantity,
+        taskStatus: values.taskStatus,
+        startAt: values.startAt,
+        endAt: values.endAt
+      };
+
+      await updatePlanRuntime(currentRecord.id, updateData);
+      message.success('更新成功');
+      setEditModalVisible(false);
+      actionRef.current?.reload();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '更新失败');
+    }
+  };
+
+  const columns: ProColumns<PlanRuntime>[] = [
     {
-      title: '计划编号',
-      dataIndex: 'planCode',
+      title: '批次号',
+      dataIndex: 'batchCode',
       copyable: true,
       ellipsis: true,
-      tip: '计划编号是唯一的',
+      tip: '批次号是唯一的',
       sorter: true,
     },
     {
-      title: '需求编号',
-      dataIndex: 'demandCode',
+      title: '需求ID',
+      dataIndex: 'demandId',
       ellipsis: true,
       sorter: true,
     },
@@ -71,10 +174,9 @@ const ProductionPlanManagement: React.FC = () => {
     },
     {
       title: '拉线',
-      dataIndex: 'lineCode',
+      dataIndex: 'lineName',
       ellipsis: true,
       sorter: true,
-      render: (_, record) => `${record.lineCode} - ${record.lineName}`,
       valueType: 'select',
       fieldProps: {
         showSearch: true,
@@ -89,45 +191,79 @@ const ProductionPlanManagement: React.FC = () => {
       },
     },
     {
-      title: '计划数量',
-      dataIndex: 'planQuantity',
-      sorter: true,
-      search: false,
-    },
-    {
-      title: '已完成数量',
-      dataIndex: 'completedQuantity',
-      sorter: true,
-      search: false,
-    },
-    {
-      title: '开始日期',
-      dataIndex: 'startDate',
-      valueType: 'date',
-      sorter: true,
-    },
-    {
-      title: '结束日期',
-      dataIndex: 'endDate',
-      valueType: 'date',
-      sorter: true,
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
+      title: '货品类型',
+      dataIndex: 'productType',
       valueType: 'select',
       valueEnum: {
-        [ProductionPlanStatus.DRAFT]: { text: '草稿', status: 'Default' },
-        [ProductionPlanStatus.CONFIRMED]: { text: '已确认', status: 'Processing' },
-        [ProductionPlanStatus.EXECUTING]: { text: '执行中', status: 'Processing' },
-        [ProductionPlanStatus.COMPLETED]: { text: '已完成', status: 'Success' },
-        [ProductionPlanStatus.CANCELLED]: { text: '已取消', status: 'Error' },
+        [ProductType.SELF_MADE]: { text: '自制件', status: 'Processing' },
       },
     },
     {
-      title: '创建人',
-      dataIndex: 'createdBy',
-      search: false,
+      title: '任务数量',
+      dataIndex: 'taskQuantity',
+      sorter: true,
+    },
+    {
+      title: '登记数量',
+      dataIndex: 'registeredQuantity',
+      sorter: true,
+    },
+    {
+      title: '完成数量',
+      dataIndex: 'completionQuantity',
+      sorter: true,
+    },
+    {
+      title: '开始日期',
+      dataIndex: 'startAt',
+      valueType: 'date',
+      sorter: true,
+      render: (_, record) => record.startAt ? record.startAt.substring(0, 10) : '-',
+    },
+    {
+      title: '结束日期',
+      dataIndex: 'endAt',
+      valueType: 'date',
+      sorter: true,
+      render: (_, record) => record.endAt ? record.endAt.substring(0, 10) : '-',
+    },
+    {
+      title: '状态',
+      dataIndex: 'taskStatus',
+      valueType: 'select',
+      valueEnum: {
+        [TaskStatus.CONFIRMED]: { text: '已确认', status: 'Default' },
+        [TaskStatus.EXECUTING]: { text: '执行中', status: 'Processing' },
+        [TaskStatus.COMPLETED]: { text: '已完成', status: 'Success' },
+        [TaskStatus.CANCELLED]: { text: '已取消', status: 'Error' },
+      },
+      render: (_, record) => (
+        <Space>
+          <span>{
+            record.taskStatus === TaskStatus.CONFIRMED ? '已确认' :
+            record.taskStatus === TaskStatus.EXECUTING ? '执行中' :
+            record.taskStatus === TaskStatus.COMPLETED ? '已完成' :
+            record.taskStatus === TaskStatus.CANCELLED ? '已取消' : '未知'
+          }</span>
+          <Switch
+            checked={record.taskStatus === TaskStatus.EXECUTING || record.taskStatus === TaskStatus.COMPLETED}
+            checkedChildren="执行中"
+            unCheckedChildren="已确认"
+            disabled={record.taskStatus === TaskStatus.CANCELLED || record.taskStatus === TaskStatus.COMPLETED}
+            onChange={async (checked) => {
+              try {
+                const newStatus = checked ? TaskStatus.EXECUTING : TaskStatus.CONFIRMED;
+                await updatePlanRuntimeStatus(record.id, newStatus);
+                message.success('状态更新成功');
+                actionRef.current?.reload();
+              } catch (error) {
+                const apiError = error as ApiError;
+                message.error(apiError.response?.data?.message || apiError.message || '状态更新失败');
+              }
+            }}
+          />
+        </Space>
+      ),
     },
     {
       title: '创建时间',
@@ -142,14 +278,17 @@ const ProductionPlanManagement: React.FC = () => {
       key: 'option',
       render: (_, record) => (
         <Space size="middle">
+          <Tooltip title="查看详情">
+            <a onClick={() => handleViewDetails(record)}><EyeOutlined style={{ color: '#1890ff' }} /></a>
+          </Tooltip>
           <Tooltip title="编辑">
-            <Button type="link" icon={<EditOutlined />} />
+            <a onClick={() => handleEdit(record)}><EditOutlined style={{ color: '#1890ff' }} /></a>
           </Tooltip>
           <Popconfirm
-            title="确定要删除该生产计划吗？"
+            title="确定要删除该生产任务吗？"
             onConfirm={async () => {
               try {
-                await deleteProductionPlan(record.id);
+                await deletePlanRuntime(record.id);
                 message.success('删除成功');
                 actionRef.current?.reload();
               } catch (error) {
@@ -159,7 +298,7 @@ const ProductionPlanManagement: React.FC = () => {
             }}
           >
             <Tooltip title="删除">
-              <Button type="link" icon={<DeleteOutlined style={{ color: '#ff4d4f' }} />} />
+              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
             </Tooltip>
           </Popconfirm>
         </Space>
@@ -168,139 +307,157 @@ const ProductionPlanManagement: React.FC = () => {
   ];
 
   return (
-    <ProTable<ProductionPlan>
-      columns={columns}
-      actionRef={actionRef}
-      cardBordered
-      bordered
-      defaultSize="small"
-      request={async (params = {}, sort, filter) => {
-        try {
-          const { current, pageSize, ...restParams } = params;
-          
-          // 构建请求参数
-          const requestParams: ProductionPlanPageRequest = {
-            pageNum: current || 1,
-            pageSize: pageSize || 10,
-            ...restParams,
-            ...searchParams,
-            sortField: Object.keys(sort || {})[0],
-            sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
-          };
+    <>
+      <ProTable<PlanRuntime>
+        columns={columns}
+        actionRef={actionRef}
+        cardBordered
+        bordered
+        defaultSize="small"
+        request={async (params = {}, sort, filter) => {
+          try {
+            const { current, pageSize, ...restParams } = params;
+            
+            // 构建请求参数
+            const requestParams: PlanRuntimePageRequest = {
+              pageNum: current || 1,
+              pageSize: pageSize || 10,
+              ...restParams,
+              ...searchParams,
+              // 固定只查询自制件类型
+              productType: ProductType.SELF_MADE,
+              sortField: Object.keys(sort || {})[0],
+              sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
+            };
 
-          const result = await getProductionPlanPage(requestParams);
+            const result = await getPlanRuntimePage(requestParams);
 
-          return {
-            data: result.list,
-            success: true,
-            total: result.total,
-          };
-        } catch (error) {
-          const apiError = error as ApiError;
-          message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
-          return {
-            data: [],
-            success: false,
-            total: 0,
-          };
+            return {
+              data: result.list,
+              success: true,
+              total: result.total,
+            };
+          } catch (error) {
+            const apiError = error as ApiError;
+            message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
+            return {
+              data: [],
+              success: false,
+              total: 0,
+            };
+          }
+        }}
+        search={false}
+        editable={{
+          type: 'multiple',
+        }}
+        columnsState={{
+          persistenceKey: 'execution-production-plan-table',
+          persistenceType: 'localStorage',
+        }}
+        rowKey="id"
+        options={{
+          density: false,
+          fullScreen: true,
+          reload: true,
+          setting: {
+            listsHeight: 400,
+          },
+        }}
+        headerTitle={
+          <Space>
+            <Input.Search
+              placeholder="批次号"
+              onSearch={(value) => {
+                setSearchParams(prev => ({ ...prev, batchCode: value }));
+                actionRef.current?.reload();
+              }}
+              style={{ width: 200 }}
+              allowClear
+            />
+            <Input.Search
+              placeholder="需求ID"
+              onSearch={(value) => {
+                setSearchParams(prev => ({ ...prev, demandId: value ? Number(value) : undefined }));
+                actionRef.current?.reload();
+              }}
+              style={{ width: 200 }}
+              allowClear
+            />
+            <Select
+              placeholder="拉线"
+              style={{ width: 200 }}
+              showSearch
+              allowClear
+              defaultActiveFirstOption={false}
+              filterOption={false}
+              onSearch={handleLineSearch}
+              onChange={(value: string) => {
+                setSearchParams(prev => ({ ...prev, lineCode: value }));
+                actionRef.current?.reload();
+              }}
+              options={searchLineOptions}
+              onClick={() => handleLineSearch('')}
+            />
+            <Select
+              placeholder="货品"
+              style={{ width: 200 }}
+              showSearch
+              allowClear
+              defaultActiveFirstOption={false}
+              filterOption={false}
+              onSearch={handleProductSearch}
+              onChange={(value: number) => {
+                setSearchParams(prev => ({ ...prev, productId: value }));
+                actionRef.current?.reload();
+              }}
+              options={searchProductOptions}
+              onClick={() => handleProductSearch('')}
+            />
+            <Select
+              placeholder="状态"
+              style={{ width: 200 }}
+              allowClear
+              options={[
+                { label: '已确认', value: TaskStatus.CONFIRMED },
+                { label: '执行中', value: TaskStatus.EXECUTING },
+                { label: '已完成', value: TaskStatus.COMPLETED },
+                { label: '已取消', value: TaskStatus.CANCELLED },
+              ]}
+              onChange={(value) => {
+                setSearchParams(prev => ({ ...prev, taskStatus: value }));
+                actionRef.current?.reload();
+              }}
+            />
+            <DatePicker.RangePicker
+              placeholder={['开始日期', '结束日期']}
+              style={{ width: 300 }}
+              onChange={(dates) => {
+                setSearchParams(prev => ({
+                  ...prev,
+                  startAtBegin: dates?.[0]?.format('YYYY-MM-DD'),
+                  endAtBegin: dates?.[1]?.format('YYYY-MM-DD'),
+                }));
+                actionRef.current?.reload();
+              }}
+              allowClear
+            />
+          </Space>
         }
-      }}
-      search={false}
-      editable={{
-        type: 'multiple',
-      }}
-      columnsState={{
-        persistenceKey: 'execution-production-plan-table',
-        persistenceType: 'localStorage',
-      }}
-      rowKey="id"
-      options={{
-        density: false,
-        fullScreen: true,
-        reload: true,
-        setting: {
-          listsHeight: 400,
-        },
-      }}
-      headerTitle={
-        <Space>
-          <Input.Search
-            placeholder="计划编号"
-            onSearch={(value) => {
-              setSearchParams(prev => ({ ...prev, planCode: value }));
-              actionRef.current?.reload();
-            }}
-            style={{ width: 200 }}
-            allowClear
-          />
-          <Input.Search
-            placeholder="需求编号"
-            onSearch={(value) => {
-              setSearchParams(prev => ({ ...prev, demandCode: value }));
-              actionRef.current?.reload();
-            }}
-            style={{ width: 200 }}
-            allowClear
-          />
-          <Select
-            placeholder="拉线编号/名称"
-            style={{ width: 200 }}
-            showSearch
-            allowClear
-            defaultActiveFirstOption={false}
-            filterOption={false}
-            onSearch={handleLineSearch}
-            onChange={(value: string) => {
-              setSearchParams(prev => ({ ...prev, lineCode: value }));
-              actionRef.current?.reload();
-            }}
-            options={searchLineOptions}
-            onClick={() => handleLineSearch('')}
-          />
-          <Select
-            placeholder="状态"
-            style={{ width: 200 }}
-            allowClear
-            options={[
-              { label: '草稿', value: ProductionPlanStatus.DRAFT },
-              { label: '已确认', value: ProductionPlanStatus.CONFIRMED },
-              { label: '执行中', value: ProductionPlanStatus.EXECUTING },
-              { label: '已完成', value: ProductionPlanStatus.COMPLETED },
-              { label: '已取消', value: ProductionPlanStatus.CANCELLED },
-            ]}
-            onChange={(value) => {
-              setSearchParams(prev => ({ ...prev, status: value }));
-              actionRef.current?.reload();
-            }}
-          />
-          <DatePicker.RangePicker
-            placeholder={['开始日期', '结束日期']}
-            style={{ width: 300 }}
-            onChange={(dates) => {
-              setSearchParams(prev => ({
-                ...prev,
-                startDate: dates?.[0]?.format('YYYY-MM-DD'),
-                endDate: dates?.[1]?.format('YYYY-MM-DD'),
-              }));
-              actionRef.current?.reload();
-            }}
-            allowClear
-          />
-        </Space>
-      }
-      pagination={{
-        defaultPageSize: 10,
-        showQuickJumper: true,
-        showSizeChanger: true,
-        pageSizeOptions: ['10', '20', '50', '100'],
-      }}
-      dateFormatter="string"
-      toolBarRender={() => [
-        <Button type="primary" key="primary" onClick={() => {}}>
-          <PlusOutlined /> 新建计划
-        </Button>,
-      ]}
-    />
+        pagination={{
+          defaultPageSize: 10,
+          showQuickJumper: true,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+        }}
+        dateFormatter="string"
+        toolBarRender={() => [
+          <Button type="primary" key="primary" onClick={() => {}}>
+            <PlusOutlined /> 新建计划
+          </Button>,
+        ]}
+      />
+    </>
   );
 };
 
