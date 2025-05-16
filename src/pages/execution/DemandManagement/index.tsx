@@ -41,10 +41,6 @@ import {
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
-import { tableSelection } from '../../../utils/tableSelection';
-
-// 定义表格唯一标识符
-const TABLE_ID = 'demand_management';
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
@@ -68,31 +64,6 @@ const DemandManagement: React.FC = () => {
   }>({});
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [form] = Form.useForm();
-  // 添加选中行状态
-  const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
-
-  // 恢复选中行状态
-  useEffect(() => {
-    // 从localStorage获取选中行状态
-    const savedRowId = tableSelection.getSelectedRow(TABLE_ID);
-    if (savedRowId !== null) {
-      setSelectedRowId(savedRowId);
-    }
-  }, []);
-
-  // 处理行点击事件
-  const handleRowClick = (record: Demand) => {
-    if (record.id) {
-      // 如果点击的是当前选中行，则取消选中
-      if (selectedRowId === record.id) {
-        setSelectedRowId(null);
-        tableSelection.clearSelectedRow(TABLE_ID);
-      } else {
-        setSelectedRowId(record.id);
-        tableSelection.saveSelectedRow(TABLE_ID, record.id);
-      }
-    }
-  };
 
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
@@ -277,6 +248,7 @@ const DemandManagement: React.FC = () => {
                 try {
                   await confirmAndExecuteDemand(record.id!);
                   message.success('确认执行成功');
+                  // 刷新表格数据
                   actionRef.current?.reload();
                 } catch (error) {
                   const apiError = error as ApiError;
@@ -298,6 +270,7 @@ const DemandManagement: React.FC = () => {
                 try {
                   await updateDemandStatus(record.id!, DemandStatus.CANCELLED);
                   message.success('状态修改成功');
+                  // 刷新表格数据
                   actionRef.current?.reload();
                 } catch (error) {
                   const apiError = error as ApiError;
@@ -319,6 +292,7 @@ const DemandManagement: React.FC = () => {
                 try {
                   await deleteDemand(record.id!);
                   message.success('删除成功');
+                  // 刷新表格数据
                   actionRef.current?.reload();
                 } catch (error) {
                   const apiError = error as ApiError;
@@ -353,19 +327,13 @@ const DemandManagement: React.FC = () => {
         // 使用状态颜色映射获取背景色
         const bgColor = statusColorMap[record.status] || statusColorMap[DemandStatus.DRAFT];
         
-        // 判断当前行是否被选中
-        const isSelected = record.id === selectedRowId;
-        
         return {
-          onClick: () => handleRowClick(record),
           style: {
             position: 'relative',
             backgroundImage: `linear-gradient(to right, ${bgColor} ${progress}%, transparent ${progress}%)`,
             backgroundPosition: 'bottom',
             backgroundRepeat: 'no-repeat',
             backgroundSize: '100% 10px',
-            // 添加选中行的背景色
-            backgroundColor: isSelected ? 'rgba(24, 144, 255, 0.1)' : undefined,
           },
         };
       }}
@@ -523,6 +491,7 @@ const DemandManagement: React.FC = () => {
             try {
               await syncDemands();
               message.success('需求同步成功');
+              // 刷新表格数据
               actionRef.current?.reload();
             } catch (error) {
               const apiError = error as ApiError;
