@@ -41,6 +41,10 @@ import {
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
+import { db } from '../../../utils/db';
+
+// 定义表格唯一标识符
+const TABLE_ID = 'demand_management';
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
@@ -64,6 +68,38 @@ const DemandManagement: React.FC = () => {
   }>({});
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [form] = Form.useForm();
+  // 添加选中行状态
+  const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
+
+  // 恢复选中行状态
+  useEffect(() => {
+    const loadSelectedRow = async () => {
+      try {
+        const savedRowId = await db.getTableSelectedRow(TABLE_ID);
+        if (savedRowId) {
+          setSelectedRowId(savedRowId);
+        }
+      } catch (error) {
+        console.error('获取选中行状态失败', error);
+      }
+    };
+
+    loadSelectedRow();
+  }, []);
+
+  // 处理行点击事件
+  const handleRowClick = (record: Demand) => {
+    if (record.id) {
+      // 如果点击的是当前选中行，则取消选中
+      if (selectedRowId === record.id) {
+        setSelectedRowId(null);
+        db.clearTableSelectedRow(TABLE_ID);
+      } else {
+        setSelectedRowId(record.id);
+        db.saveTableSelectedRow(record.id, TABLE_ID);
+      }
+    }
+  };
 
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
@@ -320,19 +356,23 @@ const DemandManagement: React.FC = () => {
         const completionQuantity = record.completionQuantity || 0;
         const purgeQuantity = record.purgeQuantity || 0;
         const progress = purgeQuantity > 0 ? (completionQuantity / purgeQuantity) * 100 : 0;
-
-        // console.log('record.status', statusColorMap[record.status]);
         
         // 使用状态颜色映射获取背景色
         const bgColor = statusColorMap[record.status] || statusColorMap[DemandStatus.DRAFT];
-
+        
+        // 判断当前行是否被选中
+        const isSelected = record.id === selectedRowId;
+        
         return {
+          onClick: () => handleRowClick(record),
           style: {
             position: 'relative',
             backgroundImage: `linear-gradient(to right, ${bgColor} ${progress}%, transparent ${progress}%)`,
             backgroundPosition: 'bottom',
             backgroundRepeat: 'no-repeat',
             backgroundSize: '100% 10px',
+            // 添加选中行的背景色
+            backgroundColor: isSelected ? 'rgba(24, 144, 255, 0.1)' : undefined,
           },
         };
       }}
