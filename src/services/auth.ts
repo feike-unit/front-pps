@@ -1,6 +1,5 @@
 import api from './api';
-import { db } from '../utils/db';
-import type { TokenData } from '../utils/db';
+import { tokenStorage, type TokenData } from '../utils/tokenStorage';
 
 export interface LoginParams {
   username: string;
@@ -44,7 +43,7 @@ export interface PasswordUpdateDto {
 // 登录
 export const login = async (params: LoginParams): Promise<AuthResponse> => {
   const response = await api.post<AuthResponse>('/auth/login', params);
-  await db.setTokens({
+  tokenStorage.setTokens({
     accessToken: response.data.accessToken,
     refreshToken: response.data.refreshToken,
   });
@@ -57,14 +56,14 @@ export const logout = async (): Promise<void> => {
     await api.post('/auth/logout');
   } finally {
     // 无论请求是否成功，都清除本地token
-    await db.clearTokens();
+    tokenStorage.clearTokens();
   }
 };
 
 // 刷新token
 export const refreshToken = async (params: RefreshTokenParams): Promise<AuthResponse> => {
   const response = await api.post<AuthResponse>('/auth/refresh', params);
-  await db.setTokens({
+  tokenStorage.setTokens({
     accessToken: response.data.accessToken,
     refreshToken: response.data.refreshToken,
   });

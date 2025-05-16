@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { db } from '../../utils/db';
+import { tabStorage } from '../../utils/tabStorage';
 import { routeMetadata } from '../../routes';
 import type { UserInfo } from '../../services/user';
+
+// 扩展TabItem类型，添加icon属性
 export interface TabItem {
   key: string;
   label: string;
@@ -44,12 +46,12 @@ export const TabsProvider: React.FC<{ children: ReactNode, userInfo: UserInfo }>
     };
   };
 
-  // 初始化：从数据库加载标签页状态
+  // 初始化：从存储加载标签页状态
   useEffect(() => {
-    const initTabs = async () => {
+    const initTabs = () => {
       try {
-        const storedTabs = await db.getTabs(userInfo.id);
-        const storedActiveTab = await db.getActiveTab(userInfo.id);
+        const storedTabs = tabStorage.getTabs(userInfo.id);
+        const storedActiveTab = tabStorage.getActiveTab(userInfo.id);
         
         if (storedTabs.length > 0) {
           // 恢复标签页时添加图标
@@ -87,28 +89,28 @@ export const TabsProvider: React.FC<{ children: ReactNode, userInfo: UserInfo }>
     const currentTab = tabs.find(tab => tab.key === location.pathname);
     if (currentTab) {
       setActiveTab(location.pathname);
-      db.saveActiveTab(location.pathname, userInfo.id);
+      tabStorage.saveActiveTab(location.pathname, userInfo.id);
     }
   }, [location.pathname, tabs, isInitialized]);
 
   // 添加标签页
-  const addTab = async (tab: TabItem) => {
+  const addTab = (tab: TabItem) => {
     setTabs(prevTabs => {
       const existingTab = prevTabs.find(t => t.key === tab.key);
       if (!existingTab) {
         const newTabs = [...prevTabs, tab];
-        // 保存到数据库时只保存必要的信息
-        db.saveTabs(newTabs.map(({ key, label, closable }) => ({ key, label, closable })), userInfo.id);
+        // 保存到存储时只保存必要的信息
+        tabStorage.saveTabs(newTabs.map(({ key, label, closable }) => ({ key, label, closable })), userInfo.id);
         return newTabs;
       }
       return prevTabs;
     });
     setActiveTab(tab.key);
-    db.saveActiveTab(tab.key, userInfo.id);
+    tabStorage.saveActiveTab(tab.key, userInfo.id);
   };
 
   // 移除标签页
-  const removeTab = async (targetKey: string) => {
+  const removeTab = (targetKey: string) => {
     setTabs(prevTabs => {
       const targetIndex = prevTabs.findIndex(tab => tab.key === targetKey);
       const newTabs = prevTabs.filter(tab => tab.key !== targetKey);
@@ -123,11 +125,11 @@ export const TabsProvider: React.FC<{ children: ReactNode, userInfo: UserInfo }>
         const newActiveKey = newTabs[targetIndex - 1]?.key || newTabs[0].key;
         setActiveTab(newActiveKey);
         navigate(newActiveKey);
-        db.saveActiveTab(newActiveKey, userInfo.id);
+        tabStorage.saveActiveTab(newActiveKey, userInfo.id);
       }
 
-      // 保存到数据库时只保存必要的信息
-      db.saveTabs(newTabs.map(({ key, label, closable }) => ({ key, label, closable })), userInfo.id);
+      // 保存到存储时只保存必要的信息
+      tabStorage.saveTabs(newTabs.map(({ key, label, closable }) => ({ key, label, closable })), userInfo.id);
       return newTabs;
     });
   };
