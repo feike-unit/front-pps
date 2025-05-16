@@ -41,7 +41,7 @@ import {
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
-import { db } from '../../../utils/db';
+import { tableSelection } from '../../../utils/tableSelection';
 
 // 定义表格唯一标识符
 const TABLE_ID = 'demand_management';
@@ -73,18 +73,11 @@ const DemandManagement: React.FC = () => {
 
   // 恢复选中行状态
   useEffect(() => {
-    const loadSelectedRow = async () => {
-      try {
-        const savedRowId = await db.getTableSelectedRow(TABLE_ID);
-        if (savedRowId) {
-          setSelectedRowId(savedRowId);
-        }
-      } catch (error) {
-        console.error('获取选中行状态失败', error);
-      }
-    };
-
-    loadSelectedRow();
+    // 从localStorage获取选中行状态
+    const savedRowId = tableSelection.getSelectedRow(TABLE_ID);
+    if (savedRowId !== null) {
+      setSelectedRowId(savedRowId);
+    }
   }, []);
 
   // 处理行点击事件
@@ -93,10 +86,10 @@ const DemandManagement: React.FC = () => {
       // 如果点击的是当前选中行，则取消选中
       if (selectedRowId === record.id) {
         setSelectedRowId(null);
-        db.clearTableSelectedRow(TABLE_ID);
+        tableSelection.clearSelectedRow(TABLE_ID);
       } else {
         setSelectedRowId(record.id);
-        db.saveTableSelectedRow(record.id, TABLE_ID);
+        tableSelection.saveSelectedRow(TABLE_ID, record.id);
       }
     }
   };
