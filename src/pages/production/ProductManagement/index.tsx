@@ -138,7 +138,7 @@ const ProductManagement: React.FC = () => {
             title="编辑货品"
             trigger={
               <Tooltip title="编辑">
-                <Button type="link" icon={<EditOutlined />} />
+                <a><EditOutlined style={{ color: '#1890ff' }} /></a>
               </Tooltip>
             }
             initialValues={record}
@@ -242,7 +242,7 @@ const ProductManagement: React.FC = () => {
             }}
           >
             <Tooltip title="删除">
-              <Button type="link" icon={<DeleteOutlined style={{ color: '#ff4d4f' }} />} />
+              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
             </Tooltip>
           </Popconfirm>
         </Space>
