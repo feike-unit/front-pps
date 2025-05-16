@@ -264,6 +264,7 @@ const MainLayoutContent: React.FC<{ userInfo: UserInfo }> = ({ userInfo }) => {
             },
             type: 'editable-card',
             hideAdd: true,
+            className: styles.customTabs,
           }}
         >
           <ProCard>
