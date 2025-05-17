@@ -21,7 +21,9 @@ export interface PlanRuntime {
   updatedAt: string;
   
   // 附加字段
+  productCode?: string;
   productName?: string;
+  lineCode?: string;
   lineName?: string;
 }
 
