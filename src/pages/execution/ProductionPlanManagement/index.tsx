@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { Button, Space, message, Popconfirm, Switch, Tooltip, Input, Select, DatePicker, Modal, Form } from 'antd';
+import { Space, message, Tooltip, Select, DatePicker, Modal } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
-import { ProTable, ModalForm, ProForm, ProFormText, ProFormDigit, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { ProTable, ProDescriptions } from '@ant-design/pro-components';
+import { EyeOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 
 
@@ -14,24 +14,12 @@ import {
   TaskStatus,
   ProductType,
   getPlanRuntimePage,
-  createPlanRuntime, 
-  updatePlanRuntime,
-  deletePlanRuntime,
-  updatePlanRuntimeStatus,
   getPlanRuntimeById,
-  PlanRuntimePageRequest,
-  PlanRuntimeUpdate
+  PlanRuntimePageRequest
 } from '../../../services/planRuntime';
 
 import {
-  ProductionPlan,
   ProductionPlanStatus,
-  ProductionPlanPageRequest,
-  getProductionPlanPage,
-  createProductionPlan,
-  updateProductionPlan,
-  deleteProductionPlan,
-  updateProductionPlanStatus,
 } from '../../../services/productionPlan';
 
 import { searchLines } from '../../../services/line';
@@ -40,7 +28,6 @@ import debounce from 'lodash/debounce';
 
 const ProductionPlanManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
-  const [form] = Form.useForm();
   const [searchParams, setSearchParams] = useState<{
     planCode?: string;
     demandCode?: string;
@@ -61,8 +48,6 @@ const ProductionPlanManagement: React.FC = () => {
   });
   const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: string }[]>([]);
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
-  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
-  const [currentRecord, setCurrentRecord] = useState<PlanRuntime | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<PlanRuntime | null>(null);
   
@@ -126,47 +111,6 @@ const ProductionPlanManagement: React.FC = () => {
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取详情失败');
-    }
-  };
-
-  // 处理编辑
-  const handleEdit = (record: PlanRuntime) => {
-    setCurrentRecord(record);
-    form.setFieldsValue({
-      batchCode: record.batchCode,
-      taskQuantity: record.taskQuantity,
-      registeredQuantity: record.registeredQuantity,
-      completionQuantity: record.completionQuantity,
-      startAt: record.startAt ? record.startAt.substring(0, 10) : undefined,
-      endAt: record.endAt ? record.endAt.substring(0, 10) : undefined,
-      taskStatus: record.taskStatus
-    });
-    setEditModalVisible(true);
-  };
-
-  // 处理保存编辑
-  const handleSaveEdit = async () => {
-    try {
-      const values = await form.validateFields();
-      if (!currentRecord?.id) return;
-
-      const updateData: PlanRuntimeUpdate = {
-        batchCode: values.batchCode,
-        taskQuantity: values.taskQuantity,
-        registeredQuantity: values.registeredQuantity,
-        completionQuantity: values.completionQuantity,
-        taskStatus: values.taskStatus,
-        startAt: values.startAt,
-        endAt: values.endAt
-      };
-
-      await updatePlanRuntime(currentRecord.id, updateData);
-      message.success('更新成功');
-      setEditModalVisible(false);
-      actionRef.current?.reload();
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '更新失败');
     }
   };
 
@@ -287,33 +231,13 @@ const ProductionPlanManagement: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      width: 90,
+      width: 60,
       fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
           <Tooltip title="查看详情">
             <a onClick={() => handleViewDetails(record)}><EyeOutlined style={{ color: '#1890ff' }} /></a>
           </Tooltip>
-          <Tooltip title="编辑">
-            <a onClick={() => handleEdit(record)}><EditOutlined style={{ color: '#1890ff' }} /></a>
-          </Tooltip>
-          <Popconfirm
-            title="确定要删除该生产任务吗？"
-            onConfirm={async () => {
-              try {
-                await deletePlanRuntime(record.id);
-                message.success('删除成功');
-                actionRef.current?.reload();
-              } catch (error) {
-                const apiError = error as ApiError;
-                message.error(apiError.response?.data?.message || apiError.message || '删除失败');
-              }
-            }}
-          >
-            <Tooltip title="删除">
-              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
-            </Tooltip>
-          </Popconfirm>
         </Space>
       ),
     },
@@ -456,6 +380,74 @@ const ProductionPlanManagement: React.FC = () => {
         }}
         dateFormatter="string"
       />
+
+      {/* 详情对话框 */}
+      <Modal
+        title="生产计划详情"
+        open={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        footer={null}
+        width={800}
+      >
+        {detailRecord && (
+          <ProDescriptions<PlanRuntime>
+            column={2}
+            title={false}
+            dataSource={detailRecord}
+            columns={[
+              {
+                title: '批次号',
+                dataIndex: 'batchCode',
+              },
+              {
+                title: '货品编号/名称',
+                dataIndex: 'productCode',
+                render: (_, record) => record.productCode ? `${record.productCode} - ${record.productName}` : record.productName,
+              },
+              {
+                title: '拉线',
+                dataIndex: 'lineName',
+                render: (_, record) => record.lineCode ? `${record.lineCode} - ${record.lineName}` : record.lineName,
+              },
+              {
+                title: '货品类型',
+                dataIndex: 'productType',
+                valueEnum: {
+                  1: { text: '采购件' },
+                  2: { text: '自制件' },
+                  3: { text: '委外件' },
+                },
+              },
+              {
+                title: '任务数量',
+                dataIndex: 'taskQuantity',
+              },
+              {
+                title: '登记数量',
+                dataIndex: 'registeredQuantity',
+              },
+              {
+                title: '完成数量',
+                dataIndex: 'completionQuantity',
+              },
+              {
+                title: '开始日期',
+                dataIndex: 'startAt',
+                render: (_, record) => record.startAt ? record.startAt.substring(0, 10) : '-',
+              },
+              {
+                title: '结束日期',
+                dataIndex: 'endAt',
+                render: (_, record) => record.endAt ? record.endAt.substring(0, 10) : '-',
+              },
+              {
+                title: '创建时间',
+                dataIndex: 'createdAt',
+              },
+            ]}
+          />
+        )}
+      </Modal>
     </>
   );
 };
