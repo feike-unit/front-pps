@@ -255,45 +255,7 @@ const ProductionPlanManagement: React.FC = () => {
       width: 120,
       render: (_, record) => record.endAt ? record.endAt.substring(0, 10) : '-',
     },
-    {
-      title: '状态',
-      dataIndex: 'taskStatus',
-      valueType: 'select',
-      width: 150,
-      valueEnum: {
-        [TaskStatus.CONFIRMED]: { text: '已确认', status: 'Default' },
-        [TaskStatus.EXECUTING]: { text: '执行中', status: 'Processing' },
-        [TaskStatus.COMPLETED]: { text: '已完成', status: 'Success' },
-        [TaskStatus.CANCELLED]: { text: '已取消', status: 'Error' },
-      },
-      render: (_, record) => (
-        <Space>
-          <span>{
-            record.taskStatus === TaskStatus.CONFIRMED ? '已确认' :
-            record.taskStatus === TaskStatus.EXECUTING ? '执行中' :
-            record.taskStatus === TaskStatus.COMPLETED ? '已完成' :
-            record.taskStatus === TaskStatus.CANCELLED ? '已取消' : '未知'
-          }</span>
-          <Switch
-            checked={record.taskStatus === TaskStatus.EXECUTING || record.taskStatus === TaskStatus.COMPLETED}
-            checkedChildren="执行中"
-            unCheckedChildren="已确认"
-            disabled={record.taskStatus === TaskStatus.CANCELLED || record.taskStatus === TaskStatus.COMPLETED}
-            onChange={async (checked) => {
-              try {
-                const newStatus = checked ? TaskStatus.EXECUTING : TaskStatus.CONFIRMED;
-                await updatePlanRuntimeStatus(record.id, newStatus);
-                message.success('状态更新成功');
-                actionRef.current?.reload();
-              } catch (error) {
-                const apiError = error as ApiError;
-                message.error(apiError.response?.data?.message || apiError.message || '状态更新失败');
-              }
-            }}
-          />
-        </Space>
-      ),
-    },
+
     {
       title: '创建时间',
       dataIndex: 'createdAt',
@@ -400,24 +362,6 @@ const ProductionPlanManagement: React.FC = () => {
         }}
         headerTitle={
           <Space>
-            <Input.Search
-              placeholder="批次号"
-              onSearch={(value) => {
-                setSearchParams(prev => ({ ...prev, batchCode: value }));
-                actionRef.current?.reload();
-              }}
-              style={{ width: 200 }}
-              allowClear
-            />
-            <Input.Search
-              placeholder="需求ID"
-              onSearch={(value) => {
-                setSearchParams(prev => ({ ...prev, demandId: value ? Number(value) : undefined }));
-                actionRef.current?.reload();
-              }}
-              style={{ width: 200 }}
-              allowClear
-            />
             <Select
               placeholder="拉线"
               style={{ width: 200 }}
@@ -448,21 +392,7 @@ const ProductionPlanManagement: React.FC = () => {
               options={searchProductOptions}
               onClick={() => handleProductSearch('')}
             />
-            <Select
-              placeholder="状态"
-              style={{ width: 200 }}
-              allowClear
-              options={[
-                { label: '已确认', value: TaskStatus.CONFIRMED },
-                { label: '执行中', value: TaskStatus.EXECUTING },
-                { label: '已完成', value: TaskStatus.COMPLETED },
-                { label: '已取消', value: TaskStatus.CANCELLED },
-              ]}
-              onChange={(value) => {
-                setSearchParams(prev => ({ ...prev, taskStatus: value }));
-                actionRef.current?.reload();
-              }}
-            />
+
             <DatePicker.RangePicker
               placeholder={['开始日期', '结束日期']}
               style={{ width: 300 }}
@@ -485,11 +415,6 @@ const ProductionPlanManagement: React.FC = () => {
           pageSizeOptions: ['10', '20', '50', '100'],
         }}
         dateFormatter="string"
-        toolBarRender={() => [
-          <Button type="primary" key="primary" onClick={() => {}}>
-            <PlusOutlined /> 新建计划
-          </Button>,
-        ]}
       />
     </>
   );
