@@ -167,9 +167,9 @@ const CapacityRuleManagement: React.FC = () => {
       copyable: true,
       ellipsis: true,
       sorter: true,
-      tip: '支持拉线编号或名称模糊搜索',
       render: (_, record) => `${record.lineCode} - ${record.lineName}`,
       valueType: 'select',
+      width: 200,
       fieldProps: {
         showSearch: true,
         placeholder: '请输入拉线编号或名称搜索',
@@ -195,9 +195,9 @@ const CapacityRuleManagement: React.FC = () => {
       copyable: true,
       ellipsis: true,
       sorter: true,
-      tip: '支持货品编号或名称模糊搜索',
       render: (_, record) => `${record.productCode} - ${record.productName}`,
       valueType: 'select',
+      width: 200,
       fieldProps: {
         showSearch: true,
         placeholder: '请输入货品编号或名称搜索',

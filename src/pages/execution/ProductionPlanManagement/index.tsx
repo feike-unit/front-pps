@@ -7,6 +7,7 @@ import { ProTable, ModalForm, ProForm, ProFormText, ProFormDigit, ProFormSelect,
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 
+
 // 引入计划运行时任务相关服务
 import {
   PlanRuntime,
@@ -310,6 +311,27 @@ const ProductionPlanManagement: React.FC = () => {
         defaultSize="small"
         scroll={{ x: 1500 }}
         components={components}
+        onRow={(record) => {
+          const completionQuantity = record.completionQuantity || 0;
+          const taskQuantity = record.taskQuantity || 0;
+          const progress = taskQuantity > 0 ? (completionQuantity / taskQuantity) * 100 : 0;
+          
+          // 使用状态颜色映射获取背景色 (如果没有taskStatus，则使用默认颜色)
+          // 根据任务是否完成选择颜色：完成则使用绿色，否则使用蓝色
+          const bgColor = completionQuantity >= taskQuantity 
+            ? 'rgba(82, 196, 26, 0.15)' // 完成时使用绿色
+            : 'rgba(24, 144, 255, 0.15)'; // 未完成时使用蓝色
+          
+          return {
+            style: {
+              position: 'relative',
+              backgroundImage: `linear-gradient(to right, ${bgColor} ${progress}%, transparent ${progress}%)`,
+              backgroundPosition: 'bottom',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '100% 10px',
+            },
+          };
+        }}
         request={async (params = {}, sort, filter) => {
           try {
             const { current, pageSize, ...restParams } = params;

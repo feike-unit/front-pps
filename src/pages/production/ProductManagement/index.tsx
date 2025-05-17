@@ -45,11 +45,14 @@ const ProductManagement: React.FC = () => {
   // ProTable 列定义
   const columns: ProColumns<Product>[] = [
     {
-      title: '货品编号',
+      title: '货品编号/名称',
       dataIndex: 'productCode',
       copyable: true,
       ellipsis: true,
       sorter: true,
+      tip: '支持货品编号或名称模糊搜索',
+      render: (_, record) => `${record.productCode} - ${record.productName}`,
+      width: 200,
     },
     {
       title: '货品名称',
@@ -57,6 +60,7 @@ const ProductManagement: React.FC = () => {
       copyable: true,
       ellipsis: true,
       sorter: true,
+      hideInTable: true,
     },
     {
       title: '规格型号',
@@ -301,21 +305,17 @@ const ProductManagement: React.FC = () => {
       headerTitle={
         <Space>
           <Input.Search
-            placeholder="货品编号"
+            placeholder="货品编号/名称"
             onSearch={(value) => {
-              setSearchParams(prev => ({ ...prev, productCode: value }));
+              // 同时设置编码和名称，后端可以同时搜索这两个字段
+              setSearchParams(prev => ({ 
+                ...prev, 
+                productCode: value,
+                productName: value 
+              }));
               actionRef.current?.reload();
             }}
-            style={{ width: 200 }}
-            allowClear
-          />
-          <Input.Search
-            placeholder="货品名称"
-            onSearch={(value) => {
-              setSearchParams(prev => ({ ...prev, productName: value }));
-              actionRef.current?.reload();
-            }}
-            style={{ width: 200 }}
+            style={{ width: 300 }}
             allowClear
           />
           <Select
