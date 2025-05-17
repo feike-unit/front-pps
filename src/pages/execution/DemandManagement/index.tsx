@@ -103,12 +103,13 @@ const DemandManagement: React.FC = () => {
   // ProTable 列定义
   const columns: ProColumns<Demand>[] = [
     {
-      title: '货品编码',
+      title: '货品编号/名称',
       dataIndex: 'productCode',
       copyable: true,
       ellipsis: true,
       sorter: true,
-      width: 120,
+      width: 200,
+      render: (_, record) => `${record.productCode} - ${record.productName}`,
     },
     {
       title: '货品类型',

@@ -114,11 +114,14 @@ const LineManagement: React.FC = () => {
   // ProTable 列定义
   const columns: ProColumns<Line>[] = [
     {
-      title: '拉线编号',
+      title: '拉线编号/名称',
       dataIndex: 'lineCode',
       copyable: true,
       ellipsis: true,
       sorter: true,
+      tip: '支持拉线编号或名称模糊搜索',
+      render: (_, record) => `${record.lineCode} - ${record.lineName}`,
+      width: 200,
     },
     {
       title: '拉线名称',
@@ -126,6 +129,7 @@ const LineManagement: React.FC = () => {
       copyable: true,
       ellipsis: true,
       sorter: true,
+      hideInTable: true,
     },
     {
       title: '所属部门',
@@ -348,21 +352,17 @@ const LineManagement: React.FC = () => {
       headerTitle={
         <Space>
           <Input.Search
-            placeholder="拉线编号"
+            placeholder="拉线编号/名称"
             onSearch={(value) => {
-              setSearchParams(prev => ({ ...prev, lineCode: value }));
+              // 同时设置编号和名称，后端可以同时搜索这两个字段
+              setSearchParams(prev => ({ 
+                ...prev, 
+                lineCode: value,
+                lineName: value 
+              }));
               actionRef.current?.reload();
             }}
-            style={{ width: 200 }}
-            allowClear
-          />
-          <Input.Search
-            placeholder="拉线名称"
-            onSearch={(value) => {
-              setSearchParams(prev => ({ ...prev, lineName: value }));
-              actionRef.current?.reload();
-            }}
-            style={{ width: 200 }}
+            style={{ width: 300 }}
             allowClear
           />
           <TreeSelect
