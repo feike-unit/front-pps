@@ -46,7 +46,7 @@ const ProductionPlanManagement: React.FC = () => {
     // 默认只显示自制件类型
     productType: ProductType.SELF_MADE,
   });
-  const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: string }[]>([]);
+  const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: number }[]>([]);
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<PlanRuntime | null>(null);
@@ -73,7 +73,7 @@ const ProductionPlanManagement: React.FC = () => {
       const lines = await searchLines(value || '');
       const options = lines.map(line => ({
         label: `${line.lineCode} - ${line.lineName}`,
-        value: line.lineCode
+        value: line.id!
       }));
       setSearchLineOptions(options);
     } catch (error: any) {
@@ -334,8 +334,8 @@ const ProductionPlanManagement: React.FC = () => {
               defaultActiveFirstOption={false}
               filterOption={false}
               onSearch={handleLineSearch}
-              onChange={(value: string) => {
-                setSearchParams(prev => ({ ...prev, lineCode: value }));
+              onChange={(value: number) => {
+                setSearchParams(prev => ({ ...prev, lineId: value }));
                 actionRef.current?.reload();
               }}
               options={searchLineOptions}
@@ -363,8 +363,8 @@ const ProductionPlanManagement: React.FC = () => {
               onChange={(dates) => {
                 setSearchParams(prev => ({
                   ...prev,
-                  startAtBegin: dates?.[0]?.format('YYYY-MM-DD'),
-                  endAtBegin: dates?.[1]?.format('YYYY-MM-DD'),
+                  startAt: dates?.[0]?.format('YYYY-MM-DD'),
+                  endAt: dates?.[1]?.format('YYYY-MM-DD'),
                 }));
                 actionRef.current?.reload();
               }}
