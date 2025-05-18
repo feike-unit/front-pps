@@ -443,6 +443,7 @@ const ProductManagement: React.FC = () => {
               title: '同步货品',
               content: (
                 <div style={{ marginTop: 16 }}>
+                  <span style={{ color: '#ff4d4f' }}>* </span>
                   <span>选择同步日期：</span>
                   <DatePicker 
                     onChange={(date) => {
@@ -452,6 +453,11 @@ const ProductManagement: React.FC = () => {
                 </div>
               ),
               onOk: async () => {
+                if (!syncDate) {
+                  message.error('请选择同步日期');
+                  return Promise.reject('请选择同步日期');
+                }
+                
                 try {
                   await syncProducts(syncDate);
                   message.success('同步货品成功');

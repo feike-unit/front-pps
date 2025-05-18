@@ -105,7 +105,7 @@ export const updateProductStatus = async (id: number, status: number): Promise<P
 };
 
 // 同步货品
-export const syncProducts = async (syncDate?: string): Promise<void> => {
+export const syncProducts = async (syncDate: string): Promise<void> => {
   await api.post('/production/products/sync', null, {
     params: { syncDate }
   });
