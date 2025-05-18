@@ -7,6 +7,7 @@ export interface Line {
   id?: number;
   lineCode: string;
   lineName: string;
+  startDate?: string; // 开始投入排产日期
   deptId: number;
   deptName?: string;
   status: number;
@@ -21,6 +22,7 @@ export interface Line {
 export interface LineUpdate {
   lineCode?: string;
   lineName?: string;
+  startDate?: string; // 开始投入排产日期
   deptId?: number;
   status?: number;
   remark?: string;

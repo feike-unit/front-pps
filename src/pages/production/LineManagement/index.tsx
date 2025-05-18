@@ -8,6 +8,7 @@ import {
   Tooltip,
   Input,
   TreeSelect,
+  DatePicker,
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { 
@@ -19,6 +20,7 @@ import {
   ProFormSwitch,
   ProFormDigit,
   ProFormTreeSelect,
+  ProFormDatePicker,
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
@@ -155,6 +157,13 @@ const LineManagement: React.FC = () => {
       hideInSearch: true,
     },
     {
+      title: '开始投入排产日期',
+      dataIndex: 'startDate',
+      valueType: 'date',
+      sorter: true,
+      search: false,
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       filters: true,
@@ -215,6 +224,7 @@ const LineManagement: React.FC = () => {
                   lineCode: values.lineCode,
                   lineName: values.lineName,
                   deptId: values.deptId,
+                  startDate: values.startDate,
                   status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
                   remark: values.remark,
                 };
@@ -271,6 +281,13 @@ const LineManagement: React.FC = () => {
                 label="状态"
                 checkedChildren="启用"
                 unCheckedChildren="禁用"
+              />
+            </ProForm.Group>
+            <ProForm.Group>
+              <ProFormDatePicker
+                name="startDate"
+                label="开始投入排产日期"
+                width="md"
               />
             </ProForm.Group>
             <ProFormTextArea
@@ -403,6 +420,7 @@ const LineManagement: React.FC = () => {
                 lineCode: values.lineCode,
                 lineName: values.lineName,
                 deptId: values.deptId,
+                startDate: values.startDate,
                 status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
                 remark: values.remark,
               };
@@ -462,6 +480,13 @@ const LineManagement: React.FC = () => {
               label="状态"
               checkedChildren="启用"
               unCheckedChildren="禁用"
+            />
+          </ProForm.Group>
+          <ProForm.Group>
+            <ProFormDatePicker
+              name="startDate"
+              label="开始投入排产日期"
+              width="md"
             />
           </ProForm.Group>
           <ProFormTextArea
