@@ -157,7 +157,7 @@ const LineManagement: React.FC = () => {
       hideInSearch: true,
     },
     {
-      title: '开始投入排产日期',
+      title: '投产日期',
       dataIndex: 'startDate',
       valueType: 'date',
       sorter: true,
@@ -286,7 +286,7 @@ const LineManagement: React.FC = () => {
             <ProForm.Group>
               <ProFormDatePicker
                 name="startDate"
-                label="开始投入排产日期"
+                label="投产日期"
                 width="md"
               />
             </ProForm.Group>
@@ -485,7 +485,7 @@ const LineManagement: React.FC = () => {
           <ProForm.Group>
             <ProFormDatePicker
               name="startDate"
-              label="开始投入排产日期"
+              label="投产日期"
               width="md"
             />
           </ProForm.Group>
