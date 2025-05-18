@@ -104,6 +104,13 @@ export const updateProductStatus = async (id: number, status: number): Promise<P
   return response.data;
 };
 
+// 同步货品
+export const syncProducts = async (syncDate?: string): Promise<void> => {
+  await api.post('/production/products/sync', null, {
+    params: { syncDate }
+  });
+};
+
 // 根据关键字搜索产品
 export const searchProducts = async (keyword: string): Promise<Product[]> => {
   const response = await api.get<Product[]>('/production/capacity-rules/products/search', {

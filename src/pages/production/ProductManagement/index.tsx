@@ -8,6 +8,8 @@ import {
   Tooltip,
   Input,
   Select,
+  DatePicker,
+  Modal,
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { 
@@ -20,7 +22,7 @@ import {
   ProFormSelect,
   ProFormSwitch,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Product, 
@@ -28,7 +30,8 @@ import {
   createProduct, 
   updateProduct, 
   deleteProduct, 
-  updateProductStatus, 
+  updateProductStatus,
+  syncProducts,
   ProductPageRequest, 
   ProductType,
   ProductStatus
@@ -431,6 +434,39 @@ const ProductManagement: React.FC = () => {
             />
           </ProForm.Group>
         </ModalForm>,
+        <Button
+          key="sync"
+          onClick={() => {
+            // 创建日期选择器弹窗
+            let syncDate: string | undefined;
+            Modal.confirm({
+              title: '同步货品',
+              content: (
+                <div style={{ marginTop: 16 }}>
+                  <span>选择同步日期：</span>
+                  <DatePicker 
+                    onChange={(date) => {
+                      syncDate = date ? date.format('YYYY-MM-DD') : undefined;
+                    }}
+                  />
+                </div>
+              ),
+              onOk: async () => {
+                try {
+                  await syncProducts(syncDate);
+                  message.success('同步货品成功');
+                  actionRef.current?.reload();
+                } catch (error) {
+                  const apiError = error as ApiError;
+                  message.error(apiError.response?.data?.message || apiError.message || '同步货品失败');
+                }
+              }
+            });
+          }}
+        >
+          <SyncOutlined />
+          同步货品
+        </Button>,
       ]}
     />
   );
