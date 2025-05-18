@@ -239,6 +239,7 @@ const DemandManagement: React.FC = () => {
       key: 'option',
       width: 90,
       fixed: 'right',
+      hidden: true,
       render: (_, record) => (
         <Space size="middle">
           {/* 草稿状态可以确认执行 */}
@@ -258,7 +259,7 @@ const DemandManagement: React.FC = () => {
               }}
             >
               <Tooltip title="确认执行">
-                <a><PlayCircleOutlined style={{ color: '#1890ff' }} /></a>
+                <a hidden={true}><PlayCircleOutlined style={{ color: '#1890ff' }} /></a>
               </Tooltip>
             </Popconfirm>
           )}
@@ -302,7 +303,7 @@ const DemandManagement: React.FC = () => {
               }}
             >
               <Tooltip title="删除">
-                <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
+                <a hidden={true}><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
               </Tooltip>
             </Popconfirm>
           )}
