@@ -8,6 +8,7 @@ export interface Line {
   lineCode: string;
   lineName: string;
   startDate?: string; // 投产日期
+  worksHour?: number; // 一天工时数(默认24小时)
   deptId: number;
   deptName?: string;
   status: number;
@@ -23,6 +24,7 @@ export interface LineUpdate {
   lineCode?: string;
   lineName?: string;
   startDate?: string; // 投产日期
+  worksHour?: number; // 一天工时数(默认24小时)
   deptId?: number;
   status?: number;
   remark?: string;

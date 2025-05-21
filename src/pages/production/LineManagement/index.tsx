@@ -164,6 +164,13 @@ const LineManagement: React.FC = () => {
       search: false,
     },
     {
+      title: '工时数(小时)',
+      dataIndex: 'worksHour',
+      valueType: 'digit',
+      sorter: true,
+      search: false,
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       filters: true,
@@ -225,6 +232,7 @@ const LineManagement: React.FC = () => {
                   lineName: values.lineName,
                   deptId: values.deptId,
                   startDate: values.startDate,
+                  worksHour: values.worksHour,
                   status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
                   remark: values.remark,
                 };
@@ -288,6 +296,19 @@ const LineManagement: React.FC = () => {
                 name="startDate"
                 label="投产日期"
                 width="md"
+              />
+              <ProFormDigit
+                name="worksHour"
+                label="工时数(小时)"
+                width="md"
+                min={0}
+                max={24}
+                fieldProps={{
+                  precision: 1,
+                  step: 0.5,
+                }}
+                tooltip="一天工时数(默认24小时)"
+                placeholder="请输入工时数"
               />
             </ProForm.Group>
             <ProFormTextArea
@@ -421,6 +442,7 @@ const LineManagement: React.FC = () => {
                 lineName: values.lineName,
                 deptId: values.deptId,
                 startDate: values.startDate,
+                worksHour: values.worksHour,
                 status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
                 remark: values.remark,
               };
@@ -487,6 +509,19 @@ const LineManagement: React.FC = () => {
               name="startDate"
               label="投产日期"
               width="md"
+            />
+            <ProFormDigit
+              name="worksHour"
+              label="工时数(小时)"
+              width="md"
+              min={0}
+              max={24}
+              fieldProps={{
+                precision: 1,
+                step: 0.5,
+              }}
+              tooltip="一天工时数(默认24小时)"
+              placeholder="请输入工时数"
             />
           </ProForm.Group>
           <ProFormTextArea
