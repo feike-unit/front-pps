@@ -211,22 +211,6 @@ const CapacityRuleManagement: React.FC = () => {
       },
     },
     {
-      title: '工时',
-      dataIndex: 'worksHour',
-      sorter: true,
-      search: false,
-      render: (val) => val ? Number(val).toFixed(2) : '-',
-      renderFormItem: () => (
-        <ProFormDigit
-          name="worksHourRange"
-          label="工时范围"
-          fieldProps={{
-            precision: 2,
-          }}
-        />
-      ),
-    },
-    {
       title: '工时产能',
       dataIndex: 'worksHourCapacity',
       sorter: true,
@@ -237,15 +221,6 @@ const CapacityRuleManagement: React.FC = () => {
           label="工时产能范围"
         />
       ),
-    },
-    {
-      title: '每天产能',
-      dataIndex: 'dailyCapacity',
-      search: false,
-      render: (_, record) => {
-        const dailyCapacity = record.worksHour * record.worksHourCapacity;
-        return dailyCapacity ? dailyCapacity.toFixed(2) : '-';
-      },
     },
     {
       title: '状态',
@@ -307,7 +282,6 @@ const CapacityRuleManagement: React.FC = () => {
                 await updateCapacityRule(record.id!, {
                   lineId: values.lineId,
                   productId: values.productId,
-                  worksHour: values.worksHour,
                   worksHourCapacity: values.worksHourCapacity,
                   status: values.status,
                   remark: values.remark,
@@ -327,18 +301,6 @@ const CapacityRuleManagement: React.FC = () => {
             }}
             modalProps={{
               destroyOnClose: true,
-            }}
-            onInit={(values) => {
-              // 初始化时计算每天产能
-              const form = formRef.current;
-              if (form) {
-                const worksHour = values.worksHour;
-                const worksHourCapacity = values.worksHourCapacity;
-                if (worksHour && worksHourCapacity) {
-                  const dailyCapacity = worksHour * worksHourCapacity;
-                  form.setFieldValue('dailyCapacity', dailyCapacity.toFixed(2));
-                }
-              }
             }}
           >
             <ProForm.Group>
@@ -389,58 +351,11 @@ const CapacityRuleManagement: React.FC = () => {
             </ProForm.Group>
             <ProForm.Group>
               <ProFormDigit
-                name="worksHour"
-                label="工时"
-                rules={[{ required: true, message: '请输入工时' }]}
-                min={0}
-                width="md"
-                fieldProps={{
-                  precision: 2,
-                  onChange: (value) => {
-                    const form = formRef.current;
-                    if (form) {
-                      const worksHourCapacity = form.getFieldValue('worksHourCapacity');
-                      if (value && worksHourCapacity) {
-                        const dailyCapacity = value * worksHourCapacity;
-                        form.setFieldValue('dailyCapacity', dailyCapacity.toFixed(2));
-                      } else {
-                        form.setFieldValue('dailyCapacity', undefined);
-                      }
-                    }
-                  },
-                }}
-              />
-              <ProFormDigit
                 name="worksHourCapacity"
                 label="工时产能"
                 rules={[{ required: true, message: '请输入工时产能' }]}
                 min={0}
                 width="md"
-                fieldProps={{
-                  onChange: (value) => {
-                    const form = formRef.current;
-                    if (form) {
-                      const worksHour = form.getFieldValue('worksHour');
-                      if (value && worksHour) {
-                        const dailyCapacity = value * worksHour;
-                        form.setFieldValue('dailyCapacity', dailyCapacity.toFixed(2));
-                      } else {
-                        form.setFieldValue('dailyCapacity', undefined);
-                      }
-                    }
-                  },
-                }}
-              />
-            </ProForm.Group>
-            <ProForm.Group>
-              <ProFormDigit
-                name="dailyCapacity"
-                label="每天产能"
-                width="md"
-                readonly
-                fieldProps={{
-                  precision: 2,
-                }}
               />
               <ProFormSwitch
                 name="status"
@@ -654,58 +569,11 @@ const CapacityRuleManagement: React.FC = () => {
           </ProForm.Group>
           <ProForm.Group>
             <ProFormDigit
-              name="worksHour"
-              label="工时"
-              rules={[{ required: true, message: '请输入工时' }]}
-              min={0}
-              width="md"
-              fieldProps={{
-                precision: 2,
-                onChange: (value) => {
-                  const form = formRef.current;
-                  if (form) {
-                    const worksHourCapacity = form.getFieldValue('worksHourCapacity');
-                    if (value && worksHourCapacity) {
-                      const dailyCapacity = value * worksHourCapacity;
-                      form.setFieldValue('dailyCapacity', dailyCapacity.toFixed(2));
-                    } else {
-                      form.setFieldValue('dailyCapacity', undefined);
-                    }
-                  }
-                },
-              }}
-            />
-            <ProFormDigit
               name="worksHourCapacity"
               label="工时产能"
               rules={[{ required: true, message: '请输入工时产能' }]}
               min={0}
               width="md"
-              fieldProps={{
-                onChange: (value) => {
-                  const form = formRef.current;
-                  if (form) {
-                    const worksHour = form.getFieldValue('worksHour');
-                    if (value && worksHour) {
-                      const dailyCapacity = value * worksHour;
-                      form.setFieldValue('dailyCapacity', dailyCapacity.toFixed(2));
-                    } else {
-                      form.setFieldValue('dailyCapacity', undefined);
-                    }
-                  }
-                },
-              }}
-            />
-          </ProForm.Group>
-          <ProForm.Group>
-            <ProFormDigit
-              name="dailyCapacity"
-              label="每天产能"
-              width="md"
-              readonly
-              fieldProps={{
-                precision: 2,
-              }}
             />
             <ProFormSwitch
               name="status"

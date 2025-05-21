@@ -8,7 +8,6 @@ export interface CapacityRule {
   productId: number;
   productCode?: string;
   productName?: string;
-  worksHour: number;
   worksHourCapacity: number;
   status?: number;
   remark?: string;
@@ -19,7 +18,6 @@ export interface CapacityRule {
 export interface CapacityRuleUpdateDto {
   lineId: number;
   productId: number;
-  worksHour: number;
   worksHourCapacity: number;
   status?: number;
   remark?: string;
