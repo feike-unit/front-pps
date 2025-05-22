@@ -79,6 +79,15 @@ const DemandManagement: React.FC = () => {
     }
   }, 500);
 
+  // 处理关键字搜索
+  const handleKeywordSearch = debounce((value: string) => {
+    setSearchParams(prev => ({
+      ...prev,
+      keyword: value || undefined
+    }));
+    actionRef.current?.reload();
+  }, 500);
+
   // 初始加载默认选项
   useEffect(() => {
     handleProductSearch('');
@@ -402,17 +411,13 @@ const DemandManagement: React.FC = () => {
               actionRef.current?.reload();
             }}
           />
-          <Input.Search
+          <Input
             placeholder="业务单号/客户订单号/客户编号/名称"
             style={{ width: 300 }}
-            onSearch={(value) => {
-              setSearchParams(prev => ({
-                ...prev,
-                keyword: value || undefined
-              }));
-              actionRef.current?.reload();
-            }}
+            onChange={(e) => handleKeywordSearch(e.target.value)}
             allowClear
+            onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
+            onClear={() => handleKeywordSearch('')}
           />
         </Space>
       }
