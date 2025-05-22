@@ -35,8 +35,8 @@ import {
   updateCapacityRuleStatus,
   CapacityRulePageRequest,
 } from '../../../services/capacityRule';
-import { getAllLines, Line, searchLines } from '../../../services/line';
-import { getAllProducts, Product, searchProducts } from '../../../services/product';
+import { Line, searchLines } from '../../../services/line';
+import { Product, searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
 import './index.css';
 
@@ -76,21 +76,11 @@ const CapacityRuleManagement: React.FC = () => {
     }
   };
 
-  // 获取拉线和货品列表
+  // 初始化必要的数据
   useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [linesData, productsData] = await Promise.all([
-          getAllLines(),
-          getAllProducts()
-        ]);
-        setLines(linesData);
-        setProducts(productsData);
-      } catch (error: any) {
-        message.error('获取选项数据失败');
-      }
-    };
-    fetchOptions();
+    // 直接初始化空数据，按需通过搜索接口获取
+    setLines([]);
+    setProducts([]);
   }, []);
 
   // 获取拉线选项

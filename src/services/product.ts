@@ -83,11 +83,11 @@ export const getProductById = async (id: number): Promise<Product> => {
   return response.data;
 };
 
-// 获取所有货品
-export const getAllProducts = async (): Promise<Product[]> => {
-  const response = await api.get<Product[]>(`/production/products/all`);
-  return response.data;
-};
+// 已废弃，接口已删除，改用searchProducts按需获取
+// export const getAllProducts = async (): Promise<Product[]> => {
+//   const response = await api.get<Product[]>(`/production/products/all`);
+//   return response.data;
+// };
 
 // 根据货品类型获取货品列表
 export const getProductsByType = async (productType: number): Promise<Product[]> => {
