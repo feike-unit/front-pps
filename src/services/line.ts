@@ -75,12 +75,6 @@ export const getLineById = async (id: number): Promise<Line> => {
   return response.data;
 };
 
-// 已废弃，接口已删除，改用searchLines按需获取
-// export const getAllLines = async (): Promise<Line[]> => {
-//   const response = await api.get<Line[]>(`/production/lines/all`);
-//   return response.data;
-// };
-
 // 更新拉线状态
 export const updateLineStatus = async (id: number, status: number): Promise<Line> => {
   const response = await api.patch<Line>(`/production/lines/${id}/status`, null, {
