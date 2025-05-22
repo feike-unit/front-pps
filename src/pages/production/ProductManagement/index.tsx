@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { debounce } from 'lodash';
 import {
   Button,
   Space,
@@ -40,8 +41,7 @@ import {
 const ProductManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [searchParams, setSearchParams] = useState<{
-    productCode?: string;
-    productName?: string;
+    keyword?: string;
     productType?: ProductType;
   }>({});
 
@@ -307,17 +307,17 @@ const ProductManagement: React.FC = () => {
       }}
       headerTitle={
         <Space>
-          <Input.Search
+          <Input 
             placeholder="货品编号/名称"
-            onSearch={(value) => {
-              // 同时设置编码和名称，后端可以同时搜索这两个字段
+            onChange={debounce((e) => {
+              const value = e.target.value;
+              // 设置关键字，后端会同时搜索编码和名称字段
               setSearchParams(prev => ({ 
                 ...prev, 
-                productCode: value,
-                productName: value 
+                keyword: value 
               }));
               actionRef.current?.reload();
-            }}
+            }, 500)} // 500毫秒的防抖延迟
             style={{ width: 300 }}
             allowClear
           />

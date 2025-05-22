@@ -34,8 +34,7 @@ export interface ProductUpdate {
 export interface ProductPageRequest {
   pageNum: number;
   pageSize: number;
-  productCode?: string;
-  productName?: string;
+  keyword?: string;
   productType?: number;
   status?: number;
   sortField?: string;
