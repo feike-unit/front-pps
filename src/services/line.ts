@@ -33,8 +33,8 @@ export interface LineUpdate {
 export interface LinePageRequest {
   pageNum: number;
   pageSize: number;
-  lineCode?: string;
-  lineName?: string;
+  keyword?: string;
+  deptId?: number;
   status?: number;
   sortField?: string;
   sortOrder?: 'asc' | 'desc';

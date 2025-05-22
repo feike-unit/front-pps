@@ -37,15 +37,30 @@ import {
   updateLineStatus,
 } from '../../../services/line';
 import { getAllDepartments } from '../../../services/department';
+import debounce from 'lodash/debounce';
 
 const LineManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [treeData, setTreeData] = React.useState<any[]>([]);
   const [searchParams, setSearchParams] = useState<{
-    lineCode?: string;
-    lineName?: string;
+    keyword?: string;
     deptId?: number;
   }>({});
+
+  // 防抖处理函数
+  const handleSearchWithDebounce = debounce((value: string) => {
+    setSearchParams(prev => ({ 
+      ...prev, 
+      keyword: value
+    }));
+    actionRef.current?.reload();
+  }, 500);
+
+  // 防抖处理部门选择
+  const handleDeptChangeWithDebounce = debounce((value: number | undefined) => {
+    setSearchParams(prev => ({ ...prev, deptId: value }));
+    actionRef.current?.reload();
+  }, 500);
 
   // 将部门列表转换为TreeSelect需要的数据格式
   const formatTreeSelectData = (data: any[]): any[] => {
@@ -360,6 +375,14 @@ const LineManagement: React.FC = () => {
             sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
           };
 
+          // 确保移除lineCode和lineName属性，使用keyword替代
+          if ('lineCode' in requestParams) {
+            delete requestParams.lineCode;
+          }
+          if ('lineName' in requestParams) {
+            delete requestParams.lineName;
+          }
+
           const result = await getLinePage(requestParams);
 
           return {
@@ -389,19 +412,13 @@ const LineManagement: React.FC = () => {
       }}
       headerTitle={
         <Space>
-          <Input.Search
+          <Input
             placeholder="拉线编号/名称"
-            onSearch={(value) => {
-              // 同时设置编号和名称，后端可以同时搜索这两个字段
-              setSearchParams(prev => ({ 
-                ...prev, 
-                lineCode: value,
-                lineName: value 
-              }));
-              actionRef.current?.reload();
-            }}
+            onChange={(e) => handleSearchWithDebounce(e.target.value)}
             style={{ width: 300 }}
             allowClear
+            onPressEnter={(e) => handleSearchWithDebounce((e.target as HTMLInputElement).value)}
+            onClear={() => handleSearchWithDebounce('')}
           />
           <TreeSelect
             placeholder="所属部门"
@@ -410,8 +427,7 @@ const LineManagement: React.FC = () => {
             showSearch
             treeData={treeData}
             onChange={(value: number) => {
-              setSearchParams(prev => ({ ...prev, deptId: value }));
-              actionRef.current?.reload();
+              handleDeptChangeWithDebounce(value);
             }}
             treeDefaultExpandAll
             treeNodeFilterProp="title"
