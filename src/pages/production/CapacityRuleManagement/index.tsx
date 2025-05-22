@@ -45,10 +45,10 @@ const CapacityRuleManagement: React.FC = () => {
   const formRef = useRef<ProFormInstance>();
   const [lines, setLines] = useState<Line[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: string }[]>([]);
+  const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: string; lineData: Line }[]>([]);
   const [lineOptions, setLineOptions] = useState<{ label: string; value: number; }[]>([]);
   const [productOptions, setProductOptions] = useState<{ label: string; value: number; }[]>([]);
-  const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: string }[]>([]);
+  const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: string; productData: Product }[]>([]);
   const [highlightedRowId, setHighlightedRowId] = useState<number | null>(null);
   const [tableData, setTableData] = useState<CapacityRule[]>([]);
   const [searchParams, setSearchParams] = useState<{
@@ -121,9 +121,13 @@ const CapacityRuleManagement: React.FC = () => {
       const lines = await searchLines(value || '');
       const options = lines.map(line => ({
         label: `${line.lineCode} - ${line.lineName}`,
-        value: line.lineCode
+        value: line.lineCode,
+        // 存储完整的line对象，用于获取ID
+        lineData: line
       }));
       setSearchLineOptions(options);
+      // 更新lines数据，用于选项映射
+      setLines(lines);
     } catch (error: any) {
       message.error('搜索拉线失败');
     }
@@ -135,9 +139,13 @@ const CapacityRuleManagement: React.FC = () => {
       const products = await searchProducts(value || '');
       const options = products.map(product => ({
         label: `${product.productCode} - ${product.productName}`,
-        value: product.productCode
+        value: product.productCode,
+        // 存储完整的product对象，用于获取ID
+        productData: product
       }));
       setSearchProductOptions(options);
+      // 更新products数据，用于选项映射
+      setProducts(products);
     } catch (error: any) {
       message.error('搜索货品失败');
     }
@@ -309,8 +317,8 @@ const CapacityRuleManagement: React.FC = () => {
                   onSearch: handleLineSearch,
                   options: searchLineOptions.map(option => ({
                     label: option.label,
-                    value: lines.find(line => line.lineCode === option.value)?.id
-                  })),
+                    value: option.lineData?.id
+                  })).filter(opt => opt.value !== undefined),
                   notFoundContent: null,
                   allowClear: true,
                   onClick: () => handleLineSearch(''),
@@ -331,8 +339,8 @@ const CapacityRuleManagement: React.FC = () => {
                   onSearch: handleProductSearch,
                   options: searchProductOptions.map(option => ({
                     label: option.label,
-                    value: products.find(product => product.productCode === option.value)?.id
-                  })),
+                    value: option.productData?.id
+                  })).filter(opt => opt.value !== undefined),
                   notFoundContent: null,
                   allowClear: true,
                   onClick: () => handleProductSearch(''),
@@ -527,8 +535,8 @@ const CapacityRuleManagement: React.FC = () => {
                 onSearch: handleLineSearch,
                 options: searchLineOptions.map(option => ({
                   label: option.label,
-                  value: lines.find(line => line.lineCode === option.value)?.id
-                })),
+                  value: option.lineData?.id
+                })).filter(opt => opt.value !== undefined),
                 notFoundContent: null,
                 allowClear: true,
                 onClick: () => handleLineSearch(''),
@@ -549,8 +557,8 @@ const CapacityRuleManagement: React.FC = () => {
                 onSearch: handleProductSearch,
                 options: searchProductOptions.map(option => ({
                   label: option.label,
-                  value: products.find(product => product.productCode === option.value)?.id
-                })),
+                  value: option.productData?.id
+                })).filter(opt => opt.value !== undefined),
                 notFoundContent: null,
                 allowClear: true,
                 onClick: () => handleProductSearch(''),
