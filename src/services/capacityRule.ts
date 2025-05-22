@@ -25,7 +25,7 @@ export interface CapacityRuleUpdateDto {
 
 export interface CapacityRulePageRequest {
   lineCode?: string;
-  productCode?: string;
+  productId?: number;
   pageNum: number;
   pageSize: number;
   status?: number;

@@ -48,12 +48,12 @@ const CapacityRuleManagement: React.FC = () => {
   const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: string; lineData: Line }[]>([]);
   const [lineOptions, setLineOptions] = useState<{ label: string; value: number; }[]>([]);
   const [productOptions, setProductOptions] = useState<{ label: string; value: number; }[]>([]);
-  const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: string; productData: Product }[]>([]);
+  const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number | undefined; productData: Product }[]>([]);
   const [highlightedRowId, setHighlightedRowId] = useState<number | null>(null);
   const [tableData, setTableData] = useState<CapacityRule[]>([]);
   const [searchParams, setSearchParams] = useState<{
     lineCode?: string;
-    productCode?: string;
+    productId?: number;
     status?: number;
   }>({});
 
@@ -139,7 +139,7 @@ const CapacityRuleManagement: React.FC = () => {
       const products = await searchProducts(value || '');
       const options = products.map(product => ({
         label: `${product.productCode} - ${product.productName}`,
-        value: product.productCode,
+        value: product.id,
         // 存储完整的product对象，用于获取ID
         productData: product
       }));
@@ -470,8 +470,8 @@ const CapacityRuleManagement: React.FC = () => {
             defaultActiveFirstOption={false}
             filterOption={false}
             onSearch={handleProductSearch}
-            onChange={(value: string) => {
-              setSearchParams(prev => ({ ...prev, productCode: value }));
+            onChange={(value: number) => {
+              setSearchParams(prev => ({ ...prev, productId: value }));
               actionRef.current?.reload();
             }}
             options={searchProductOptions}
