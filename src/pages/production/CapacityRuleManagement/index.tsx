@@ -45,14 +45,14 @@ const CapacityRuleManagement: React.FC = () => {
   const formRef = useRef<ProFormInstance>();
   const [lines, setLines] = useState<Line[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: string; lineData: Line }[]>([]);
+  const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: number | undefined; lineData: Line }[]>([]);
   const [lineOptions, setLineOptions] = useState<{ label: string; value: number; }[]>([]);
   const [productOptions, setProductOptions] = useState<{ label: string; value: number; }[]>([]);
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number | undefined; productData: Product }[]>([]);
   const [highlightedRowId, setHighlightedRowId] = useState<number | null>(null);
   const [tableData, setTableData] = useState<CapacityRule[]>([]);
   const [searchParams, setSearchParams] = useState<{
-    lineCode?: string;
+    lineId?: number;
     productId?: number;
     status?: number;
   }>({});
@@ -121,7 +121,7 @@ const CapacityRuleManagement: React.FC = () => {
       const lines = await searchLines(value || '');
       const options = lines.map(line => ({
         label: `${line.lineCode} - ${line.lineName}`,
-        value: line.lineCode,
+        value: line.id!,
         // 存储完整的line对象，用于获取ID
         lineData: line
       }));
@@ -455,8 +455,8 @@ const CapacityRuleManagement: React.FC = () => {
             defaultActiveFirstOption={false}
             filterOption={false}
             onSearch={handleLineSearch}
-            onChange={(value: string) => {
-              setSearchParams(prev => ({ ...prev, lineCode: value }));
+            onChange={(value: number) => {
+              setSearchParams(prev => ({ ...prev, lineId: value }));
               actionRef.current?.reload();
             }}
             options={searchLineOptions}
