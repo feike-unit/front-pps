@@ -82,15 +82,7 @@ const CalendarView: React.FC = () => {
     isRefreshOnly: boolean = false,
     additionalParams?: { lineId?: number, productId?: number }
   ) => {
-    // 避免重复请求相同日期范围的数据
-    if (!additionalParams && lastFetchRange && 
-        lastFetchRange.start === startStr && 
-        lastFetchRange.end === endStr && 
-        !isInitialLoad && 
-        !isRefreshOnly) {
-      return;
-    }
-    
+    // 移除缓存检查，确保每次都请求数据
     try {
       // 只有在非刷新模式或初次加载时才设置整体加载状态
       if (!isRefreshOnly) {
@@ -99,21 +91,12 @@ const CalendarView: React.FC = () => {
         setDataRefreshing(true); // 仅设置数据刷新状态
       }
       
-      // 记录本次请求的日期范围
-      setLastFetchRange({ start: startStr, end: endStr });
-      setIsInitialLoad(false);
+      console.log('开始获取数据:', { startStr, endStr });
       
       // 使用合并后的查询参数
       const queryParams = additionalParams 
         ? { ...searchParams, ...additionalParams }
         : searchParams;
-      
-      // 查询参数日志
-      console.log('查询参数:', { 
-        startAtBegin: startStr,
-        endAtEnd: endStr,
-        ...queryParams
-      });
       
       // 获取该时间范围内的生产计划数据
       const result = await getPlanRuntimePage({
@@ -125,6 +108,8 @@ const CalendarView: React.FC = () => {
         lineId: queryParams.lineId, // 使用可能更新的lineId
         productId: queryParams.productId, // 使用可能更新的productId
       });
+      
+      console.log('数据获取成功，数量:', result.list.length);
       
       // 转换为日历事件格式
       const events: CalendarEvent[] = result.list.map(plan => {
@@ -179,8 +164,10 @@ const CalendarView: React.FC = () => {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
     } finally {
+      // 确保无论如何都重置加载状态
+      console.log('重置加载状态');
       setLoading(false);
-      setDataRefreshing(false); // 结束数据刷新状态
+      setDataRefreshing(false);
     }
   };
   
@@ -222,14 +209,14 @@ const CalendarView: React.FC = () => {
   
   // 处理日历日期变化
   const handleDatesSet = (dateInfo: any) => {
-    // 仅在视图变更时才触发数据获取 (月视图切换、视图类型变更等)
-    if (!lastFetchRange || 
-        dateInfo.startStr.substring(0, 7) !== lastFetchRange.start.substring(0, 7) ||
-        dateInfo.view.type !== dateInfo.oldView?.type) {
-      const startDate = dateInfo.startStr.substring(0, 10);
-      const endDate = dateInfo.endStr.substring(0, 10);
-      fetchEvents(startDate, endDate);
-    }
+    console.log('日历日期变化:', dateInfo.startStr, dateInfo.endStr);
+    
+    // 当日期范围变化时，获取新数据
+    const startDate = dateInfo.startStr.substring(0, 10);
+    const endDate = dateInfo.endStr.substring(0, 10);
+    
+    // 使用 isRefreshOnly=true 确保不会显示全局加载状态
+    fetchEvents(startDate, endDate, true);
   };
 
   // 初始加载数据
