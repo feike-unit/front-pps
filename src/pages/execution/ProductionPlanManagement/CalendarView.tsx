@@ -279,7 +279,14 @@ const CalendarView: React.FC = () => {
             {dataRefreshing && <span className="data-refreshing-indicator" style={{ marginLeft: 8 }}>数据刷新中...</span>}
           </Space>
         </div>
-        <div className="calendar-container">
+        <div 
+          className="calendar-container" 
+          style={{ 
+            maxHeight: 'calc(100vh - 220px)', // 设置最大高度，预留顶部和底部空间
+            overflowY: 'auto',  // 垂直方向滚动
+            padding: '0 4px'    // 添加一点内边距，确保滚动条不会紧贴内容
+          }}
+        >
           {loading ? (
             <div style={{ height: '500px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               加载中...
