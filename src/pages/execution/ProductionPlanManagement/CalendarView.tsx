@@ -44,6 +44,7 @@ const CalendarView: React.FC = () => {
   }>({});
   const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: number }[]>([]);
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
+  const [dataRefreshing, setDataRefreshing] = useState<boolean>(false);
   
   // 处理拉线搜索
   const handleLineSearch = debounce(async (value: string) => {
@@ -74,22 +75,45 @@ const CalendarView: React.FC = () => {
     }
   }, 500);
   
-  // 获取指定日期范围内的计划数据
-  const fetchEvents = async (startStr: string, endStr: string) => {
+  // 获取指定日期范围内的计划数据，允许指定额外的查询参数
+  const fetchEvents = async (
+    startStr: string, 
+    endStr: string, 
+    isRefreshOnly: boolean = false,
+    additionalParams?: { lineId?: number, productId?: number }
+  ) => {
     // 避免重复请求相同日期范围的数据
-    if (lastFetchRange && 
+    if (!additionalParams && lastFetchRange && 
         lastFetchRange.start === startStr && 
         lastFetchRange.end === endStr && 
-        !isInitialLoad) {
+        !isInitialLoad && 
+        !isRefreshOnly) {
       return;
     }
     
     try {
-      setLoading(true);
+      // 只有在非刷新模式或初次加载时才设置整体加载状态
+      if (!isRefreshOnly) {
+        setLoading(true);
+      } else {
+        setDataRefreshing(true); // 仅设置数据刷新状态
+      }
       
       // 记录本次请求的日期范围
       setLastFetchRange({ start: startStr, end: endStr });
       setIsInitialLoad(false);
+      
+      // 使用合并后的查询参数
+      const queryParams = additionalParams 
+        ? { ...searchParams, ...additionalParams }
+        : searchParams;
+      
+      // 查询参数日志
+      console.log('查询参数:', { 
+        startAtBegin: startStr,
+        endAtEnd: endStr,
+        ...queryParams
+      });
       
       // 获取该时间范围内的生产计划数据
       const result = await getPlanRuntimePage({
@@ -98,7 +122,8 @@ const CalendarView: React.FC = () => {
         productType: ProductType.SELF_MADE, // 只查询自制件
         startAtBegin: startStr,
         endAtEnd: endStr,
-        ...searchParams, // 添加拉线和货品筛选条件
+        lineId: queryParams.lineId, // 使用可能更新的lineId
+        productId: queryParams.productId, // 使用可能更新的productId
       });
       
       // 转换为日历事件格式
@@ -145,11 +170,33 @@ const CalendarView: React.FC = () => {
       });
       
       setCalendarEvents(events);
+      
+      // 如果有传入额外参数，同步更新searchParams状态
+      if (additionalParams) {
+        setSearchParams(prev => ({ ...prev, ...additionalParams }));
+      }
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
     } finally {
       setLoading(false);
+      setDataRefreshing(false); // 结束数据刷新状态
+    }
+  };
+  
+  // 根据筛选条件重新加载事件数据，但保持当前视图
+  const refreshEvents = (params?: { lineId?: number, productId?: number }) => {
+    console.log('刷新事件，当前查询参数:', params || searchParams);
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      const view = calendarApi.view;
+      const startStr = view.activeStart.toISOString().substring(0, 10);
+      const endStr = view.activeEnd.toISOString().substring(0, 10);
+      
+      // 强制重新加载数据，忽略日期范围检查，但标记为仅刷新数据
+      setLastFetchRange(null);
+      // 使用额外参数直接查询
+      fetchEvents(startStr, endStr, true, params);
     }
   };
   
@@ -203,7 +250,7 @@ const CalendarView: React.FC = () => {
 
   return (
     <>
-      <Card loading={loading} bordered={false}>
+      <Card bordered={false}>
         <div className="calendar-header">
           <Space>
             <Select
@@ -215,21 +262,14 @@ const CalendarView: React.FC = () => {
               filterOption={false}
               onSearch={handleLineSearch}
               value={searchParams.lineId}
-              onChange={(value: number) => {
-                setSearchParams(prev => ({ ...prev, lineId: value }));
-                // 重置日期范围，触发重新加载
-                setLastFetchRange(null);
-                // 获取当前日历视图的日期范围
-                if (calendarRef.current) {
-                  const calendarApi = calendarRef.current.getApi();
-                  const view = calendarApi.view;
-                  const startStr = view.activeStart.toISOString().substring(0, 10);
-                  const endStr = view.activeEnd.toISOString().substring(0, 10);
-                  fetchEvents(startStr, endStr);
-                }
+              onChange={(value: number | null) => {
+                console.log('拉线选择改变:', value);
+                // 直接使用值刷新，而不是先更新状态
+                refreshEvents({ lineId: value === null ? undefined : value });
               }}
               options={searchLineOptions}
               onClick={() => handleLineSearch('')}
+              disabled={dataRefreshing}
             />
             <Select
               placeholder="货品"
@@ -240,56 +280,56 @@ const CalendarView: React.FC = () => {
               filterOption={false}
               onSearch={handleProductSearch}
               value={searchParams.productId}
-              onChange={(value: number) => {
-                setSearchParams(prev => ({ ...prev, productId: value }));
-                // 重置日期范围，触发重新加载
-                setLastFetchRange(null);
-                // 获取当前日历视图的日期范围
-                if (calendarRef.current) {
-                  const calendarApi = calendarRef.current.getApi();
-                  const view = calendarApi.view;
-                  const startStr = view.activeStart.toISOString().substring(0, 10);
-                  const endStr = view.activeEnd.toISOString().substring(0, 10);
-                  fetchEvents(startStr, endStr);
-                }
+              onChange={(value: number | null) => {
+                console.log('货品选择改变:', value);
+                // 直接使用值刷新，而不是先更新状态
+                refreshEvents({ productId: value === null ? undefined : value });
               }}
               options={searchProductOptions}
               onClick={() => handleProductSearch('')}
+              disabled={dataRefreshing}
             />
+            {dataRefreshing && <span className="data-refreshing-indicator" style={{ marginLeft: 8 }}>数据刷新中...</span>}
           </Space>
         </div>
         <div className="calendar-container">
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            headerToolbar={{
-              left: 'prev,next',
-              center: 'title',
-              right: ''
-            }}
-            locale={zhCNLocale}
-            events={calendarEvents}
-            eventClick={handleEventClick}
-            datesSet={handleDatesSet}
-            height="auto"
-            dayMaxEventRows={3}
-            eventTimeFormat={{
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false
-            }}
-            firstDay={1} // 从周一开始
-            eventDisplay="block"
-            nowIndicator={true}
-            businessHours={true}
-            weekNumbers={false}
-            navLinks={true}
-            selectable={true}
-            editable={false}
-            stickyHeaderDates={true}
-            handleWindowResize={true}
-          />
+          {loading ? (
+            <div style={{ height: '500px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              加载中...
+            </div>
+          ) : (
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              headerToolbar={{
+                left: 'prev,next',
+                center: 'title',
+                right: ''
+              }}
+              locale={zhCNLocale}
+              events={calendarEvents}
+              eventClick={handleEventClick}
+              datesSet={handleDatesSet}
+              height="auto"
+              dayMaxEventRows={3}
+              eventTimeFormat={{
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }}
+              firstDay={1} // 从周一开始
+              eventDisplay="block"
+              nowIndicator={true}
+              businessHours={true}
+              weekNumbers={false}
+              navLinks={true}
+              selectable={true}
+              editable={false}
+              stickyHeaderDates={true}
+              handleWindowResize={true}
+            />
+          )}
         </div>
       </Card>
       
