@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { Space, message, Tooltip, Select, DatePicker, Modal } from 'antd';
+import { Space, message, Tooltip, Select, DatePicker, Modal, Tabs } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
 import { ProTable, ProDescriptions } from '@ant-design/pro-components';
 import { EyeOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
-
+import CalendarView from './CalendarView';
 
 // 引入计划运行时任务相关服务
 import {
@@ -50,6 +50,8 @@ const ProductionPlanManagement: React.FC = () => {
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<PlanRuntime | null>(null);
+  // 当前激活的标签页
+  const [activeTab, setActiveTab] = useState<string>("list");
   
   // 定义表格列头单元格的通用样式
   const components: TableComponents<PlanRuntime> = {
@@ -243,142 +245,167 @@ const ProductionPlanManagement: React.FC = () => {
     },
   ];
 
+  // 列表视图组件
+  const ListView = () => (
+    <ProTable<PlanRuntime>
+      columns={columns}
+      actionRef={actionRef}
+      cardBordered
+      bordered
+      defaultSize="small"
+      scroll={{ x: 1500 }}
+      components={components}
+      onRow={(record) => {
+        const completionQuantity = record.completionQuantity || 0;
+        const taskQuantity = record.taskQuantity || 0;
+        const progress = taskQuantity > 0 ? (completionQuantity / taskQuantity) * 100 : 0;
+        
+        // 使用状态颜色映射获取背景色 (如果没有taskStatus，则使用默认颜色)
+        // 根据任务是否完成选择颜色：完成则使用绿色，否则使用蓝色
+        const bgColor = completionQuantity >= taskQuantity 
+          ? 'rgba(82, 196, 26, 0.15)' // 完成时使用绿色
+          : 'rgba(24, 144, 255, 0.15)'; // 未完成时使用蓝色
+        
+        return {
+          style: {
+            position: 'relative',
+            backgroundImage: `linear-gradient(to right, ${bgColor} ${progress}%, transparent ${progress}%)`,
+            backgroundPosition: 'bottom',
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: '100% 10px',
+          },
+        };
+      }}
+      request={async (params = {}, sort, filter) => {
+        try {
+          const { current, pageSize, ...restParams } = params;
+          
+          // 构建请求参数
+          const requestParams: PlanRuntimePageRequest = {
+            pageNum: current || 1,
+            pageSize: pageSize || 10,
+            ...restParams,
+            ...searchParams,
+            // 固定只查询自制件类型
+            productType: ProductType.SELF_MADE,
+            sortField: Object.keys(sort || {})[0],
+            sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
+          };
+
+          const result = await getPlanRuntimePage(requestParams);
+
+          return {
+            data: result.list,
+            success: true,
+            total: result.total,
+          };
+        } catch (error) {
+          const apiError = error as ApiError;
+          message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
+          return {
+            data: [],
+            success: false,
+            total: 0,
+          };
+        }
+      }}
+      search={false}
+      editable={{
+        type: 'multiple',
+      }}
+      columnsState={{
+        persistenceKey: 'execution-production-plan-table',
+        persistenceType: 'localStorage',
+      }}
+      rowKey="id"
+      options={{
+        density: false,
+        fullScreen: true,
+        reload: true,
+        setting: {
+          listsHeight: 400,
+        },
+      }}
+      headerTitle={
+        <Space>
+          <Select
+            placeholder="拉线"
+            style={{ width: 200 }}
+            showSearch
+            allowClear
+            defaultActiveFirstOption={false}
+            filterOption={false}
+            onSearch={handleLineSearch}
+            onChange={(value: number) => {
+              setSearchParams(prev => ({ ...prev, lineId: value }));
+              actionRef.current?.reload();
+            }}
+            options={searchLineOptions}
+            onClick={() => handleLineSearch('')}
+          />
+          <Select
+            placeholder="货品"
+            style={{ width: 200 }}
+            showSearch
+            allowClear
+            defaultActiveFirstOption={false}
+            filterOption={false}
+            onSearch={handleProductSearch}
+            onChange={(value: number) => {
+              setSearchParams(prev => ({ ...prev, productId: value }));
+              actionRef.current?.reload();
+            }}
+            options={searchProductOptions}
+            onClick={() => handleProductSearch('')}
+          />
+
+          <DatePicker.RangePicker
+            placeholder={['开始日期', '结束日期']}
+            style={{ width: 300 }}
+            onChange={(dates) => {
+              setSearchParams(prev => ({
+                ...prev,
+                startAt: dates?.[0]?.format('YYYY-MM-DD'),
+                endAt: dates?.[1]?.format('YYYY-MM-DD'),
+              }));
+              actionRef.current?.reload();
+            }}
+            allowClear
+          />
+        </Space>
+      }
+      pagination={{
+        defaultPageSize: 10,
+        showQuickJumper: true,
+        showSizeChanger: true,
+        pageSizeOptions: ['10', '20', '50', '100'],
+      }}
+      dateFormatter="string"
+    />
+  );
+
+  // 标签页配置
+  const tabItems = [
+    {
+      key: 'list',
+      label: '列表展示',
+      children: <ListView />,
+    },
+    {
+      key: 'calendar',
+      label: '日历展示',
+      children: <CalendarView />,
+    },
+  ];
+
   return (
     <>
-      <ProTable<PlanRuntime>
-        columns={columns}
-        actionRef={actionRef}
-        cardBordered
-        bordered
-        defaultSize="small"
-        scroll={{ x: 1500 }}
-        components={components}
-        onRow={(record) => {
-          const completionQuantity = record.completionQuantity || 0;
-          const taskQuantity = record.taskQuantity || 0;
-          const progress = taskQuantity > 0 ? (completionQuantity / taskQuantity) * 100 : 0;
-          
-          // 使用状态颜色映射获取背景色 (如果没有taskStatus，则使用默认颜色)
-          // 根据任务是否完成选择颜色：完成则使用绿色，否则使用蓝色
-          const bgColor = completionQuantity >= taskQuantity 
-            ? 'rgba(82, 196, 26, 0.15)' // 完成时使用绿色
-            : 'rgba(24, 144, 255, 0.15)'; // 未完成时使用蓝色
-          
-          return {
-            style: {
-              position: 'relative',
-              backgroundImage: `linear-gradient(to right, ${bgColor} ${progress}%, transparent ${progress}%)`,
-              backgroundPosition: 'bottom',
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: '100% 10px',
-            },
-          };
-        }}
-        request={async (params = {}, sort, filter) => {
-          try {
-            const { current, pageSize, ...restParams } = params;
-            
-            // 构建请求参数
-            const requestParams: PlanRuntimePageRequest = {
-              pageNum: current || 1,
-              pageSize: pageSize || 10,
-              ...restParams,
-              ...searchParams,
-              // 固定只查询自制件类型
-              productType: ProductType.SELF_MADE,
-              sortField: Object.keys(sort || {})[0],
-              sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
-            };
-
-            const result = await getPlanRuntimePage(requestParams);
-
-            return {
-              data: result.list,
-              success: true,
-              total: result.total,
-            };
-          } catch (error) {
-            const apiError = error as ApiError;
-            message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
-            return {
-              data: [],
-              success: false,
-              total: 0,
-            };
-          }
-        }}
-        search={false}
-        editable={{
-          type: 'multiple',
-        }}
-        columnsState={{
-          persistenceKey: 'execution-production-plan-table',
-          persistenceType: 'localStorage',
-        }}
-        rowKey="id"
-        options={{
-          density: false,
-          fullScreen: true,
-          reload: true,
-          setting: {
-            listsHeight: 400,
-          },
-        }}
-        headerTitle={
-          <Space>
-            <Select
-              placeholder="拉线"
-              style={{ width: 200 }}
-              showSearch
-              allowClear
-              defaultActiveFirstOption={false}
-              filterOption={false}
-              onSearch={handleLineSearch}
-              onChange={(value: number) => {
-                setSearchParams(prev => ({ ...prev, lineId: value }));
-                actionRef.current?.reload();
-              }}
-              options={searchLineOptions}
-              onClick={() => handleLineSearch('')}
-            />
-            <Select
-              placeholder="货品"
-              style={{ width: 200 }}
-              showSearch
-              allowClear
-              defaultActiveFirstOption={false}
-              filterOption={false}
-              onSearch={handleProductSearch}
-              onChange={(value: number) => {
-                setSearchParams(prev => ({ ...prev, productId: value }));
-                actionRef.current?.reload();
-              }}
-              options={searchProductOptions}
-              onClick={() => handleProductSearch('')}
-            />
-
-            <DatePicker.RangePicker
-              placeholder={['开始日期', '结束日期']}
-              style={{ width: 300 }}
-              onChange={(dates) => {
-                setSearchParams(prev => ({
-                  ...prev,
-                  startAt: dates?.[0]?.format('YYYY-MM-DD'),
-                  endAt: dates?.[1]?.format('YYYY-MM-DD'),
-                }));
-                actionRef.current?.reload();
-              }}
-              allowClear
-            />
-          </Space>
-        }
-        pagination={{
-          defaultPageSize: 10,
-          showQuickJumper: true,
-          showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-        }}
-        dateFormatter="string"
+      <Tabs
+        activeKey={activeTab}
+        items={tabItems}
+        onChange={setActiveTab}
+        type="card"
+        style={{ marginBottom: '16px' }}
       />
 
       {/* 详情对话框 */}
