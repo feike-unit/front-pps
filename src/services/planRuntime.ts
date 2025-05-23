@@ -13,7 +13,6 @@ export interface PlanRuntime {
   taskQuantity: number;
   registeredQuantity: number;
   completionQuantity: number;
-  taskStatus: number;
   startAt: string;
   endAt: string;
   createdBy: number;
@@ -35,7 +34,6 @@ export interface PlanRuntimeUpdate {
   taskQuantity?: number;
   registeredQuantity?: number;
   completionQuantity?: number;
-  taskStatus?: number;
   startAt?: string;
   endAt?: string;
 }
@@ -51,7 +49,6 @@ export interface PlanRuntimePageRequest {
   lineId?: number;
   batchCode?: string;
   productType?: number;
-  taskStatus?: number;
   startAtBegin?: string;
   startAtEnd?: string;
   endAtBegin?: string;
@@ -65,14 +62,6 @@ export enum ProductType {
   PURCHASE = 1, // 采购件
   SELF_MADE = 2, // 自制件
   OUTSOURCED = 3, // 委外件
-}
-
-// 任务状态枚举
-export enum TaskStatus {
-  CONFIRMED = 2, // 已确认
-  EXECUTING = 3, // 执行中
-  COMPLETED = 4, // 已完成
-  CANCELLED = 5, // 已取消
 }
 
 // 分页查询计划任务列表
@@ -115,19 +104,3 @@ export const getPlanRuntimesByProductType = async (productType: number): Promise
   const response = await api.get<PlanRuntime[]>(`/execution/plan-runtimes/by-product-type/${productType}`);
   return response.data;
 };
-
-// 根据货品类型和任务状态查询计划任务列表
-export const getPlanRuntimesByProductTypeAndStatus = async (productType: number, taskStatus: number): Promise<PlanRuntime[]> => {
-  const response = await api.get<PlanRuntime[]>(`/execution/plan-runtimes/by-product-type-and-status`, { 
-    params: { productType, taskStatus } 
-  });
-  return response.data;
-};
-
-// 更新计划任务状态
-export const updatePlanRuntimeStatus = async (id: number, status: number): Promise<PlanRuntime> => {
-  const response = await api.patch<PlanRuntime>(`/execution/plan-runtimes/${id}/status`, null, {
-    params: { status }
-  });
-  return response.data;
-}; 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Modal, message, Space, Select } from 'antd';
+import { Card, Modal, message, Space, Select, Button } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { ProDescriptions } from '@ant-design/pro-components';
 import type { ApiError } from '../../../services/api';
 import FullCalendar from '@fullcalendar/react';
@@ -9,6 +10,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import zhCNLocale from '@fullcalendar/core/locales/zh-cn';
 import type { EventInput, DateSelectArg, EventClickArg } from '@fullcalendar/core';
 import type { EventSourceInput } from '@fullcalendar/core';
+import { UnorderedListOutlined } from '@ant-design/icons';
 import debounce from 'lodash/debounce';
 import { searchLines } from '../../../services/line';
 import { searchProducts } from '../../../services/product';
@@ -19,7 +21,6 @@ import './calendar.css';
 import {
   PlanRuntime,
   ProductType,
-  TaskStatus,
   getPlanRuntimePage,
   getPlanRuntimeById,
 } from '../../../services/planRuntime';
@@ -31,6 +32,7 @@ interface CalendarEvent extends EventInput {
 }
 
 const CalendarView: React.FC = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<PlanRuntime | null>(null);
@@ -44,7 +46,11 @@ const CalendarView: React.FC = () => {
   }>({});
   const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: number }[]>([]);
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
-  const [dataRefreshing, setDataRefreshing] = useState<boolean>(false);
+  
+  // 跳转返回列表视图
+  const handleBackToListView = () => {
+    navigate('/execution/production-plans');
+  };
   
   // 处理拉线搜索
   const handleLineSearch = debounce(async (value: string) => {
@@ -87,8 +93,6 @@ const CalendarView: React.FC = () => {
       // 只有在非刷新模式或初次加载时才设置整体加载状态
       if (!isRefreshOnly) {
         setLoading(true);
-      } else {
-        setDataRefreshing(true); // 仅设置数据刷新状态
       }
       
       console.log('开始获取数据:', { startStr, endStr });
@@ -113,19 +117,22 @@ const CalendarView: React.FC = () => {
       
       // 转换为日历事件格式
       const events: CalendarEvent[] = result.list.map(plan => {
-        // 根据任务状态设置不同的颜色
+        // 根据任务进度设置不同的颜色
         let backgroundColor = '#4285F4'; // 默认蓝色 (Google Calendar的默认颜色)
         let textColor = '#FFFFFF';
         let borderColor = '#4285F4';
         
-        if (plan.taskStatus === TaskStatus.COMPLETED) {
+        // 使用任务进度计算完成百分比
+        const progress = plan.taskQuantity > 0 ? plan.completionQuantity / plan.taskQuantity : 0;
+        
+        if (progress >= 1) {
           backgroundColor = '#34A853'; // 已完成 - 绿色
-        } else if (plan.taskStatus === TaskStatus.EXECUTING) {
-          backgroundColor = '#4285F4'; // 执行中 - 蓝色
-        } else if (plan.taskStatus === TaskStatus.CONFIRMED) {
-          backgroundColor = '#FBBC05'; // 已确认 - 黄色
-        } else if (plan.taskStatus === TaskStatus.CANCELLED) {
-          backgroundColor = '#EA4335'; // 已取消 - 红色
+        } else if (progress >= 0.5) {
+          backgroundColor = '#4285F4'; // 完成一半以上 - 蓝色
+        } else if (progress > 0) {
+          backgroundColor = '#FBBC05'; // 已开始 - 黄色
+        } else {
+          backgroundColor = '#EA4335'; // 未开始 - 红色
         }
         
         const title = `${plan.productName || '未命名'} (${plan.completionQuantity}/${plan.taskQuantity})`;
@@ -167,7 +174,6 @@ const CalendarView: React.FC = () => {
       // 确保无论如何都重置加载状态
       console.log('重置加载状态');
       setLoading(false);
-      setDataRefreshing(false);
     }
   };
   
@@ -238,7 +244,7 @@ const CalendarView: React.FC = () => {
   return (
     <>
       <Card bordered={false}>
-        <div className="calendar-header">
+        <div className="calendar-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
           <Space>
             <Select
               placeholder="拉线"
@@ -256,7 +262,6 @@ const CalendarView: React.FC = () => {
               }}
               options={searchLineOptions}
               onClick={() => handleLineSearch('')}
-              disabled={dataRefreshing}
             />
             <Select
               placeholder="货品"
@@ -274,10 +279,15 @@ const CalendarView: React.FC = () => {
               }}
               options={searchProductOptions}
               onClick={() => handleProductSearch('')}
-              disabled={dataRefreshing}
             />
-            {dataRefreshing && <span className="data-refreshing-indicator" style={{ marginLeft: 8 }}>数据刷新中...</span>}
           </Space>
+          <Button
+            type="primary"
+            icon={<UnorderedListOutlined />}
+            onClick={handleBackToListView}
+          >
+            返回列表视图
+          </Button>
         </div>
         <div 
           className="calendar-container" 

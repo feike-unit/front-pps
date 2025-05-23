@@ -10,7 +10,6 @@ import type { ApiError } from '../../../services/api';
 // 引入计划运行时任务相关服务
 import {
   PlanRuntime,
-  TaskStatus,
   ProductType,
   getPlanRuntimePage,
   getPlanRuntimeById,
@@ -32,7 +31,6 @@ const PurchasePlanManagement: React.FC = () => {
     productType?: number;
     batchCode?: string;
     demandId?: number;
-    taskStatus?: number;
     startAtBegin?: string;
     endAtBegin?: string;
   }>({
@@ -214,7 +212,7 @@ const PurchasePlanManagement: React.FC = () => {
           const taskQuantity = record.taskQuantity || 0;
           const progress = taskQuantity > 0 ? (completionQuantity / taskQuantity) * 100 : 0;
           
-          // 使用状态颜色映射获取背景色 (如果没有taskStatus，则使用默认颜色)
+          // 根据任务进度设置行背景颜色
           // 根据任务是否完成选择颜色：完成则使用绿色，否则使用蓝色
           const bgColor = completionQuantity >= taskQuantity 
             ? 'rgba(82, 196, 26, 0.15)' // 完成时使用绿色

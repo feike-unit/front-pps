@@ -94,6 +94,16 @@ export const routes: ExtendedRouteObject[] = [
             }
           },
           {
+            path: 'production-calendar',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/execution/ProductionCalendar')))}</Suspense>,
+            metadata: {
+              label: '生产日历',
+              icon: <ScheduleOutlined />,
+              closable: true,
+              hideInMenu: true
+            }
+          },
+          {
             path: 'purchase-plans',
             element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/execution/PurchasePlanManagement')))}</Suspense>,
             metadata: {
