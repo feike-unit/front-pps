@@ -52,8 +52,9 @@ const ProductionPlanManagement: React.FC = () => {
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<PlanRuntime | null>(null);
   
-  // 跳转到日历视图
+  // 切换到日历视图
   const handleSwitchToCalendar = () => {
+    console.log('跳转到日历视图:', '/execution/production-plans/calendar');
     navigate('/execution/production-plans/calendar');
   };
   
