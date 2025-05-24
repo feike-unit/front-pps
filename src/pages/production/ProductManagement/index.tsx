@@ -43,7 +43,10 @@ const ProductManagement: React.FC = () => {
   const [searchParams, setSearchParams] = useState<{
     keyword?: string;
     productType?: ProductType;
-  }>({});
+  }>({
+    // 默认选择自制件
+    productType: ProductType.SELF_MADE,
+  });
 
   // ProTable 列定义
   const columns: ProColumns<Product>[] = [
@@ -266,19 +269,16 @@ const ProductManagement: React.FC = () => {
       defaultSize="small"
       request={async (params = {}, sort, filter) => {
         try {
-          const { current, pageSize, ...restParams } = params;
-          
-          // 构建请求参数
-          const requestParams: ProductPageRequest = {
-            pageNum: current || 1,
-            pageSize: pageSize || 10,
-            ...restParams,
-            ...searchParams,
+          // 构建查询参数
+          const queryParams: ProductPageRequest = {
+            pageNum: params.current as number,
+            pageSize: params.pageSize as number,
+            ...searchParams, // 包含默认的 productType
             sortField: Object.keys(sort || {})[0],
             sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
           };
           
-          const result = await getProductPage(requestParams);
+          const result = await getProductPage(queryParams);
           
           return {
             data: result.list,
@@ -325,6 +325,7 @@ const ProductManagement: React.FC = () => {
             placeholder="货品类型"
             style={{ width: 200 }}
             allowClear
+            defaultValue={ProductType.SELF_MADE}
             options={[
               { label: '采购件', value: ProductType.PURCHASE },
               { label: '自制件', value: ProductType.SELF_MADE },
