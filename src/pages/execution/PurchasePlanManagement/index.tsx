@@ -158,7 +158,7 @@ const PurchasePlanManagement: React.FC = () => {
       width: 100,
     },
     {
-      title: '开始日期',
+      title: '下单日期',
       dataIndex: 'startAt',
       valueType: 'date',
       sorter: true,
@@ -166,7 +166,7 @@ const PurchasePlanManagement: React.FC = () => {
       render: (_, record) => record.startAt ? record.startAt.substring(0, 10) : '-',
     },
     {
-      title: '结束日期',
+      title: '到货日期',
       dataIndex: 'endAt',
       valueType: 'date',
       sorter: true,
@@ -297,7 +297,7 @@ const PurchasePlanManagement: React.FC = () => {
             />
 
             <DatePicker.RangePicker
-              placeholder={['开始日期', '结束日期']}
+              placeholder={['下单日期', '到货日期']}
               style={{ width: 300 }}
               onChange={(dates) => {
                 setSearchParams(prev => ({
@@ -365,12 +365,12 @@ const PurchasePlanManagement: React.FC = () => {
                 dataIndex: 'completionQuantity',
               },
               {
-                title: '开始日期',
+                title: '下单日期',
                 dataIndex: 'startAt',
                 render: (_, record) => record.startAt ? record.startAt.substring(0, 10) : '-',
               },
               {
-                title: '结束日期',
+                title: '到货日期',
                 dataIndex: 'endAt',
                 render: (_, record) => record.endAt ? record.endAt.substring(0, 10) : '-',
               },
