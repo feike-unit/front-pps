@@ -132,13 +132,13 @@ const DemandManagement: React.FC = () => {
       width: 100,
     },
     {
-      title: '需求数量',
+      title: '订单数量',
       dataIndex: 'demandQuantity',
       sorter: true,
       width: 100,
     },
     {
-      title: '净需数量',
+      title: '生产数量',
       dataIndex: 'purgeQuantity',
       sorter: true,
       width: 100,
