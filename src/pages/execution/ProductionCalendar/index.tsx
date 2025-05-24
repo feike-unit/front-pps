@@ -344,6 +344,7 @@ const ProductionCalendar: React.FC = () => {
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
         width={800}
+        zIndex={1100000}
       >
         {detailRecord && (
           <ProDescriptions<PlanRuntime>
