@@ -54,7 +54,7 @@ const ProductionPlanManagement: React.FC = () => {
   
   // 跳转到日历视图
   const handleSwitchToCalendar = () => {
-    navigate('/execution/production-calendar');
+    navigate('/execution/production-plans/calendar');
   };
   
   // 定义表格列头单元格的通用样式
