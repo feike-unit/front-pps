@@ -64,7 +64,7 @@ const DemandManagement: React.FC = () => {
   }>({});
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [form] = Form.useForm();
-
+  
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
     try {
@@ -160,6 +160,7 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'deliveryDate',
       valueType: 'date',
       sorter: true,
+      defaultSortOrder: 'descend',
       width: 120,
     },
     {
@@ -182,6 +183,7 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'businessKey',
       ellipsis: true,
       width: 120,
+      hidden: true,
     },
     {
       title: '业务类型',
@@ -268,7 +270,7 @@ const DemandManagement: React.FC = () => {
               }}
             >
               <Tooltip title="确认执行">
-                <a hidden={true}><PlayCircleOutlined style={{ color: '#1890ff' }} /></a>
+                <a><PlayCircleOutlined style={{ color: '#1890ff' }} /></a>
               </Tooltip>
             </Popconfirm>
           )}
@@ -312,7 +314,7 @@ const DemandManagement: React.FC = () => {
               }}
             >
               <Tooltip title="删除">
-                <a hidden={true}><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
+                <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
               </Tooltip>
             </Popconfirm>
           )}
@@ -425,13 +427,23 @@ const DemandManagement: React.FC = () => {
         try {
           const { current, pageSize, ...restParams } = params;
           
+          // 如果没有排序参数，则使用默认的交期倒序排序
+          const sortParams = Object.keys(sort || {}).length > 0 
+            ? { 
+                sortField: Object.keys(sort)[0],
+                sortOrder: Object.values(sort)[0] === 'ascend' ? 'asc' : 'desc'
+              }
+            : { 
+                sortField: 'deliveryDate',
+                sortOrder: 'desc' 
+              };
+          
           const pageParams: DemandPageRequest = {
             pageNum: current || 1,
             pageSize: pageSize || 10,
             ...restParams,
             ...searchParams,
-            sortField: Object.keys(sort || {})[0],
-            sortOrder: Object.values(sort || {})[0] === 'ascend' ? 'asc' : 'desc',
+            ...sortParams
           };
           
           const result = await getDemandPage(pageParams);
