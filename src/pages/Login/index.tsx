@@ -40,7 +40,7 @@ const Login: React.FC = () => {
   return (
     <div className={styles.container}>
       <LoginForm
-        title="企业计划管理系统"
+        title="福佑计划管理系统"
         subTitle="欢迎回来！请登录您的账户"
         loading={loading}
         initialValues={{

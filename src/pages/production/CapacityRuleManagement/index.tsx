@@ -300,6 +300,26 @@ const CapacityRuleManagement: React.FC = () => {
             modalProps={{
               destroyOnClose: true,
             }}
+            onOpenChange={(visible) => {
+              // 打开表单时预加载当前产品和拉线的详细信息
+              if (visible) {
+                const { lineId, productId, lineCode, lineName, productCode, productName } = record;
+                
+                // 设置拉线选项
+                setSearchLineOptions([{
+                  label: `${lineCode} - ${lineName}`,
+                  value: lineId,
+                  lineData: { id: lineId, lineCode, lineName } as Line
+                }, ...searchLineOptions]);
+                
+                // 设置产品选项
+                setSearchProductOptions([{
+                  label: `${productCode} - ${productName}`,
+                  value: productId,
+                  productData: { id: productId, productCode, productName } as Product
+                }, ...searchProductOptions]);
+              }
+            }}
           >
             <ProForm.Group>
               <ProFormSelect
@@ -517,6 +537,13 @@ const CapacityRuleManagement: React.FC = () => {
           }}
           modalProps={{
             destroyOnClose: true,
+          }}
+          onOpenChange={(visible) => {
+            if (visible) {
+              // 预加载选项
+              handleLineSearch('');
+              handleProductSearch('');
+            }
           }}
         >
           <ProForm.Group>

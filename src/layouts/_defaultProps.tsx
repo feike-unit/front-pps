@@ -143,7 +143,7 @@ export const getDefaultProps = async () => {
     location: {
       pathname: '/',
     },
-    title: 'PPS 管理系统',
+    title: '计划管理系统',
     logo: 'https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg',
   };
 };
@@ -157,6 +157,6 @@ export default {
   location: {
     pathname: '/',
   },
-  title: 'PPS 管理系统',
+  title: '计划管理系统',
   logo: 'https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg',
 }; 
