@@ -216,6 +216,7 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'customerCode',
       ellipsis: true,
       width: 120,
+      hideInTable: true,
     },
     {
       title: '客户名称',

@@ -24,6 +24,13 @@ export interface PlanRuntime {
   productName?: string;
   lineCode?: string;
   lineName?: string;
+  
+  // 关联需求的信息
+  businessType?: string;
+  businessDocNo?: string;
+  customerOrderDocNo?: string;
+  customerCode?: string;
+  customerName?: string;
 }
 
 /**

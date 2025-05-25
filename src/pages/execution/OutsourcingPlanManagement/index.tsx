@@ -140,6 +140,44 @@ const OutsourcingPlanManagement: React.FC = () => {
       },
     },
     {
+      title: '业务类型',
+      dataIndex: 'businessType',
+      ellipsis: true,
+      sorter: true,
+      width: 120,
+    },
+    {
+      title: '业务单号',
+      dataIndex: 'businessDocNo',
+      ellipsis: true,
+      sorter: true,
+      copyable: true,
+      width: 150,
+    },
+    {
+      title: '客户订单号',
+      dataIndex: 'customerOrderDocNo',
+      ellipsis: true,
+      sorter: true,
+      copyable: true,
+      width: 150,
+    },
+    {
+      title: '客户编号',
+      dataIndex: 'customerCode',
+      ellipsis: true,
+      sorter: true,
+      width: 120,
+      hideInTable: true,
+    },
+    {
+      title: '客户名称',
+      dataIndex: 'customerName',
+      ellipsis: true,
+      sorter: true,
+      width: 180,
+    },
+    {
       title: '任务数量',
       dataIndex: 'taskQuantity',
       sorter: true,
@@ -337,11 +375,19 @@ const OutsourcingPlanManagement: React.FC = () => {
               {
                 title: '批次号',
                 dataIndex: 'batchCode',
+                copyable: true,
               },
               {
-                title: '货品编号/名称',
+                title: '需求ID',
+                dataIndex: 'demandId',
+              },
+              {
+                title: '货品编号',
                 dataIndex: 'productCode',
-                render: (_, record) => record.productCode ? `${record.productCode} - ${record.productName}` : record.productName,
+              },
+              {
+                title: '货品名称',
+                dataIndex: 'productName',
               },
               {
                 title: '货品类型',
@@ -351,6 +397,28 @@ const OutsourcingPlanManagement: React.FC = () => {
                   2: { text: '自制件' },
                   3: { text: '委外件' },
                 },
+              },
+              {
+                title: '业务类型',
+                dataIndex: 'businessType',
+              },
+              {
+                title: '业务单号',
+                dataIndex: 'businessDocNo',
+                copyable: true,
+              },
+              {
+                title: '客户订单号',
+                dataIndex: 'customerOrderDocNo',
+                copyable: true,
+              },
+              {
+                title: '客户编号',
+                dataIndex: 'customerCode',
+              },
+              {
+                title: '客户名称',
+                dataIndex: 'customerName',
               },
               {
                 title: '任务数量',
