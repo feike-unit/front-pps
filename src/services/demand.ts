@@ -60,6 +60,19 @@ export interface DemandPageRequest {
   sortOrder?: string;
 }
 
+// 插单计划日期数量类型
+export interface DateQuantity {
+  insertOrderDate: string;
+  quantity: number;
+}
+
+// 插单计划请求类型
+export interface InsertOrderRequest {
+  demandId: number;
+  dateQuantityList: DateQuantity[];
+  rePlanScope?: number;
+}
+
 // 获取需求分页列表
 export const getDemandPage = async (params: DemandPageRequest): Promise<PageResponse<Demand>> => {
   const response = await api.get('/execution/demands', { params });
@@ -105,5 +118,11 @@ export const confirmAndExecuteDemand = async (id: number): Promise<Demand> => {
 // 同步需求
 export const syncDemands = async (): Promise<void> => {
   const response = await api.post('/execution/demands/sync');
+  return response.data;
+};
+
+// 提交插单计划
+export const submitInsertOrder = async (data: InsertOrderRequest): Promise<void> => {
+  const response = await api.post('/execution/demands/insert-order', data);
   return response.data;
 }; 

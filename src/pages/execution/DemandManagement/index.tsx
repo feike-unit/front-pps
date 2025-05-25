@@ -11,6 +11,13 @@ import {
   Input,
   DatePicker,
   Select,
+  Card,
+  Row,
+  Col,
+  Divider,
+  InputNumber,
+  Modal,
+  Radio
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
@@ -25,7 +32,7 @@ import {
   ProFormDatePicker,
   ProFormTreeSelect,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Demand, 
@@ -38,9 +45,15 @@ import {
   updateDemandStatus,
   confirmAndExecuteDemand,
   syncDemands,
+  DateQuantity,
+  InsertOrderRequest,
+  submitInsertOrder,
+  getDemandById
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
+import dayjs from 'dayjs';
+import { RadioChangeEvent } from 'antd/lib/radio';
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
@@ -62,6 +75,13 @@ const DemandManagement: React.FC = () => {
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [form] = Form.useForm();
   
+  // 插单相关状态
+  const [insertOrderModalVisible, setInsertOrderModalVisible] = useState<boolean>(false);
+  const [currentDemand, setCurrentDemand] = useState<Demand | null>(null);
+  const [dateQuantityList, setDateQuantityList] = useState<DateQuantity[]>([]);
+  const [insertOrderForm] = Form.useForm();
+  const [rePlanScope, setRePlanScope] = useState<number>(0);
+
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
     try {
@@ -89,6 +109,192 @@ const DemandManagement: React.FC = () => {
   useEffect(() => {
     handleProductSearch('');
   }, []);
+
+  // 计算剩余可插单数量
+  const calculateRemainingQuantity = () => {
+    const totalPlannedQuantity = dateQuantityList.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const remainingQuantity = (currentDemand?.purgeQuantity || 0) - (currentDemand?.completionQuantity || 0) - totalPlannedQuantity;
+    return Math.max(0, remainingQuantity);
+  };
+
+  // 获取最后一个日期
+  const getLastDate = () => {
+    if (dateQuantityList.length === 0) {
+      return dayjs();
+    }
+    const lastDate = dateQuantityList[dateQuantityList.length - 1].insertOrderDate;
+    return dayjs(lastDate);
+  };
+
+  // 检查日期是否重复
+  const isDateDuplicate = (date: string, excludeIndex?: number) => {
+    return dateQuantityList.some((item, index) => 
+      index !== excludeIndex && item.insertOrderDate === date
+    );
+  };
+
+  // 处理打开插单对话框
+  const handleOpenInsertOrderModal = async (record: Demand) => {
+    try {
+      // 先设置当前选中的需求数据
+      setCurrentDemand(record);
+      
+      // 初始化第一条日期数量记录，数量为生产数量-完工数量
+      const initialQuantity = (record.purgeQuantity || 0) - (record.completionQuantity || 0);
+      const initialDateQuantity: DateQuantity = {
+        insertOrderDate: dayjs().format('YYYY-MM-DD'),
+        quantity: initialQuantity,
+      };
+      setDateQuantityList([initialDateQuantity]);
+      
+      // 重置表单
+      insertOrderForm.resetFields();
+      // 确保重置后设置默认值
+      setTimeout(() => {
+        insertOrderForm.setFieldsValue({
+          rePlanScope: 0
+        });
+      }, 0);
+      
+      // 显示对话框
+      setInsertOrderModalVisible(true);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取需求详情失败');
+    }
+  };
+
+  // 处理关闭插单对话框
+  const handleCloseInsertOrderModal = () => {
+    // 清空表单和状态
+    insertOrderForm.resetFields();
+    setDateQuantityList([]);
+    setCurrentDemand(null);
+    setInsertOrderModalVisible(false);
+  };
+
+  // 处理添加日期数量
+  const handleAddDateQuantity = () => {
+    const remainingQuantity = calculateRemainingQuantity();
+    if (remainingQuantity <= 0) {
+      message.warning('已无剩余可插单数量');
+      return;
+    }
+
+    // 获取最后一个日期并加1天
+    const nextDate = getLastDate().add(1, 'day').format('YYYY-MM-DD');
+
+    setDateQuantityList([
+      ...dateQuantityList,
+      {
+        insertOrderDate: nextDate,
+        quantity: remainingQuantity,
+      },
+    ]);
+  };
+
+  // 处理移除日期数量
+  const handleRemoveDateQuantity = (index: number) => {
+    const newList = [...dateQuantityList];
+    newList.splice(index, 1);
+    setDateQuantityList(newList);
+  };
+
+  // 处理日期变更
+  const handleDateChange = (index: number, date: dayjs.Dayjs | null) => {
+    if (!date) return;
+    
+    const newDate = date.format('YYYY-MM-DD');
+    
+    // 检查日期是否重复
+    if (isDateDuplicate(newDate, index)) {
+      message.error('该日期已存在，请选择其他日期');
+      return;
+    }
+
+    const newList = [...dateQuantityList];
+    newList[index].insertOrderDate = newDate;
+    setDateQuantityList(newList);
+  };
+
+  // 处理数量变更
+  const handleQuantityChange = (index: number, value: number | null) => {
+    if (value === null) return;
+
+    const newList = [...dateQuantityList];
+    const oldQuantity = newList[index].quantity || 0;
+    const remainingQuantity = calculateRemainingQuantity() + oldQuantity; // 加回当前行的旧数量
+
+    // 确保新数量不超过剩余可用数量
+    const newQuantity = Math.min(value, remainingQuantity);
+    if (value > remainingQuantity) {
+      message.warning('输入数量超过剩余可插单数量');
+    }
+
+    newList[index].quantity = newQuantity;
+    setDateQuantityList(newList);
+  };
+
+  // 处理影响范围变更
+  const handleRePlanScopeChange = (e: RadioChangeEvent) => {
+    const value = e.target.value;
+    const prevValue = rePlanScope;
+    setRePlanScope(value);
+    
+    // 如果是切换到全部重拍计划
+    if (value === 2) {
+      // 清空已有日期行，只保留一行，数量为生产数量
+      setDateQuantityList([{
+        insertOrderDate: dayjs().format('YYYY-MM-DD'),
+        quantity: currentDemand?.purgeQuantity || 0,
+      }]);
+      return;
+    }
+    
+    // 如果是从全部重拍计划切换到其他选项
+    if (prevValue === 2) {
+      // 重置为一行，数量为生产数量-完工数量
+      const initialQuantity = (currentDemand?.purgeQuantity || 0) - (currentDemand?.completionQuantity || 0);
+      setDateQuantityList([{
+        insertOrderDate: dayjs().format('YYYY-MM-DD'),
+        quantity: initialQuantity,
+      }]);
+      return;
+    }
+    
+    // 其他情况（0和1之间切换）保持日期行不变
+  };
+
+  // 处理提交插单计划
+  const handleSubmitInsertOrder = async (values: any) => {
+    try {
+      if (!currentDemand?.id) {
+        message.error('未选择需求');
+        return false;
+      }
+      
+      // 构建插单请求数据
+      const insertOrderData: InsertOrderRequest = {
+        demandId: currentDemand.id,
+        dateQuantityList: dateQuantityList,
+        rePlanScope: values.rePlanScope || 0,
+      };
+      
+      // 提交插单请求
+      await submitInsertOrder(insertOrderData);
+      
+      // 关闭对话框并刷新表格
+      message.success('插单计划提交成功');
+      handleCloseInsertOrderModal();
+      actionRef.current?.reload();
+      
+      return true;
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '插单计划提交失败');
+      return false;
+    }
+  };
 
   // 定义表格列头单元格的通用样式
   const components: TableComponents<Demand> = {
@@ -249,16 +455,7 @@ const DemandManagement: React.FC = () => {
         <Space size="middle">
           {/* 添加插单按钮 */}
           <Tooltip title="插单">
-            <a onClick={() => {
-              // 插单操作逻辑
-              confirmAndExecuteDemand(record.id!).then(() => {
-                message.success('插单成功');
-                actionRef.current?.reload();
-              }).catch((error) => {
-                const apiError = error as ApiError;
-                message.error(apiError.response?.data?.message || apiError.message || '插单失败');
-              });
-            }}>
+            <a onClick={() => handleOpenInsertOrderModal(record)}>
               <SwapOutlined style={{ color: '#1890ff' }} />
             </a>
           </Tooltip>
@@ -268,216 +465,345 @@ const DemandManagement: React.FC = () => {
   ];
 
   return (
-    <ProTable<Demand>
-      columns={columns}
-      actionRef={actionRef}
-      cardBordered
-      bordered
-      defaultSize="small"
-      scroll={{ x: 1500 }}
-      components={components}
-      onRow={(record) => {
-        const completionQuantity = record.completionQuantity || 0;
-        const purgeQuantity = record.purgeQuantity || 0;
-        
-        // 计算进度，已完成状态显示100%进度
-        let progress = 0;
-        if (record.status === DemandStatus.COMPLETED) {
-          // 已完成状态显示满进度
-          progress = 100;
-        } else {
-          // 未完成状态根据完成率计算
-          progress = purgeQuantity > 0 ? (completionQuantity / purgeQuantity) * 100 : 0;
-        }
-        
-        // 使用状态颜色映射获取背景色
-        const bgColor = statusColorMap[record.status] || statusColorMap[DemandStatus.INCOMPLETE];
-        
-        return {
-          style: {
-            position: 'relative',
-            backgroundImage: `linear-gradient(to right, ${bgColor} ${progress}%, transparent ${progress}%)`,
-            backgroundPosition: 'bottom',
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: '100% 10px',
-          },
-        };
-      }}
-      headerTitle={
-        <Space wrap>
-          <Select
-            placeholder="货品编号/名称"
-            style={{ width: 200 }}
-            showSearch
-            allowClear
-            defaultActiveFirstOption={false}
-            filterOption={false}
-            onSearch={handleProductSearch}
-            onChange={(value: number) => {
-              setSearchParams(prev => ({ ...prev, productId: value }));
-              actionRef.current?.reload();
-            }}
-            options={searchProductOptions}
-            onClick={() => handleProductSearch('')}
-          />
-          <DatePicker.RangePicker
-            placeholder={['开始交期', '结束交期']}
-            style={{ width: 250 }}
-            onChange={(dates) => {
-              // 只有当两个日期都选择了，才设置日期区间参数
-              if (dates && dates[0] && dates[1]) {
-                const startDate = dates[0]?.format('YYYY-MM-DD');
-                const endDate = dates[1]?.format('YYYY-MM-DD');
-                
-                if (startDate && endDate) {
+    <>
+      <ProTable<Demand>
+        columns={columns}
+        actionRef={actionRef}
+        cardBordered
+        bordered
+        defaultSize="small"
+        scroll={{ x: 1500 }}
+        components={components}
+        onRow={(record) => {
+          const completionQuantity = record.completionQuantity || 0;
+          const purgeQuantity = record.purgeQuantity || 0;
+          
+          // 计算进度，已完成状态显示100%进度
+          let progress = 0;
+          if (record.status === DemandStatus.COMPLETED) {
+            // 已完成状态显示满进度
+            progress = 100;
+          } else {
+            // 未完成状态根据完成率计算
+            progress = purgeQuantity > 0 ? (completionQuantity / purgeQuantity) * 100 : 0;
+          }
+          
+          // 使用状态颜色映射获取背景色
+          const bgColor = statusColorMap[record.status] || statusColorMap[DemandStatus.INCOMPLETE];
+          
+          return {
+            style: {
+              position: 'relative',
+              backgroundImage: `linear-gradient(to right, ${bgColor} ${progress}%, transparent ${progress}%)`,
+              backgroundPosition: 'bottom',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '100% 10px',
+            },
+          };
+        }}
+        headerTitle={
+          <Space wrap>
+            <Select
+              placeholder="货品编号/名称"
+              style={{ width: 200 }}
+              showSearch
+              allowClear
+              defaultActiveFirstOption={false}
+              filterOption={false}
+              onSearch={handleProductSearch}
+              onChange={(value: number) => {
+                setSearchParams(prev => ({ ...prev, productId: value }));
+                actionRef.current?.reload();
+              }}
+              options={searchProductOptions}
+              onClick={() => handleProductSearch('')}
+            />
+            <DatePicker.RangePicker
+              placeholder={['开始交期', '结束交期']}
+              style={{ width: 250 }}
+              onChange={(dates) => {
+                // 只有当两个日期都选择了，才设置日期区间参数
+                if (dates && dates[0] && dates[1]) {
+                  const startDate = dates[0]?.format('YYYY-MM-DD');
+                  const endDate = dates[1]?.format('YYYY-MM-DD');
+                  
+                  if (startDate && endDate) {
+                    setSearchParams(prev => ({
+                      ...prev,
+                      deliveryDateStart: startDate,
+                      deliveryDateEnd: endDate,
+                      deliveryDate: undefined
+                    }));
+                  }
+                } else {
+                  // 如果没有选择完整的日期区间，则清空所有日期参数
                   setSearchParams(prev => ({
                     ...prev,
-                    deliveryDateStart: startDate,
-                    deliveryDateEnd: endDate,
+                    deliveryDateStart: undefined,
+                    deliveryDateEnd: undefined,
                     deliveryDate: undefined
                   }));
                 }
-              } else {
-                // 如果没有选择完整的日期区间，则清空所有日期参数
-                setSearchParams(prev => ({
-                  ...prev,
-                  deliveryDateStart: undefined,
-                  deliveryDateEnd: undefined,
-                  deliveryDate: undefined
-                }));
-              }
-              actionRef.current?.reload();
-            }}
-            allowClear
-          />
-          <Select
-            placeholder="状态"
-            style={{ width: 150 }}
-            allowClear
-            options={[
-              { label: '未完成', value: DemandStatus.INCOMPLETE },
-              { label: '已完成', value: DemandStatus.COMPLETED },
-            ]}
-            onChange={(value) => {
-              setSearchParams(prev => ({ ...prev, status: value }));
-              actionRef.current?.reload();
-            }}
-          />
-          <Input
-            placeholder="业务单号/客户订单号/客户编号/名称"
-            style={{ width: 300 }}
-            onChange={(e) => handleKeywordSearch(e.target.value)}
-            allowClear
-            onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
-            onClear={() => handleKeywordSearch('')}
-          />
-        </Space>
-      }
-      request={async (params = {}, sort, filter) => {
-        try {
-          const { current, pageSize, ...restParams } = params;
-          
-          // 如果没有排序参数，则使用默认的交期倒序排序
-          const sortParams = Object.keys(sort || {}).length > 0 
-            ? { 
-                sortField: Object.keys(sort)[0],
-                sortOrder: Object.values(sort)[0] === 'ascend' ? 'asc' : 'desc'
-              }
-            : { 
-                sortField: 'deliveryDate',
-                sortOrder: 'desc' 
-              };
-          
-          const pageParams: DemandPageRequest = {
-            pageNum: current || 1,
-            pageSize: pageSize || 10,
-            ...restParams,
-            ...searchParams,
-            ...sortParams
-          };
-          
-          const result = await getDemandPage(pageParams);
-          
-          return {
-            data: result.list,
-            success: true,
-            total: result.total,
-          };
-        } catch (error) {
-          const apiError = error as ApiError;
-          message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
-          return {
-            data: [],
-            success: false,
-            total: 0,
-          };
+                actionRef.current?.reload();
+              }}
+              allowClear
+            />
+            <Select
+              placeholder="状态"
+              style={{ width: 150 }}
+              allowClear
+              options={[
+                { label: '未完成', value: DemandStatus.INCOMPLETE },
+                { label: '已完成', value: DemandStatus.COMPLETED },
+              ]}
+              onChange={(value) => {
+                setSearchParams(prev => ({ ...prev, status: value }));
+                actionRef.current?.reload();
+              }}
+            />
+            <Input
+              placeholder="业务单号/客户订单号/客户编号/名称"
+              style={{ width: 300 }}
+              onChange={(e) => handleKeywordSearch(e.target.value)}
+              allowClear
+              onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
+              onClear={() => handleKeywordSearch('')}
+            />
+          </Space>
         }
-      }}
-      editable={{
-        type: 'multiple',
-      }}
-      columnsState={{
-        persistenceKey: 'execution-demand-table',
-        persistenceType: 'localStorage',
-      }}
-      rowKey="id"
-      search={false}
-      options={{
-        density: false,
-        fullScreen: true,
-        reload: true,
-        setting: {
-          listsHeight: 400,
-        },
-      }}
-      pagination={{
-        defaultPageSize: 10,
-        showSizeChanger: true,
-        pageSizeOptions: ['10', '20', '50', '100'],
-      }}
-      dateFormatter="string"
-      expandable={{
-        expandedRowKeys: expandedKeys,
-        onExpandedRowsChange: (keys) => setExpandedKeys(keys as number[]),
-        expandIcon: ({ expanded, onExpand, record }) => {
-          if (record.children && record.children.length > 0) {
-            return expanded ? (
-              <CaretDownOutlined onClick={e => onExpand(record, e)} />
-            ) : (
-              <CaretRightOutlined onClick={e => onExpand(record, e)} />
-            );
+        request={async (params = {}, sort, filter) => {
+          try {
+            const { current, pageSize, ...restParams } = params;
+            
+            // 如果没有排序参数，则使用默认的交期倒序排序
+            const sortParams = Object.keys(sort || {}).length > 0 
+              ? { 
+                  sortField: Object.keys(sort)[0],
+                  sortOrder: Object.values(sort)[0] === 'ascend' ? 'asc' : 'desc'
+                }
+              : { 
+                  sortField: 'deliveryDate',
+                  sortOrder: 'desc' 
+                };
+            
+            const pageParams: DemandPageRequest = {
+              pageNum: current || 1,
+              pageSize: pageSize || 10,
+              ...restParams,
+              ...searchParams,
+              ...sortParams
+            };
+            
+            const result = await getDemandPage(pageParams);
+            
+            return {
+              data: result.list,
+              success: true,
+              total: result.total,
+            };
+          } catch (error) {
+            const apiError = error as ApiError;
+            message.error(apiError.response?.data?.message || apiError.message || '获取数据失败');
+            return {
+              data: [],
+              success: false,
+              total: 0,
+            };
           }
-          return null;
-        },
-      }}
-      childrenColumnName="children"
-      indentSize={24}
-      toolBarRender={() => [
-        <Popconfirm
-          key="syncConfirm"
-          title="确定要同步需求数据吗？"
-          onConfirm={async () => {
-            try {
-              await syncDemands();
-              message.success('需求同步成功');
-              // 刷新表格数据
-              actionRef.current?.reload();
-            } catch (error) {
-              const apiError = error as ApiError;
-              message.error(apiError.response?.data?.message || apiError.message || '需求同步失败');
+        }}
+        editable={{
+          type: 'multiple',
+        }}
+        columnsState={{
+          persistenceKey: 'execution-demand-table',
+          persistenceType: 'localStorage',
+        }}
+        rowKey="id"
+        search={false}
+        options={{
+          density: false,
+          fullScreen: true,
+          reload: true,
+          setting: {
+            listsHeight: 400,
+          },
+        }}
+        pagination={{
+          defaultPageSize: 10,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+        }}
+        dateFormatter="string"
+        expandable={{
+          expandedRowKeys: expandedKeys,
+          onExpandedRowsChange: (keys) => setExpandedKeys(keys as number[]),
+          expandIcon: ({ expanded, onExpand, record }) => {
+            if (record.children && record.children.length > 0) {
+              return expanded ? (
+                <CaretDownOutlined onClick={e => onExpand(record, e)} />
+              ) : (
+                <CaretRightOutlined onClick={e => onExpand(record, e)} />
+              );
             }
-          }}
-        >
-          <Button
-            key="sync"
-            type="primary"
-            icon={<SyncOutlined />}
+            return null;
+          },
+        }}
+        childrenColumnName="children"
+        indentSize={24}
+        toolBarRender={() => [
+          <Popconfirm
+            key="syncConfirm"
+            title="确定要同步需求数据吗？"
+            onConfirm={async () => {
+              try {
+                await syncDemands();
+                message.success('需求同步成功');
+                // 刷新表格数据
+                actionRef.current?.reload();
+              } catch (error) {
+                const apiError = error as ApiError;
+                message.error(apiError.response?.data?.message || apiError.message || '需求同步失败');
+              }
+            }}
           >
-            同步需求
-          </Button>
-        </Popconfirm>
-      ]}
-    />
+            <Button
+              key="sync"
+              type="primary"
+              icon={<SyncOutlined />}
+            >
+              同步需求
+            </Button>
+          </Popconfirm>
+        ]}
+      />
+      <Modal
+        title="插单计划"
+        width={800}
+        open={insertOrderModalVisible}
+        onCancel={handleCloseInsertOrderModal}
+        footer={null}
+        destroyOnClose
+        maskClosable={false}
+      >
+        {currentDemand && (
+          <Form form={insertOrderForm} onFinish={handleSubmitInsertOrder} layout="vertical">
+            <Card bordered={false} style={{ marginBottom: 0 }}>
+              <Row gutter={[16, 8]}>
+                <Col span={12}>
+                  <div style={{ marginBottom: 0 }}>
+                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>货品编号/名称</div>
+                    <div>{`${currentDemand.productCode || ''} ${currentDemand.productName ? '- ' + currentDemand.productName : ''}`}</div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <div style={{ marginBottom: 0 }}>
+                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>生产数量</div>
+                    <div>{currentDemand.purgeQuantity || 0}</div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <div style={{ marginBottom: 0 }}>
+                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>完工数量</div>
+                    <div>{currentDemand.completionQuantity || 0}</div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <div style={{ marginBottom: 0 }}>
+                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>交期</div>
+                    <div>{currentDemand.deliveryDate || '-'}</div>
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+            
+            <Card bordered={false} style={{ marginTop: 12 }}>
+              <div style={{ marginBottom: 6 }}>
+                <Button 
+                  type="dashed" 
+                  onClick={handleAddDateQuantity} 
+                  block 
+                  icon={<PlusOutlined />}
+                  disabled={rePlanScope === 2 || calculateRemainingQuantity() <= 0}
+                >
+                  添加插单日期
+                </Button>
+              </div>
+              
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex' }}>
+                  <div style={{ flex: 1, marginRight: 16 }}>插单日期</div>
+                  <div style={{ flex: 1, marginRight: 16 }}>插单数量</div>
+                  <div style={{ width: 32 }}></div>
+                </div>
+              </div>
+              
+              {dateQuantityList.map((item, index) => (
+                <div key={index} style={{ marginBottom: 16, display: 'flex', alignItems: 'center' }}>
+                  <div style={{ flex: 1, marginRight: 16 }}>
+                    <DatePicker
+                      style={{ width: '100%' }}
+                      value={item.insertOrderDate ? dayjs(item.insertOrderDate) : null}
+                      onChange={(date) => handleDateChange(index, date)}
+                      format="YYYY-MM-DD"
+                      placeholder="选择插单日期"
+                      allowClear={false}
+                      showToday
+                    />
+                  </div>
+                  <div style={{ flex: 1, marginRight: 16 }}>
+                    <InputNumber
+                      style={{ width: '100%' }}
+                      min={1}
+                      max={currentDemand!.demandQuantity}
+                      value={item.quantity}
+                      onChange={(value) => handleQuantityChange(index, value as number)}
+                      disabled={rePlanScope === 2}
+                    />
+                  </div>
+                  <div>
+                    {dateQuantityList.length > 1 && rePlanScope !== 2 && (
+                      <Button
+                        type="text"
+                        danger
+                        icon={<MinusCircleOutlined />}
+                        onClick={() => handleRemoveDateQuantity(index)}
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              <Divider style={{ margin: '24px 0 16px' }} />
+              
+              <Form.Item name="rePlanScope" label="影响范围" initialValue={0}>
+                <Radio.Group defaultValue={0} onChange={handleRePlanScopeChange}>
+                  <Space direction="vertical">
+                    <Tooltip title="仅插单不影响其他计划，保持其他计划不变">
+                      <Radio value={0}>仅插单不影响其他计划</Radio>
+                    </Tooltip>
+                    <Tooltip title="插单后，因该单之前占用的产能释放，需要重新计算其释放而影响到的其他计划">
+                      <Radio value={1}>插单并重新计算因该单空余产能影响的计划</Radio>
+                    </Tooltip>
+                    <Tooltip title="插单后，从插单日期开始的所有计划重新排产">
+                      <Radio value={2}>插单并从插单日期全部重拍计划</Radio>
+                    </Tooltip>
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+              
+              <div style={{ textAlign: 'right', marginTop: 24 }}>
+                <Button onClick={handleCloseInsertOrderModal} style={{ marginRight: 8 }}>
+                  取消
+                </Button>
+                <Button type="primary" htmlType="submit">
+                  提交插单计划
+                </Button>
+              </div>
+            </Card>
+          </Form>
+        )}
+      </Modal>
+    </>
   );
 };
 
