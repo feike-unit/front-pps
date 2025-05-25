@@ -279,7 +279,16 @@ const DemandManagement: React.FC = () => {
       onRow={(record) => {
         const completionQuantity = record.completionQuantity || 0;
         const purgeQuantity = record.purgeQuantity || 0;
-        const progress = purgeQuantity > 0 ? (completionQuantity / purgeQuantity) * 100 : 0;
+        
+        // 计算进度，已完成状态显示100%进度
+        let progress = 0;
+        if (record.status === DemandStatus.COMPLETED) {
+          // 已完成状态显示满进度
+          progress = 100;
+        } else {
+          // 未完成状态根据完成率计算
+          progress = purgeQuantity > 0 ? (completionQuantity / purgeQuantity) * 100 : 0;
+        }
         
         // 使用状态颜色映射获取背景色
         const bgColor = statusColorMap[record.status] || statusColorMap[DemandStatus.INCOMPLETE];
