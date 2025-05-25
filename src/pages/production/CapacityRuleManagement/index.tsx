@@ -221,6 +221,13 @@ const CapacityRuleManagement: React.FC = () => {
       ),
     },
     {
+      title: '系数',
+      dataIndex: 'coefficient',
+      sorter: true,
+      search: false,
+      render: (_, record) => record.coefficient,
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       filters: true,
@@ -281,6 +288,7 @@ const CapacityRuleManagement: React.FC = () => {
                   lineId: values.lineId,
                   productId: values.productId,
                   worksHourCapacity: values.worksHourCapacity,
+                  coefficient: values.coefficient,
                   status: values.status,
                   remark: values.remark,
                 });
@@ -373,6 +381,19 @@ const CapacityRuleManagement: React.FC = () => {
                 label="工时产能"
                 rules={[{ required: true, message: '请输入工时产能' }]}
                 min={0}
+                width="md"
+              />
+              <ProFormDigit
+                name="coefficient"
+                label="系数"
+                rules={[{ required: true, message: '请输入系数' }]}
+                min={0}
+                max={5}
+                initialValue={1.0}
+                fieldProps={{
+                  precision: 2,
+                  step: 0.1
+                }}
                 width="md"
               />
               <ProFormSwitch
@@ -598,6 +619,19 @@ const CapacityRuleManagement: React.FC = () => {
               label="工时产能"
               rules={[{ required: true, message: '请输入工时产能' }]}
               min={0}
+              width="md"
+            />
+            <ProFormDigit
+              name="coefficient"
+              label="系数"
+              rules={[{ required: true, message: '请输入系数' }]}
+              min={0}
+              max={5}
+              initialValue={1.0}
+              fieldProps={{
+                precision: 2,
+                step: 0.1
+              }}
               width="md"
             />
             <ProFormSwitch
