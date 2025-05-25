@@ -44,11 +44,8 @@ import debounce from 'lodash/debounce';
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
-  [1]: 'rgba(217, 217, 217, 0.15)', 
-  [2]: 'rgba(24, 144, 255, 0.15)', 
-  [3]: 'rgba(24, 144, 255, 0.15)', 
-  [4]: 'rgba(82, 196, 26, 0.15)', 
-  [5]: 'rgba(255, 77, 79, 0.15)', 
+  [DemandStatus.INCOMPLETE]: 'rgba(24, 144, 255, 0.15)', // 未完成 - 蓝色
+  [DemandStatus.COMPLETED]: 'rgba(82, 196, 26, 0.15)',   // 已完成 - 绿色
 };
 
 const DemandManagement: React.FC = () => {
@@ -170,11 +167,8 @@ const DemandManagement: React.FC = () => {
       onFilter: true,
       valueType: 'select',
       valueEnum: {
-        1: { text: '草稿', status: 'default' },
-        2: { text: '已确认', status: 'processing' },
-        3: { text: '执行中', status: 'processing' },
-        4: { text: '已完成', status: 'success' },
-        5: { text: '已取消', status: 'error' },
+        [0]: { text: '未完成', status: 'processing' },
+        [1]: { text: '已完成', status: 'success' },
       },
       width: 100,
     },
@@ -253,35 +247,13 @@ const DemandManagement: React.FC = () => {
       hidden: true,
       render: (_, record) => (
         <Space size="middle">
-          {/* 草稿状态可以确认执行 */}
-          {record.status === DemandStatus.DRAFT && (
+          {/* 未完成状态可以标记为已完成 */}
+          {record.status === DemandStatus.INCOMPLETE && (
             <Popconfirm
-              title="确认执行该需求？"
+              title="确认标记为已完成？"
               onConfirm={async () => {
                 try {
-                  await confirmAndExecuteDemand(record.id!);
-                  message.success('确认执行成功');
-                  // 刷新表格数据
-                  actionRef.current?.reload();
-                } catch (error) {
-                  const apiError = error as ApiError;
-                  message.error(apiError.response?.data?.message || apiError.message || '确认执行失败');
-                }
-              }}
-            >
-              <Tooltip title="确认执行">
-                <a><PlayCircleOutlined style={{ color: '#1890ff' }} /></a>
-              </Tooltip>
-            </Popconfirm>
-          )}
-          
-          {/* 已确认或执行中状态可以修改为已取消 */}
-          {(record.status === DemandStatus.CONFIRMED || record.status === DemandStatus.EXECUTING) && (
-            <Popconfirm
-              title="确认将状态修改为已取消？"
-              onConfirm={async () => {
-                try {
-                  await updateDemandStatus(record.id!, DemandStatus.CANCELLED);
+                  await updateDemandStatus(record.id!, DemandStatus.COMPLETED);
                   message.success('状态修改成功');
                   // 刷新表格数据
                   actionRef.current?.reload();
@@ -291,33 +263,53 @@ const DemandManagement: React.FC = () => {
                 }
               }}
             >
-              <Tooltip title="修改为已取消">
-                <a><StopOutlined style={{ color: '#ff4d4f' }} /></a>
+              <Tooltip title="标记为已完成">
+                <a><CheckOutlined style={{ color: '#52c41a' }} /></a>
               </Tooltip>
             </Popconfirm>
           )}
           
-          {/* 只有草稿和已取消状态才可以删除 */}
-          {(record.status === DemandStatus.DRAFT || record.status === DemandStatus.CANCELLED) && (
+          {/* 已完成状态可以标记为未完成 */}
+          {record.status === DemandStatus.COMPLETED && (
             <Popconfirm
-              title="确定要删除该需求吗？"
+              title="确认标记为未完成？"
               onConfirm={async () => {
                 try {
-                  await deleteDemand(record.id!);
-                  message.success('删除成功');
+                  await updateDemandStatus(record.id!, DemandStatus.INCOMPLETE);
+                  message.success('状态修改成功');
                   // 刷新表格数据
                   actionRef.current?.reload();
                 } catch (error) {
                   const apiError = error as ApiError;
-                  message.error(apiError.response?.data?.message || apiError.message || '删除失败');
+                  message.error(apiError.response?.data?.message || apiError.message || '状态修改失败');
                 }
               }}
             >
-              <Tooltip title="删除">
-                <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
+              <Tooltip title="标记为未完成">
+                <a><PlayCircleOutlined style={{ color: '#1890ff' }} /></a>
               </Tooltip>
             </Popconfirm>
           )}
+          
+          {/* 所有状态都可以删除 */}
+          <Popconfirm
+            title="确定要删除该需求吗？"
+            onConfirm={async () => {
+              try {
+                await deleteDemand(record.id!);
+                message.success('删除成功');
+                // 刷新表格数据
+                actionRef.current?.reload();
+              } catch (error) {
+                const apiError = error as ApiError;
+                message.error(apiError.response?.data?.message || apiError.message || '删除失败');
+              }
+            }}
+          >
+            <Tooltip title="删除">
+              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -338,7 +330,7 @@ const DemandManagement: React.FC = () => {
         const progress = purgeQuantity > 0 ? (completionQuantity / purgeQuantity) * 100 : 0;
         
         // 使用状态颜色映射获取背景色
-        const bgColor = statusColorMap[record.status] || statusColorMap[DemandStatus.DRAFT];
+        const bgColor = statusColorMap[record.status] || statusColorMap[DemandStatus.INCOMPLETE];
         
         return {
           style: {
@@ -402,11 +394,8 @@ const DemandManagement: React.FC = () => {
             style={{ width: 150 }}
             allowClear
             options={[
-              { label: '草稿', value: DemandStatus.DRAFT },
-              { label: '已确认', value: DemandStatus.CONFIRMED },
-              { label: '执行中', value: DemandStatus.EXECUTING },
+              { label: '未完成', value: DemandStatus.INCOMPLETE },
               { label: '已完成', value: DemandStatus.COMPLETED },
-              { label: '已取消', value: DemandStatus.CANCELLED },
             ]}
             onChange={(value) => {
               setSearchParams(prev => ({ ...prev, status: value }));

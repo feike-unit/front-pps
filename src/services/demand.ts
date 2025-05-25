@@ -3,11 +3,8 @@ import api from './api';
 
 // 需求状态枚举
 export enum DemandStatus {
-  DRAFT = 1,      // 草稿
-  CONFIRMED = 2,  // 已确认
-  EXECUTING = 3,  // 执行中
-  COMPLETED = 4,  // 已完成
-  CANCELLED = 5,  // 已取消
+  INCOMPLETE = 0,  // 未完成
+  COMPLETED = 1,   // 已完成
 }
 
 // 需求实体类型
