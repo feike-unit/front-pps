@@ -736,15 +736,6 @@ const CapacityRuleManagement: React.FC = () => {
                 }
               }}
             />
-            <ProFormDatePicker
-              name="lineStartDate"
-              label="拉线投产日期"
-              width="md"
-              readonly
-              fieldProps={{
-                style: { backgroundColor: '#f5f5f5' }
-              }}
-            />
             <ProFormSelect
               name="productId"
               label="货品"
@@ -768,18 +759,11 @@ const CapacityRuleManagement: React.FC = () => {
                 loading: searchProductOptions.length === 0
               }}
             />
+            
+            
           </ProForm.Group>
           <ProForm.Group>
-            <ProFormDigit
-              name="lineWorksHour"
-              label="拉线工时(小时/天)"
-              width="md"
-              readonly
-              fieldProps={{
-                style: { backgroundColor: '#f5f5f5' }
-              }}
-            />
-            <ProFormDigit
+          <ProFormDigit
               name="worksHourCapacity"
               label="工时产能(件/小时)"
               rules={[{ required: true, message: '请输入工时产能' }]}
@@ -823,16 +807,27 @@ const CapacityRuleManagement: React.FC = () => {
               }}
               width="md"
             />
-            <ProFormSwitch
-              name="status"
-              label="状态"
-              checkedChildren="启用"
-              unCheckedChildren="禁用"
-              initialValue={true}
-              transform={(value) => ({ status: value ? 1 : 0 })}
-            />
+            
           </ProForm.Group>
           <ProForm.Group>
+          <ProFormDatePicker
+              name="lineStartDate"
+              label="拉线投产日期"
+              width="md"
+              readonly
+              fieldProps={{
+                style: { backgroundColor: '#f5f5f5' }
+              }}
+            />
+            <ProFormDigit
+              name="lineWorksHour"
+              label="拉线工时(小时/天)"
+              width="md"
+              readonly
+              fieldProps={{
+                style: { backgroundColor: '#f5f5f5' }
+              }}
+            />
             <ProFormText
               name="dailyCapacity"
               label="日产能(件/天)"
@@ -842,6 +837,16 @@ const CapacityRuleManagement: React.FC = () => {
                 style: { backgroundColor: '#f5f5f5' }
               }}
               extra={<span style={{ color: '#888' }}>计算公式: (拉线工时 × 工时产能) × 系数</span>}
+            />
+          </ProForm.Group>
+          <ProForm.Group>
+          <ProFormSwitch
+              name="status"
+              label="状态"
+              checkedChildren="启用"
+              unCheckedChildren="禁用"
+              initialValue={true}
+              transform={(value) => ({ status: value ? 1 : 0 })}
             />
           </ProForm.Group>
           <ProFormTextArea
