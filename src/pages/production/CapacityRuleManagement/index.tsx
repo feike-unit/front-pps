@@ -454,8 +454,8 @@ const CapacityRuleManagement: React.FC = () => {
                     // 重新计算日产能
                     const lineWorksHour = formRef.current?.getFieldValue('lineWorksHour');
                     const coefficient = formRef.current?.getFieldValue('coefficient');
-                    if (lineWorksHour && value && coefficient) {
-                      const dailyCapacity = (lineWorksHour * value) * coefficient;
+                    if (lineWorksHour && coefficient) {
+                      const dailyCapacity = (lineWorksHour * (value || 0)) * coefficient;
                       formRef.current?.setFieldsValue({
                         dailyCapacity: dailyCapacity.toFixed(2)
                       });
@@ -468,7 +468,6 @@ const CapacityRuleManagement: React.FC = () => {
                 label="系数"
                 rules={[{ required: true, message: '请输入系数' }]}
                 min={0}
-                max={5}
                 initialValue={1.0}
                 fieldProps={{
                   precision: 2,
@@ -477,8 +476,8 @@ const CapacityRuleManagement: React.FC = () => {
                     // 重新计算日产能
                     const lineWorksHour = formRef.current?.getFieldValue('lineWorksHour');
                     const worksHourCapacity = formRef.current?.getFieldValue('worksHourCapacity');
-                    if (lineWorksHour && worksHourCapacity && value) {
-                      const dailyCapacity = (lineWorksHour * worksHourCapacity) * value;
+                    if (lineWorksHour && worksHourCapacity) {
+                      const dailyCapacity = (lineWorksHour * worksHourCapacity) * (value || 0);
                       formRef.current?.setFieldsValue({
                         dailyCapacity: dailyCapacity.toFixed(2)
                       });
@@ -774,8 +773,8 @@ const CapacityRuleManagement: React.FC = () => {
                   // 重新计算日产能
                   const lineWorksHour = formRef.current?.getFieldValue('lineWorksHour');
                   const coefficient = formRef.current?.getFieldValue('coefficient');
-                  if (lineWorksHour && value && coefficient) {
-                    const dailyCapacity = (lineWorksHour * value) * coefficient;
+                  if (lineWorksHour && coefficient) {
+                    const dailyCapacity = (lineWorksHour * (value || 0)) * coefficient;
                     formRef.current?.setFieldsValue({
                       dailyCapacity: dailyCapacity.toFixed(2)
                     });
@@ -788,7 +787,6 @@ const CapacityRuleManagement: React.FC = () => {
               label="系数"
               rules={[{ required: true, message: '请输入系数' }]}
               min={0}
-              max={5}
               initialValue={1.0}
               fieldProps={{
                 precision: 2,
@@ -797,8 +795,8 @@ const CapacityRuleManagement: React.FC = () => {
                   // 重新计算日产能
                   const lineWorksHour = formRef.current?.getFieldValue('lineWorksHour');
                   const worksHourCapacity = formRef.current?.getFieldValue('worksHourCapacity');
-                  if (lineWorksHour && worksHourCapacity && value) {
-                    const dailyCapacity = (lineWorksHour * worksHourCapacity) * value;
+                  if (lineWorksHour && worksHourCapacity) {
+                    const dailyCapacity = (lineWorksHour * worksHourCapacity) * (value || 0);
                     formRef.current?.setFieldsValue({
                       dailyCapacity: dailyCapacity.toFixed(2)
                     });
