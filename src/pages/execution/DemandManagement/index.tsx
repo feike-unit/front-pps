@@ -25,7 +25,7 @@ import {
   ProFormDatePicker,
   ProFormTreeSelect,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Demand, 
@@ -245,72 +245,23 @@ const DemandManagement: React.FC = () => {
       key: 'option',
       width: 90,
       fixed: 'right',
-      hidden: true,
       render: (_, record) => (
         <Space size="middle">
-          {/* 未完成状态可以标记为已完成 */}
-          {record.status === DemandStatus.INCOMPLETE && (
-            <Popconfirm
-              title="确认标记为已完成？"
-              onConfirm={async () => {
-                try {
-                  await updateDemandStatus(record.id!, DemandStatus.COMPLETED);
-                  message.success('状态修改成功');
-                  // 刷新表格数据
-                  actionRef.current?.reload();
-                } catch (error) {
-                  const apiError = error as ApiError;
-                  message.error(apiError.response?.data?.message || apiError.message || '状态修改失败');
-                }
-              }}
-            >
-              <Tooltip title="标记为已完成">
-                <a><CheckOutlined style={{ color: '#52c41a' }} /></a>
-              </Tooltip>
-            </Popconfirm>
-          )}
-          
-          {/* 已完成状态可以标记为未完成 */}
-          {record.status === DemandStatus.COMPLETED && (
-            <Popconfirm
-              title="确认标记为未完成？"
-              onConfirm={async () => {
-                try {
-                  await updateDemandStatus(record.id!, DemandStatus.INCOMPLETE);
-                  message.success('状态修改成功');
-                  // 刷新表格数据
-                  actionRef.current?.reload();
-                } catch (error) {
-                  const apiError = error as ApiError;
-                  message.error(apiError.response?.data?.message || apiError.message || '状态修改失败');
-                }
-              }}
-            >
-              <Tooltip title="标记为未完成">
-                <a><PlayCircleOutlined style={{ color: '#1890ff' }} /></a>
-              </Tooltip>
-            </Popconfirm>
-          )}
-          
-          {/* 所有状态都可以删除 */}
-          <Popconfirm
-            title="确定要删除该需求吗？"
-            onConfirm={async () => {
-              try {
-                await deleteDemand(record.id!);
-                message.success('删除成功');
-                // 刷新表格数据
+          {/* 添加插单按钮 */}
+          <Tooltip title="插单">
+            <a onClick={() => {
+              // 插单操作逻辑
+              confirmAndExecuteDemand(record.id!).then(() => {
+                message.success('插单成功');
                 actionRef.current?.reload();
-              } catch (error) {
+              }).catch((error) => {
                 const apiError = error as ApiError;
-                message.error(apiError.response?.data?.message || apiError.message || '删除失败');
-              }
-            }}
-          >
-            <Tooltip title="删除">
-              <a><DeleteOutlined style={{ color: '#ff4d4f' }} /></a>
-            </Tooltip>
-          </Popconfirm>
+                message.error(apiError.response?.data?.message || apiError.message || '插单失败');
+              });
+            }}>
+              <SwapOutlined style={{ color: '#1890ff' }} />
+            </a>
+          </Tooltip>
         </Space>
       ),
     },
