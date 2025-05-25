@@ -125,6 +125,8 @@ const CapacityRuleManagement: React.FC = () => {
         // 存储完整的line对象，用于获取ID
         lineData: line
       }));
+      
+      // 直接设置新的选项，而不是累加
       setSearchLineOptions(options);
       // 更新lines数据，用于选项映射
       setLines(lines);
@@ -143,6 +145,8 @@ const CapacityRuleManagement: React.FC = () => {
         // 存储完整的product对象，用于获取ID
         productData: product
       }));
+      
+      // 直接设置新的选项，而不是累加
       setSearchProductOptions(options);
       // 更新products数据，用于选项映射
       setProducts(products);
@@ -326,19 +330,32 @@ const CapacityRuleManagement: React.FC = () => {
               if (visible) {
                 const { lineId, productId, lineCode, lineName, productCode, productName } = record;
                 
-                // 设置拉线选项
-                setSearchLineOptions([{
-                  label: `${lineCode} - ${lineName}`,
-                  value: lineId,
-                  lineData: { id: lineId, lineCode, lineName } as Line
-                }, ...searchLineOptions]);
+                // 对拉线和产品执行空字符搜索，获取选项列表
+                handleLineSearch('');
+                handleProductSearch('');
                 
-                // 设置产品选项
-                setSearchProductOptions([{
-                  label: `${productCode} - ${productName}`,
-                  value: productId,
-                  productData: { id: productId, productCode, productName } as Product
-                }, ...searchProductOptions]);
+                // 延迟添加当前编辑项，确保它显示在下拉列表中
+                setTimeout(() => {
+                  // 检查当前拉线是否在选项中
+                  const existingLineOption = searchLineOptions.find(opt => opt.value === lineId);
+                  if (!existingLineOption) {
+                    setSearchLineOptions(prev => [{
+                      label: `${lineCode} - ${lineName}`,
+                      value: lineId,
+                      lineData: { id: lineId, lineCode, lineName } as Line
+                    }, ...prev]);
+                  }
+                  
+                  // 检查当前产品是否在选项中
+                  const existingProductOption = searchProductOptions.find(opt => opt.value === productId);
+                  if (!existingProductOption) {
+                    setSearchProductOptions(prev => [{
+                      label: `${productCode} - ${productName}`,
+                      value: productId,
+                      productData: { id: productId, productCode, productName } as Product
+                    }, ...prev]);
+                  }
+                }, 100);
               }
             }}
           >
@@ -363,6 +380,7 @@ const CapacityRuleManagement: React.FC = () => {
                   notFoundContent: null,
                   allowClear: true,
                   onClick: () => handleLineSearch(''),
+                  loading: searchLineOptions.length === 0
                 }}
               />
               <ProFormSelect
@@ -385,6 +403,7 @@ const CapacityRuleManagement: React.FC = () => {
                   notFoundContent: null,
                   allowClear: true,
                   onClick: () => handleProductSearch(''),
+                  loading: searchProductOptions.length === 0
                 }}
               />
             </ProForm.Group>
@@ -574,7 +593,7 @@ const CapacityRuleManagement: React.FC = () => {
           }}
           onOpenChange={(visible) => {
             if (visible) {
-              // 预加载选项
+              // 预加载选项，使用空搜索获取初始列表
               handleLineSearch('');
               handleProductSearch('');
             }
@@ -601,6 +620,7 @@ const CapacityRuleManagement: React.FC = () => {
                 notFoundContent: null,
                 allowClear: true,
                 onClick: () => handleLineSearch(''),
+                loading: searchLineOptions.length === 0
               }}
             />
             <ProFormSelect
@@ -623,6 +643,7 @@ const CapacityRuleManagement: React.FC = () => {
                 notFoundContent: null,
                 allowClear: true,
                 onClick: () => handleProductSearch(''),
+                loading: searchProductOptions.length === 0
               }}
             />
           </ProForm.Group>
