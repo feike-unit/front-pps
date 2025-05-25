@@ -11,6 +11,7 @@ import {
   Select,
   Form,
   Input,
+  DatePicker,
 } from 'antd';
 import type { ActionType, ProColumns, ProFormInstance } from '@ant-design/pro-components';
 import { 
@@ -23,6 +24,7 @@ import {
   ProFormSelect,
   ProFormDateTimeRangePicker,
   ProFormSwitch,
+  ProFormDatePicker,
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
@@ -245,6 +247,18 @@ const CapacityRuleManagement: React.FC = () => {
       render: (_, record) => record.coefficient,
     },
     {
+      title: '日产能(件/天)',
+      dataIndex: 'dailyCapacity',
+      search: false,
+      render: (_, record) => {
+        const dailyCapacity = record.lineWorksHour && record.worksHourCapacity && record.coefficient
+          ? (record.lineWorksHour * record.worksHourCapacity * record.coefficient).toFixed(2)
+          : '-';
+        return dailyCapacity;
+      },
+      tooltip: '日产能 = (拉线工时 × 工时产能) × 系数',
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       filters: true,
@@ -380,7 +394,28 @@ const CapacityRuleManagement: React.FC = () => {
                   notFoundContent: null,
                   allowClear: true,
                   onClick: () => handleLineSearch(''),
-                  loading: searchLineOptions.length === 0
+                  loading: searchLineOptions.length === 0,
+                  onChange: (value) => {
+                    // 根据选择的拉线获取投产日期和工时
+                    const selectedLine = searchLineOptions.find(option => option.value === value)?.lineData;
+                    if (selectedLine) {
+                      // 设置投产日期和工时表单字段
+                      formRef.current?.setFieldsValue({
+                        lineStartDate: selectedLine.startDate,
+                        lineWorksHour: selectedLine.worksHour
+                      });
+                      
+                      // 计算日产能
+                      const worksHourCapacity = formRef.current?.getFieldValue('worksHourCapacity');
+                      const coefficient = formRef.current?.getFieldValue('coefficient');
+                      if (selectedLine.worksHour && worksHourCapacity && coefficient) {
+                        const dailyCapacity = (selectedLine.worksHour * worksHourCapacity) * coefficient;
+                        formRef.current?.setFieldsValue({
+                          dailyCapacity: dailyCapacity.toFixed(2)
+                        });
+                      }
+                    }
+                  }
                 }}
               />
               <ProFormSelect
@@ -408,12 +443,25 @@ const CapacityRuleManagement: React.FC = () => {
               />
             </ProForm.Group>
             <ProForm.Group>
-              <ProFormDigit
+            <ProFormDigit
                 name="worksHourCapacity"
-                label="工时产能"
+                label="工时产能(件/小时)"
                 rules={[{ required: true, message: '请输入工时产能' }]}
                 min={0}
                 width="md"
+                fieldProps={{
+                  onChange: (value) => {
+                    // 重新计算日产能
+                    const lineWorksHour = formRef.current?.getFieldValue('lineWorksHour');
+                    const coefficient = formRef.current?.getFieldValue('coefficient');
+                    if (lineWorksHour && value && coefficient) {
+                      const dailyCapacity = (lineWorksHour * value) * coefficient;
+                      formRef.current?.setFieldsValue({
+                        dailyCapacity: dailyCapacity.toFixed(2)
+                      });
+                    }
+                  }
+                }}
               />
               <ProFormDigit
                 name="coefficient"
@@ -424,22 +472,66 @@ const CapacityRuleManagement: React.FC = () => {
                 initialValue={1.0}
                 fieldProps={{
                   precision: 2,
-                  step: 0.1
+                  step: 0.1,
+                  onChange: (value) => {
+                    // 重新计算日产能
+                    const lineWorksHour = formRef.current?.getFieldValue('lineWorksHour');
+                    const worksHourCapacity = formRef.current?.getFieldValue('worksHourCapacity');
+                    if (lineWorksHour && worksHourCapacity && value) {
+                      const dailyCapacity = (lineWorksHour * worksHourCapacity) * value;
+                      formRef.current?.setFieldsValue({
+                        dailyCapacity: dailyCapacity.toFixed(2)
+                      });
+                    }
+                  }
                 }}
                 width="md"
               />
-              <ProFormSwitch
-                name="status"
-                label="状态"
-                checkedChildren="启用"
-                unCheckedChildren="禁用"
-                initialValue={true}
-                transform={(value) => ({ status: value ? 1 : 0 })}
+            </ProForm.Group>
+            <ProForm.Group>
+            <ProFormDatePicker
+                name="lineStartDate"
+                label="拉线投产日期"
+                width="md"
+                readonly
                 fieldProps={{
-                  defaultChecked: record.status === 1,
+                  style: { backgroundColor: '#f5f5f5' }
                 }}
               />
+              <ProFormDigit
+                name="lineWorksHour"
+                label="拉线工时(小时/天)"
+                width="md"
+                readonly
+                fieldProps={{
+                  style: { backgroundColor: '#f5f5f5' }
+                }}
+              />
+              <ProFormText
+                name="dailyCapacity"
+                label="日产能(件/天)"
+                width="md"
+                readonly
+                fieldProps={{
+                  style: { backgroundColor: '#f5f5f5' }
+                }}
+                extra={<span style={{ color: '#888' }}>计算公式: (拉线工时 × 工时产能) × 系数</span>}
+              />
             </ProForm.Group>
+            
+            <ProForm.Group>
+                <ProFormSwitch
+                  name="status"
+                  label="状态"
+                  checkedChildren="启用"
+                  unCheckedChildren="禁用"
+                  initialValue={true}
+                  transform={(value) => ({ status: value ? 1 : 0 })}
+                  fieldProps={{
+                    defaultChecked: record.status === 1,
+                  }}
+                />
+              </ProForm.Group>
             <ProFormTextArea
               name="remark"
               label="备注"
@@ -620,7 +712,37 @@ const CapacityRuleManagement: React.FC = () => {
                 notFoundContent: null,
                 allowClear: true,
                 onClick: () => handleLineSearch(''),
-                loading: searchLineOptions.length === 0
+                loading: searchLineOptions.length === 0,
+                onChange: (value) => {
+                  // 根据选择的拉线获取投产日期和工时
+                  const selectedLine = searchLineOptions.find(option => option.value === value)?.lineData;
+                  if (selectedLine) {
+                    // 设置投产日期和工时表单字段
+                    formRef.current?.setFieldsValue({
+                      lineStartDate: selectedLine.startDate,
+                      lineWorksHour: selectedLine.worksHour
+                    });
+                    
+                    // 计算日产能
+                    const worksHourCapacity = formRef.current?.getFieldValue('worksHourCapacity');
+                    const coefficient = formRef.current?.getFieldValue('coefficient');
+                    if (selectedLine.worksHour && worksHourCapacity && coefficient) {
+                      const dailyCapacity = (selectedLine.worksHour * worksHourCapacity) * coefficient;
+                      formRef.current?.setFieldsValue({
+                        dailyCapacity: dailyCapacity.toFixed(2)
+                      });
+                    }
+                  }
+                }
+              }}
+            />
+            <ProFormDatePicker
+              name="lineStartDate"
+              label="拉线投产日期"
+              width="md"
+              readonly
+              fieldProps={{
+                style: { backgroundColor: '#f5f5f5' }
               }}
             />
             <ProFormSelect
@@ -649,11 +771,33 @@ const CapacityRuleManagement: React.FC = () => {
           </ProForm.Group>
           <ProForm.Group>
             <ProFormDigit
+              name="lineWorksHour"
+              label="拉线工时(小时/天)"
+              width="md"
+              readonly
+              fieldProps={{
+                style: { backgroundColor: '#f5f5f5' }
+              }}
+            />
+            <ProFormDigit
               name="worksHourCapacity"
-              label="工时产能"
+              label="工时产能(件/小时)"
               rules={[{ required: true, message: '请输入工时产能' }]}
               min={0}
               width="md"
+              fieldProps={{
+                onChange: (value) => {
+                  // 重新计算日产能
+                  const lineWorksHour = formRef.current?.getFieldValue('lineWorksHour');
+                  const coefficient = formRef.current?.getFieldValue('coefficient');
+                  if (lineWorksHour && value && coefficient) {
+                    const dailyCapacity = (lineWorksHour * value) * coefficient;
+                    formRef.current?.setFieldsValue({
+                      dailyCapacity: dailyCapacity.toFixed(2)
+                    });
+                  }
+                }
+              }}
             />
             <ProFormDigit
               name="coefficient"
@@ -664,7 +808,18 @@ const CapacityRuleManagement: React.FC = () => {
               initialValue={1.0}
               fieldProps={{
                 precision: 2,
-                step: 0.1
+                step: 0.1,
+                onChange: (value) => {
+                  // 重新计算日产能
+                  const lineWorksHour = formRef.current?.getFieldValue('lineWorksHour');
+                  const worksHourCapacity = formRef.current?.getFieldValue('worksHourCapacity');
+                  if (lineWorksHour && worksHourCapacity && value) {
+                    const dailyCapacity = (lineWorksHour * worksHourCapacity) * value;
+                    formRef.current?.setFieldsValue({
+                      dailyCapacity: dailyCapacity.toFixed(2)
+                    });
+                  }
+                }
               }}
               width="md"
             />
@@ -675,6 +830,18 @@ const CapacityRuleManagement: React.FC = () => {
               unCheckedChildren="禁用"
               initialValue={true}
               transform={(value) => ({ status: value ? 1 : 0 })}
+            />
+          </ProForm.Group>
+          <ProForm.Group>
+            <ProFormText
+              name="dailyCapacity"
+              label="日产能(件/天)"
+              width="md"
+              readonly
+              fieldProps={{
+                style: { backgroundColor: '#f5f5f5' }
+              }}
+              extra={<span style={{ color: '#888' }}>计算公式: (拉线工时 × 工时产能) × 系数</span>}
             />
           </ProForm.Group>
           <ProFormTextArea
