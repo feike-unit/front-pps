@@ -5,6 +5,8 @@ export interface CapacityRule {
   lineId: number;
   lineCode?: string;
   lineName?: string;
+  lineStartDate?: string;
+  lineWorksHour?: number;
   productId: number;
   productCode?: string;
   productName?: string;

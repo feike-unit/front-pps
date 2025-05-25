@@ -188,6 +188,19 @@ const CapacityRuleManagement: React.FC = () => {
       hideInTable: true,
     },
     {
+      title: '拉线投产日期',
+      dataIndex: 'lineStartDate',
+      valueType: 'date',
+      ellipsis: true,
+      search: false,
+    },
+    {
+      title: '拉线工时',
+      dataIndex: 'lineWorksHour',
+      ellipsis: true,
+      search: false,
+    },
+    {
       title: '货品编号/名称',
       dataIndex: 'productCode',
       copyable: true,
