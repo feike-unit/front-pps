@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Modal, message, Space, Select, Button } from 'antd';
+import { Card, Modal, message, Space, Select, Button, Tag } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { ProDescriptions } from '@ant-design/pro-components';
 import type { ApiError } from '../../../services/api';
@@ -297,7 +297,6 @@ const ProductionCalendar: React.FC = () => {
               value={searchParams.lineId}
               onChange={(value: number | null) => {
                 console.log('拉线选择改变:', value);
-                // 直接使用值刷新，而不是先更新状态
                 refreshEvents({ lineId: value === null ? undefined : value });
               }}
               options={searchLineOptions}
@@ -314,12 +313,17 @@ const ProductionCalendar: React.FC = () => {
               value={searchParams.productId}
               onChange={(value: number | null) => {
                 console.log('货品选择改变:', value);
-                // 直接使用值刷新，而不是先更新状态
                 refreshEvents({ productId: value === null ? undefined : value });
               }}
               options={searchProductOptions}
               onClick={() => handleProductSearch('')}
             />
+            <Space size={4}>
+              <Tag color="#34A853">已完成</Tag>
+              <Tag color="#4285F4">完成一半以上</Tag>
+              <Tag color="#FBBC05">已开始</Tag>
+              <Tag color="#EA4335">未开始</Tag>
+            </Space>
           </Space>
           <Button
             type="primary"
