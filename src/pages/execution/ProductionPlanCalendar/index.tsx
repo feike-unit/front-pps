@@ -31,7 +31,7 @@ interface CalendarEvent extends EventInput {
   taskQuantity?: number;
 }
 
-const ProductionCalendar: React.FC = () => {
+const ProductionPlanCalendar: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
@@ -552,4 +552,4 @@ const ProductionCalendar: React.FC = () => {
   );
 };
 
-export default ProductionCalendar;
+export default ProductionPlanCalendar;

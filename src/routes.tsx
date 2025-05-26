@@ -95,7 +95,7 @@ export const routes: ExtendedRouteObject[] = [
           },
           {
             path: 'production-plans/calendar',
-            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/execution/ProductionCalendar')))}</Suspense>,
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/execution/ProductionPlanCalendar')))}</Suspense>,
             metadata: {
               label: '生产日历',
               icon: <ScheduleOutlined />,
