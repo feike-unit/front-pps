@@ -8,7 +8,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import zhCNLocale from '@fullcalendar/core/locales/zh-cn';
-import type { EventInput, DateSelectArg, EventClickArg } from '@fullcalendar/core';
+import type { EventInput, DateSelectArg, EventClickArg, EventMountArg } from '@fullcalendar/core';
 import type { EventSourceInput } from '@fullcalendar/core';
 import { UnorderedListOutlined } from '@ant-design/icons';
 import debounce from 'lodash/debounce';
@@ -225,6 +225,11 @@ const ProductionCalendar: React.FC = () => {
     fetchEvents(startDate, endDate, true);
   };
 
+  // 处理事件挂载，添加tooltip
+  const handleEventDidMount = (info: EventMountArg) => {
+    info.el.title = info.event.title;
+  };
+
   // 初始加载数据
   useEffect(() => {
     const now = new Date();
@@ -314,6 +319,7 @@ const ProductionCalendar: React.FC = () => {
               locale={zhCNLocale}
               events={calendarEvents}
               eventClick={handleEventClick}
+              eventDidMount={handleEventDidMount}
               datesSet={handleDatesSet}
               height="auto"
               dayMaxEvents={false}
