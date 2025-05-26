@@ -96,6 +96,11 @@
   margin: 1px 0;
   border: none;
   cursor: pointer;
+  position: relative;
+}
+
+.fc-event:hover {
+  z-index: 99999 !important;
 }
 
 .fc .fc-daygrid-event {
@@ -164,4 +169,40 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 自定义 tooltip 样式 */
+.fc-event:hover::after {
+  content: attr(title);
+  position: fixed;
+  left: var(--tooltip-x);
+  top: var(--tooltip-y);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  white-space: nowrap;
+  z-index: 99999999;
+  pointer-events: none;
+  margin-left: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 确保事件容器不会限制 z-index */
+.fc .fc-daygrid-event-harness {
+  z-index: auto !important;
+}
+
+.fc-daygrid-event-harness:hover {
+  z-index: 99999 !important;
+}
+
+/* 隐藏原生 tooltip */
+.fc-event[title] {
+  position: relative;
+}
+
+.fc-event[title]:hover:before {
+  display: none;
 } 

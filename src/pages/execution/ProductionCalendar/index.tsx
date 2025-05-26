@@ -228,6 +228,18 @@ const ProductionCalendar: React.FC = () => {
   // 处理事件挂载，添加tooltip
   const handleEventDidMount = (info: EventMountArg) => {
     info.el.title = info.event.title;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const el = e.currentTarget as HTMLElement;
+      el.style.setProperty('--tooltip-x', `${e.clientX + 10}px`);
+      el.style.setProperty('--tooltip-y', `${e.clientY + 10}px`);
+    };
+
+    info.el.addEventListener('mousemove', handleMouseMove);
+    
+    return () => {
+      info.el.removeEventListener('mousemove', handleMouseMove);
+    };
   };
 
   // 初始加载数据
