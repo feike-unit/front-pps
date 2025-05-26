@@ -232,20 +232,26 @@ const ProductionCalendar: React.FC = () => {
     const handleMouseMove = (e: MouseEvent) => {
       const el = e.currentTarget as HTMLElement;
       const tooltipWidth = 300; // 预估的tooltip宽度
+      const tooltipHeight = 40; // 预估的tooltip高度
       const margin = 10; // 与边缘的安全距离
       
       // 计算水平位置
       let xPos = e.clientX + margin;
-      // 如果tooltip会超出右侧边界，则显示在鼠标左侧
       if (xPos + tooltipWidth > window.innerWidth) {
         xPos = e.clientX - tooltipWidth - margin;
       }
       
-      // 计算垂直位置
+      // 计算垂直位置，优先显示在鼠标下方
       let yPos = e.clientY + margin;
-      // 如果tooltip会超出底部边界，则显示在鼠标上方
-      if (yPos + 100 > window.innerHeight) { // 100是预估的tooltip高度
-        yPos = e.clientY - 100 - margin;
+      
+      // 如果下方空间不足且上方空间足够，则显示在上方
+      if (yPos + tooltipHeight > window.innerHeight && e.clientY > tooltipHeight + margin) {
+        yPos = e.clientY - tooltipHeight - margin;
+      }
+      
+      // 如果上下都不够，就固定在视口中间
+      if (yPos + tooltipHeight > window.innerHeight && yPos < 0) {
+        yPos = Math.max(margin, Math.min(window.innerHeight - tooltipHeight - margin, e.clientY));
       }
       
       el.style.setProperty('--tooltip-x', `${xPos}px`);
