@@ -238,31 +238,7 @@ const DemandManagement: React.FC = () => {
   // 处理影响范围变更
   const handleRePlanScopeChange = (e: RadioChangeEvent) => {
     const value = e.target.value;
-    const prevValue = rePlanScope;
     setRePlanScope(value);
-    
-    // 如果是切换到全部重拍计划
-    if (value === 2) {
-      // 清空已有日期行，只保留一行，数量为生产数量
-      setDateQuantityList([{
-        insertOrderDate: dayjs().format('YYYY-MM-DD'),
-        quantity: currentDemand?.purgeQuantity || 0,
-      }]);
-      return;
-    }
-    
-    // 如果是从全部重拍计划切换到其他选项
-    if (prevValue === 2) {
-      // 重置为一行，数量为生产数量-完工数量
-      const initialQuantity = (currentDemand?.purgeQuantity || 0) - (currentDemand?.completionQuantity || 0);
-      setDateQuantityList([{
-        insertOrderDate: dayjs().format('YYYY-MM-DD'),
-        quantity: initialQuantity,
-      }]);
-      return;
-    }
-    
-    // 其他情况（0和1之间切换）保持日期行不变
   };
 
   // 处理提交插单计划
@@ -723,7 +699,7 @@ const DemandManagement: React.FC = () => {
                   onClick={handleAddDateQuantity} 
                   block 
                   icon={<PlusOutlined />}
-                  disabled={rePlanScope === 2 || calculateRemainingQuantity() <= 0}
+                  disabled={calculateRemainingQuantity() <= 0}
                 >
                   添加插单日期
                 </Button>
@@ -757,11 +733,10 @@ const DemandManagement: React.FC = () => {
                       max={currentDemand!.demandQuantity}
                       value={item.quantity}
                       onChange={(value) => handleQuantityChange(index, value as number)}
-                      disabled={rePlanScope === 2}
                     />
                   </div>
                   <div>
-                    {dateQuantityList.length > 1 && rePlanScope !== 2 && (
+                    {dateQuantityList.length > 1 && (
                       <Button
                         type="text"
                         danger
@@ -781,11 +756,8 @@ const DemandManagement: React.FC = () => {
                     <Tooltip title="仅插单不影响其他计划，保持其他计划不变">
                       <Radio value={0}>仅插单不影响其他计划</Radio>
                     </Tooltip>
-                    <Tooltip title="插单后，因该单之前占用的产能释放，需要重新计算其释放而影响到的其他计划">
-                      <Radio value={1}>插单并重新计算因该单空余产能影响的计划</Radio>
-                    </Tooltip>
-                    <Tooltip title="插单后，从插单日期开始的所有计划重新排产">
-                      <Radio value={2}>插单并从插单日期全部重拍计划</Radio>
+                    <Tooltip title="插单后，需要重新计算其插入日期之后的产能而影响到的其他计划">
+                      <Radio value={1}>插单并重新计算影响的其他计划</Radio>
                     </Tooltip>
                   </Space>
                 </Radio.Group>
