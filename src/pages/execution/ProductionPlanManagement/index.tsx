@@ -447,7 +447,6 @@ const ProductionPlanManagement: React.FC = () => {
         {detailRecord && (
           <ProDescriptions<PlanRuntime>
             column={2}
-            title="计划任务详情"
             dataSource={detailRecord}
             columns={[
               {

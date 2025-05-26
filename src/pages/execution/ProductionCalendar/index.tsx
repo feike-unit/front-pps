@@ -309,7 +309,7 @@ const ProductionCalendar: React.FC = () => {
               headerToolbar={{
                 left: 'prev,next',
                 center: 'title',
-                right: ''
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
               }}
               locale={zhCNLocale}
               events={calendarEvents}
@@ -325,13 +325,28 @@ const ProductionCalendar: React.FC = () => {
               firstDay={1} // 从周一开始
               eventDisplay="block"
               nowIndicator={true}
-              businessHours={true}
+              businessHours={{
+                daysOfWeek: [1, 2, 3, 4, 5], // 周一到周五
+                startTime: '08:00',
+                endTime: '18:00',
+              }}
               weekNumbers={false}
               navLinks={true}
               selectable={true}
               editable={false}
               stickyHeaderDates={true}
               handleWindowResize={true}
+              views={{
+                dayGridMonth: {
+                  titleFormat: { year: 'numeric', month: 'long' }
+                },
+                timeGridWeek: {
+                  titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
+                },
+                timeGridDay: {
+                  titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
+                }
+              }}
             />
           )}
         </div>
@@ -400,6 +415,26 @@ const ProductionCalendar: React.FC = () => {
               {
                 title: '创建时间',
                 dataIndex: 'createdAt',
+              },
+              {
+                title: '业务类型',
+                dataIndex: 'businessType',
+              },
+              {
+                title: '业务单号',
+                dataIndex: 'businessDocNo',
+              },
+              {
+                title: '客户订单号',
+                dataIndex: 'customerOrderDocNo',
+              },
+              {
+                title: '客户编号',
+                dataIndex: 'customerCode',
+              },
+              {
+                title: '客户名称',
+                dataIndex: 'customerName',
               },
             ]}
           />
