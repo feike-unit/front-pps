@@ -316,7 +316,7 @@ const ProductionCalendar: React.FC = () => {
               eventClick={handleEventClick}
               datesSet={handleDatesSet}
               height="auto"
-              dayMaxEventRows={3}
+              dayMaxEvents={false}
               firstDay={1} // 从周一开始
               eventDisplay="block"
               nowIndicator={true}
