@@ -43,6 +43,7 @@ const ProductionCalendar: React.FC = () => {
   const [searchParams, setSearchParams] = useState<{
     lineId?: number;
     productId?: number;
+    progressFilter?: string;
   }>({});
   const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: number }[]>([]);
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
@@ -265,6 +266,49 @@ const ProductionCalendar: React.FC = () => {
     };
   };
 
+  // 处理进度过滤
+  const handleProgressFilter = (progress: string) => {
+    setSearchParams(prev => ({
+      ...prev,
+      progressFilter: progress === prev.progressFilter ? undefined : progress
+    }));
+  };
+
+  // 过滤事件
+  const filterEvents = (events: CalendarEvent[]) => {
+    if (!searchParams.progressFilter) {
+      return events;
+    }
+
+    return events.filter(event => {
+      const completionQuantity = event.completionQuantity || 0;
+      const taskQuantity = event.taskQuantity || 1;
+      const progress = taskQuantity > 0 ? completionQuantity / taskQuantity : 0;
+      
+      switch (searchParams.progressFilter) {
+        case 'completed':
+          return progress >= 1;
+        case 'halfCompleted':
+          return progress >= 0.5 && progress < 1;
+        case 'started':
+          return progress > 0 && progress < 0.5;
+        case 'notStarted':
+          return progress === 0;
+        default:
+          return true;
+      }
+    });
+  };
+
+  // 修改事件获取和显示逻辑
+  useEffect(() => {
+    if (calendarRef.current) {
+      const api = calendarRef.current.getApi();
+      api.removeAllEvents();
+      api.addEventSource(filterEvents(calendarEvents));
+    }
+  }, [calendarEvents, searchParams.progressFilter]);
+
   // 初始加载数据
   useEffect(() => {
     const now = new Date();
@@ -319,10 +363,34 @@ const ProductionCalendar: React.FC = () => {
               onClick={() => handleProductSearch('')}
             />
             <Space size={4}>
-              <Tag color="#34A853">已完成</Tag>
-              <Tag color="#4285F4">完成一半以上</Tag>
-              <Tag color="#FBBC05">已开始</Tag>
-              <Tag color="#EA4335">未开始</Tag>
+              <Tag 
+                color="#34A853" 
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleProgressFilter('completed')}
+              >
+                已完成 {searchParams.progressFilter === 'completed' && '✓'}
+              </Tag>
+              <Tag 
+                color="#4285F4" 
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleProgressFilter('halfCompleted')}
+              >
+                完成一半以上 {searchParams.progressFilter === 'halfCompleted' && '✓'}
+              </Tag>
+              <Tag 
+                color="#FBBC05" 
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleProgressFilter('started')}
+              >
+                已开始 {searchParams.progressFilter === 'started' && '✓'}
+              </Tag>
+              <Tag 
+                color="#EA4335" 
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleProgressFilter('notStarted')}
+              >
+                未开始 {searchParams.progressFilter === 'notStarted' && '✓'}
+              </Tag>
             </Space>
           </Space>
           <Button
