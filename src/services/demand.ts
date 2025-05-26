@@ -33,6 +33,8 @@ export interface Demand {
   createdAt?: string;
   updatedAt?: string;
   children?: Demand[];
+  startDate?: string;
+  endDate?: string;
 }
 
 // 分页响应类型

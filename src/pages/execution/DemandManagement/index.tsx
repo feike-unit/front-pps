@@ -343,6 +343,20 @@ const DemandManagement: React.FC = () => {
       width: 120,
     },
     {
+      title: '开始日期',
+      dataIndex: 'startDate',
+      valueType: 'date',
+      sorter: true,
+      width: 120,
+    },
+    {
+      title: '结束日期',
+      dataIndex: 'endDate',
+      valueType: 'date',
+      sorter: true,
+      width: 120,
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       filters: true,
@@ -687,6 +701,18 @@ const DemandManagement: React.FC = () => {
                   <div style={{ marginBottom: 0 }}>
                     <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>交期</div>
                     <div>{currentDemand.deliveryDate || '-'}</div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <div style={{ marginBottom: 0 }}>
+                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>开始日期</div>
+                    <div>{currentDemand.startDate || '-'}</div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <div style={{ marginBottom: 0 }}>
+                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>结束日期</div>
+                    <div>{currentDemand.endDate || '-'}</div>
                   </div>
                 </Col>
               </Row>
