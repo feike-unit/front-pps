@@ -309,7 +309,7 @@ const ProductionCalendar: React.FC = () => {
               headerToolbar={{
                 left: 'prev,next',
                 center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                right: 'dayGridMonth,dayGridWeek,dayGridDay'
               }}
               locale={zhCNLocale}
               events={calendarEvents}
@@ -317,11 +317,6 @@ const ProductionCalendar: React.FC = () => {
               datesSet={handleDatesSet}
               height="auto"
               dayMaxEventRows={3}
-              eventTimeFormat={{
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              }}
               firstDay={1} // 从周一开始
               eventDisplay="block"
               nowIndicator={true}
@@ -340,10 +335,10 @@ const ProductionCalendar: React.FC = () => {
                 dayGridMonth: {
                   titleFormat: { year: 'numeric', month: 'long' }
                 },
-                timeGridWeek: {
+                dayGridWeek: {
                   titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
                 },
-                timeGridDay: {
+                dayGridDay: {
                   titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
                 }
               }}
