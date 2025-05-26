@@ -227,29 +227,29 @@ const ProductionCalendar: React.FC = () => {
 
   // 处理事件挂载，添加tooltip
   const handleEventDidMount = (info: EventMountArg) => {
-    info.el.title = info.event.title;
+    const el = info.el;
+    const event = info.event;
+    
+    // 使用 data-title 属性替代 title 属性
+    el.removeAttribute('title');
+    el.setAttribute('data-title', event.title);
     
     const handleMouseMove = (e: MouseEvent) => {
-      const el = e.currentTarget as HTMLElement;
-      const tooltipWidth = 300; // 预估的tooltip宽度
-      const tooltipHeight = 40; // 预估的tooltip高度
-      const margin = 10; // 与边缘的安全距离
+      const tooltipWidth = 300;
+      const tooltipHeight = 40;
+      const margin = 10;
       
-      // 计算水平位置
       let xPos = e.clientX + margin;
       if (xPos + tooltipWidth > window.innerWidth) {
         xPos = e.clientX - tooltipWidth - margin;
       }
       
-      // 计算垂直位置，优先显示在鼠标下方
       let yPos = e.clientY + margin;
       
-      // 如果下方空间不足且上方空间足够，则显示在上方
       if (yPos + tooltipHeight > window.innerHeight && e.clientY > tooltipHeight + margin) {
         yPos = e.clientY - tooltipHeight - margin;
       }
       
-      // 如果上下都不够，就固定在视口中间
       if (yPos + tooltipHeight > window.innerHeight && yPos < 0) {
         yPos = Math.max(margin, Math.min(window.innerHeight - tooltipHeight - margin, e.clientY));
       }
@@ -258,10 +258,10 @@ const ProductionCalendar: React.FC = () => {
       el.style.setProperty('--tooltip-y', `${yPos}px`);
     };
 
-    info.el.addEventListener('mousemove', handleMouseMove);
+    el.addEventListener('mousemove', handleMouseMove);
     
     return () => {
-      info.el.removeEventListener('mousemove', handleMouseMove);
+      el.removeEventListener('mousemove', handleMouseMove);
     };
   };
 

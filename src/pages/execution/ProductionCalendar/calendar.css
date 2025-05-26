@@ -173,7 +173,7 @@
 
 /* 自定义 tooltip 样式 */
 .fc-event:hover::after {
-  content: attr(title);
+  content: attr(data-title);
   position: fixed;
   left: var(--tooltip-x);
   top: var(--tooltip-y);
