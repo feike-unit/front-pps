@@ -119,8 +119,8 @@ const DemandCalendar: React.FC = () => {
         return {
           id: demand.id?.toString(),
           title: title,
-          start: demand.deliveryDate,
-          end: demand.deliveryDate,
+          start: demand.startDate,
+          end: demand.endDate,
           backgroundColor,
           borderColor,
           textColor,
