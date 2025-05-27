@@ -32,7 +32,7 @@ import {
   ProFormDatePicker,
   ProFormTreeSelect,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined, ScheduleOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Demand, 
@@ -54,6 +54,7 @@ import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
 import dayjs from 'dayjs';
 import { RadioChangeEvent } from 'antd/lib/radio';
+import { useNavigate } from 'react-router-dom';
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
@@ -81,6 +82,8 @@ const DemandManagement: React.FC = () => {
   const [dateQuantityList, setDateQuantityList] = useState<DateQuantity[]>([]);
   const [insertOrderForm] = Form.useForm();
   const [rePlanScope, setRePlanScope] = useState<number>(0);
+
+  const navigate = useNavigate();
 
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
@@ -270,6 +273,12 @@ const DemandManagement: React.FC = () => {
       message.error(apiError.response?.data?.message || apiError.message || '插单计划提交失败');
       return false;
     }
+  };
+
+  // 切换到日历视图
+  const handleSwitchToCalendar = () => {
+    console.log('跳转到日历视图:', '/execution/demands/calendar');
+    navigate('/execution/demands/calendar');
   };
 
   // 定义表格列头单元格的通用样式
@@ -641,6 +650,15 @@ const DemandManagement: React.FC = () => {
         childrenColumnName="children"
         indentSize={24}
         toolBarRender={() => [
+          <Button
+            key="calendar"
+            type="primary"
+            icon={<ScheduleOutlined />}
+            onClick={handleSwitchToCalendar}
+            style={{ marginRight: 8 }}
+          >
+            日历视图
+          </Button>,
           <Popconfirm
             key="syncConfirm"
             title="确定要同步需求数据吗？"
