@@ -1,71 +1,60 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Calendar, Badge, Card, Button, Modal, Form, Input, DatePicker, Select, message, Table, Upload } from 'antd';
-import { UploadOutlined, DownloadOutlined } from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
+import { Calendar, Badge, Card, Button, Modal, Form, Input, DatePicker, Select, message, ConfigProvider, Row, Col } from 'antd';
 import type { Dayjs } from 'dayjs';
-import type { BadgeProps, UploadFile } from 'antd';
-import { createHoliday, deleteHoliday, listHolidays, updateHoliday, importHolidays, downloadTemplate } from '@/services/holiday';
-import type { Holidays } from '@/services/types';
+import { query, create, update, deleteHoliday, updateStatus, downloadTemplate } from '../../../services/holiday';
+import type { Holiday } from '../../../services/holiday';
 import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
+import zhCN from 'antd/locale/zh_CN';
+
+// 配置 dayjs
+dayjs.locale('zh-cn');
 
 const CapacityCalendar: React.FC = () => {
-  const [holidays, setHolidays] = useState<Holidays[]>([]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [importing, setImporting] = useState(false);
-  const uploadRef = useRef<any>();
+  const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs());
 
   const fetchHolidays = async () => {
     try {
-      const response = await listHolidays();
+      const response = await query({
+        year: currentDate.year()
+      });
       setHolidays(response);
-    } catch (error) {
-      message.error('获取节假日数据失败');
+    } catch (error: any) {
+      message.error(error.response?.data?.message || error.message || '获取节假日数据失败');
     }
   };
 
   useEffect(() => {
     fetchHolidays();
-  }, []);
-
-  const dateCellRender = (value: Dayjs) => {
-    const date = value.format('YYYY-MM-DD');
-    const holiday = holidays.find(h => h.holidayDate === date);
-    
-    if (holiday) {
-      const status = holiday.enabled ? 'success' : 'default';
-      return (
-        <div>
-          <Badge status={status as BadgeProps['status']} text={holiday.description} />
-        </div>
-      );
-    }
-    return null;
-  };
+  }, [currentDate]);
 
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      if (!values.holidayDate) {
+      if (!values.holiday) {
         throw new Error('节假日日期不能为空');
       }
       const formData = {
         ...values,
-        holidayDate: values.holidayDate.format('YYYY-MM-DD'),
-        enabled: values.enabled ?? true, // 使用表单中的enabled值，如果未设置则默认为true
+        holiday: values.holiday.format('YYYY-MM-DD'),
+        status: values.status ?? 1,
       };
 
       if (editingId) {
-        await updateHoliday(editingId, formData);
+        await update(editingId, formData);
         message.success('更新成功');
       } else {
-        await createHoliday(formData);
+        await create(formData);
         message.success('创建成功');
       }
       setIsModalVisible(false);
       fetchHolidays();
-    } catch (error) {
-      message.error('保存失败');
+    } catch (error: any) {
+      message.error(error.response?.data?.message || error.message || '保存失败');
     }
   };
 
@@ -75,154 +64,114 @@ const CapacityCalendar: React.FC = () => {
     setIsModalVisible(true);
   };
 
-  const handleEdit = (holiday: Holidays) => {
-    form.setFieldsValue({
-      ...holiday,
-      holidayDate: dayjs(holiday.holidayDate),
-    });
-    setEditingId(holiday.id);
-    setIsModalVisible(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await deleteHoliday(id);
-      message.success('删除成功');
-      fetchHolidays();
-    } catch (error) {
-      message.error('删除失败');
-    }
-  };
-
   const handleCalendarSelect = (date: Dayjs) => {
     form.setFieldsValue({
-      holidayDate: date,
+      holiday: date,
     });
     setEditingId(null);
     setIsModalVisible(true);
   };
 
-  const handleImport = async (file: UploadFile) => {
-    if (!file) return false;
-    setImporting(true);
-    try {
-      await importHolidays(file as File);
-      message.success('导入成功');
-      fetchHolidays();
-      if (uploadRef.current) {
-        uploadRef.current.fileList = [];
+  const renderMonthCalendar = (month: number) => {
+    const monthStart = currentDate.month(month).startOf('month');
+    
+    const monthCellRender = (value: Dayjs) => {
+      const date = value.format('YYYY-MM-DD');
+      const holiday = holidays.find(h => h.holiday === date);
+      
+      if (holiday) {
+        return (
+          <Badge 
+            status={holiday.status === 1 ? 'error' : 'default'} 
+            text={holiday.holidayName} 
+          />
+        );
       }
-    } catch (error) {
-      message.error('导入失败');
-    } finally {
-      setImporting(false);
-    }
-    return false;
+      return null;
+    };
+    
+    return (
+      <div key={month} style={{ marginBottom: 16 }}>
+        <h3 style={{ marginBottom: 8 }}>{month + 1}月</h3>
+        <Calendar
+          fullscreen={false}
+          mode="month"
+          value={monthStart}
+          dateCellRender={monthCellRender}
+          headerRender={() => null}
+          onSelect={handleCalendarSelect}
+        />
+      </div>
+    );
   };
-
-  const handleDownloadTemplate = () => {
-    downloadTemplate();
-  };
-
-  const columns = [
-    {
-      title: '日期',
-      dataIndex: 'holidayDate',
-      key: 'holidayDate',
-    },
-    {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
-    },
-    {
-      title: '状态',
-      dataIndex: 'enabled',
-      key: 'enabled',
-      render: (enabled: boolean) => (
-        <Badge status={enabled ? 'success' : 'default'} text={enabled ? '启用' : '禁用'} />
-      ),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: any, record: Holidays) => (
-        <>
-          <Button type="link" onClick={() => handleEdit(record)}>编辑</Button>
-          <Button type="link" danger onClick={() => handleDelete(record.id)}>删除</Button>
-        </>
-      ),
-    },
-  ];
 
   return (
-    <Card
-      title="产能日历"
-      extra={<Button type="primary" onClick={handleAdd}>新增节假日</Button>}
-    >
-      <Calendar
-        dateCellRender={dateCellRender}
-        onSelect={handleCalendarSelect}
-      />
-      <Table
-        columns={columns}
-        dataSource={holidays}
-        rowKey="id"
-        style={{ marginTop: 16 }}
-      />
-      <Modal
-        title={editingId ? '编辑节假日' : '新增节假日'}
-        open={isModalVisible}
-        onOk={handleModalOk}
-        onCancel={() => setIsModalVisible(false)}
+    <ConfigProvider locale={zhCN}>
+      <Card
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>产能日历 ({currentDate.year()}年)</span>
+            <div>
+              <DatePicker
+                picker="year"
+                value={currentDate}
+                onChange={(date) => date && setCurrentDate(date)}
+                style={{ marginRight: 8 }}
+              />
+              <Button onClick={downloadTemplate} style={{ marginRight: 8 }}>下载模板</Button>
+              <Button type="primary" onClick={handleAdd}>新增节假日</Button>
+            </div>
+          </div>
+        }
       >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="holidayDate"
-            label="日期"
-            rules={[{ required: true, message: '请选择日期' }]}
-          >
-            <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item
-            name="description"
-            label="描述"
-            rules={[{ required: true, message: '请输入描述' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="enabled"
-            label="状态"
-            initialValue={true}
-            rules={[{ required: true, message: '请选择状态' }]}
-          >
-            <Select>
-              <Select.Option value={true}>启用</Select.Option>
-              <Select.Option value={false}>禁用</Select.Option>
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-      <Upload
-        ref={uploadRef}
-        showUploadList={false}
-        beforeUpload={handleImport}
-        accept=".xlsx, .xls"
-        style={{ marginTop: 16 }}
-      >
-        <Button icon={<UploadOutlined />} loading={importing}>
-          导入节假日
-        </Button>
-      </Upload>
-      <Button
-        icon={<DownloadOutlined />}
-        onClick={handleDownloadTemplate}
-        style={{ marginTop: 16, marginLeft: 8 }}
-      >
-        下载模板
-      </Button>
-    </Card>
+        <Row gutter={[16, 16]}>
+          {Array.from({ length: 12 }, (_, i) => (
+            <Col key={i} xs={24} sm={24} md={12} lg={8} xl={6}>
+              {renderMonthCalendar(i)}
+            </Col>
+          ))}
+        </Row>
+        <Modal
+          title={editingId ? '编辑节假日' : '新增节假日'}
+          open={isModalVisible}
+          onOk={handleModalOk}
+          onCancel={() => setIsModalVisible(false)}
+        >
+          <Form form={form} layout="vertical">
+            <Form.Item
+              name="holiday"
+              label="日期"
+              rules={[{ required: true, message: '请选择日期' }]}
+            >
+              <DatePicker style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item
+              name="holidayName"
+              label="名称"
+              rules={[{ required: true, message: '请输入名称' }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="status"
+              label="状态"
+              initialValue={1}
+            >
+              <Select>
+                <Select.Option value={1}>启用</Select.Option>
+                <Select.Option value={0}>禁用</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item
+              name="remark"
+              label="备注"
+            >
+              <Input.TextArea />
+            </Form.Item>
+          </Form>
+        </Modal>
+      </Card>
+    </ConfigProvider>
   );
 };
 
