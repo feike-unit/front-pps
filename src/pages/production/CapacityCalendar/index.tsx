@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, Badge, Card, Button, Modal, Form, Input, DatePicker, Select, message, ConfigProvider, Row, Col, Tooltip } from 'antd';
+import { Card, Button, Modal, Form, Input, DatePicker, Select, message, ConfigProvider, Row, Col, Tooltip } from 'antd';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import multiMonthPlugin from '@fullcalendar/multimonth';
 import type { Dayjs } from 'dayjs';
 import { query, create, update, deleteHoliday, updateStatus, downloadTemplate } from '../../../services/holiday';
 import type { Holiday } from '../../../services/holiday';
@@ -72,46 +76,39 @@ const CapacityCalendar: React.FC = () => {
     setIsModalVisible(true);
   };
 
-  const renderMonthCalendar = (month: number) => {
-    const monthStart = currentDate.month(month).startOf('month');
-    
-    const monthCellRender = (value: Dayjs) => {
-      const date = value.format('YYYY-MM-DD');
-      const holiday = holidays.find(h => h.holiday === date);
-      
-      if (holiday) {
-        return (
-          <Tooltip title={`${holiday.holidayName}${holiday.remark ? ' - ' + holiday.remark : ''}`}>
-            <div
-              style={{
-                backgroundColor: '#f5f5f5',
-                padding: '2px 4px',
-                borderRadius: 2,
-                border: '2px solid #1890ff'
-              }}
-            >
-              {holiday.holidayName}
-            </div>
-          </Tooltip>
-        );
-      }
-      return null;
-    };
-    
-    return (
-      <div key={month} style={{ marginBottom: 16 }}>
-        <h3 style={{ marginBottom: 8 }}>{month + 1}月</h3>
-        <Calendar
-          fullscreen={false}
-          mode="month"
-          defaultValue={monthStart}
-          dateCellRender={monthCellRender}
-          headerRender={() => null}
-          onSelect={handleCalendarSelect}
-          selectedValue={null}
-        />
-      </div>
-    );
+  const calendarEvents = holidays
+    .filter(holiday => holiday.status === 1)
+    .map(holiday => ({
+      title: holiday.holidayName,
+      date: holiday.holiday,
+      extendedProps: {
+        remark: holiday.remark
+      },
+      backgroundColor: '#666666',
+      borderColor: '#666666',
+      textColor: '#fff'
+    }));
+
+  const handleDateClick = (arg: any) => {
+    form.setFieldsValue({
+      holiday: dayjs(arg.dateStr)
+    });
+    setEditingId(null);
+    setIsModalVisible(true);
+  };
+
+  const handleEventClick = (arg: any) => {
+    const holiday = holidays.find(h => h.holiday === arg.event.startStr);
+    if (holiday) {
+      form.setFieldsValue({
+        holiday: dayjs(holiday.holiday),
+        holidayName: holiday.holidayName,
+        status: holiday.status,
+        remark: holiday.remark
+      });
+      setEditingId(holiday.id);
+      setIsModalVisible(true);
+    }
   };
 
   return (
@@ -133,13 +130,26 @@ const CapacityCalendar: React.FC = () => {
           </div>
         }
       >
-        <Row gutter={[16, 16]}>
-          {Array.from({ length: 12 }, (_, i) => (
-            <Col key={i} xs={24} sm={24} md={12} lg={8} xl={6}>
-              {renderMonthCalendar(i)}
-            </Col>
-          ))}
-        </Row>
+        <FullCalendar
+          plugins={[dayGridPlugin, interactionPlugin, multiMonthPlugin]}
+          initialView="multiMonthYear"
+          multiMonthMaxColumns={4}
+          events={calendarEvents}
+          dateClick={handleDateClick}
+          eventClick={handleEventClick}
+          locale="zh-cn"
+          dayCellClassNames={(arg) => {
+            return arg.isOtherMonth ? ['fc-non-month-day'] : [];
+          }}
+          headerToolbar={{}}
+          eventContent={(arg) => (
+            <Tooltip title={`${arg.event.title}${arg.event.extendedProps.remark ? ' - ' + arg.event.extendedProps.remark : ''}`}>
+              <div style={{ padding: '2px 4px', borderRadius: 2 }}>
+                {arg.event.title}
+              </div>
+            </Tooltip>
+          )}
+        />
         <Modal
           title={editingId ? '编辑节假日' : '新增节假日'}
           open={isModalVisible}
