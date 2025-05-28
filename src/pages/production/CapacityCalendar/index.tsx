@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, Badge, Card, Button, Modal, Form, Input, DatePicker, Select, message, ConfigProvider, Row, Col } from 'antd';
+import { Calendar, Badge, Card, Button, Modal, Form, Input, DatePicker, Select, message, ConfigProvider, Row, Col, Tooltip } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { query, create, update, deleteHoliday, updateStatus, downloadTemplate } from '../../../services/holiday';
 import type { Holiday } from '../../../services/holiday';
@@ -81,10 +81,18 @@ const CapacityCalendar: React.FC = () => {
       
       if (holiday) {
         return (
-          <Badge 
-            status={holiday.status === 1 ? 'error' : 'default'} 
-            text={holiday.holidayName} 
-          />
+          <Tooltip title={`${holiday.holidayName}${holiday.remark ? ' - ' + holiday.remark : ''}`}>
+            <div
+              style={{
+                backgroundColor: '#f5f5f5',
+                padding: '2px 4px',
+                borderRadius: 2,
+                border: '2px solid #1890ff'
+              }}
+            >
+              {holiday.holidayName}
+            </div>
+          </Tooltip>
         );
       }
       return null;
@@ -96,10 +104,11 @@ const CapacityCalendar: React.FC = () => {
         <Calendar
           fullscreen={false}
           mode="month"
-          value={monthStart}
+          defaultValue={monthStart}
           dateCellRender={monthCellRender}
           headerRender={() => null}
           onSelect={handleCalendarSelect}
+          selectedValue={null}
         />
       </div>
     );
