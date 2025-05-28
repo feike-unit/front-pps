@@ -137,7 +137,7 @@ export const routes: ExtendedRouteObject[] = [
         path: 'production',
         metadata: {
           label: '生产管理',
-          icon: <ToolOutlined />
+          icon: <RotateRightOutlined />
         },
         children: [
           {
@@ -164,6 +164,15 @@ export const routes: ExtendedRouteObject[] = [
             metadata: {
               label: '产能规则',
               icon: <ControlOutlined />,
+              closable: true
+            }
+          },
+          {
+            path: 'capacity-calendar',
+            element: <Suspense fallback={null}>{React.createElement(lazy(() => import('./pages/production/CapacityCalendar')))}</Suspense>,
+            metadata: {
+              label: '产能日历',
+              icon: <ScheduleOutlined />,
               closable: true
             }
           }
@@ -306,4 +315,4 @@ export const convertRoutesToMenuItems = (routes: ExtendedRouteObject[]): MenuPro
     .filter(Boolean);
 };
 
-export const routeMetadata = generateRouteMetadata(routes); 
+export const routeMetadata = generateRouteMetadata(routes);

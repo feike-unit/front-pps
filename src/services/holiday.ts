@@ -1,0 +1,108 @@
+import api, { PageResponse } from './api';
+
+/**
+ * 节假日类型定义
+ */
+export interface Holiday {
+  id?: number;
+  holidayDate: string;
+  description: string;
+  enabled: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * 节假日更新类型定义
+ */
+export interface HolidayUpdate {
+  holidayDate?: string;
+  description?: string;
+  enabled?: boolean;
+}
+
+export interface HolidayPageRequest {
+  pageNum: number;
+  pageSize: number;
+  keyword?: string;
+  enabled?: boolean;
+  startDate?: string;
+  endDate?: string;
+  sortField?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+// 分页查询节假日列表
+export const getHolidayPage = async (params: HolidayPageRequest): Promise<PageResponse<Holiday>> => {
+  const response = await api.get<PageResponse<Holiday>>('/production/holidays', { params });
+  return response.data;
+};
+
+// 获取所有节假日列表
+export const listHolidays = async (): Promise<Holiday[]> => {
+  const response = await api.get<Holiday[]>('/production/holidays/all');
+  return response.data;
+};
+
+// 创建节假日
+export const createHoliday = async (holiday: Omit<Holiday, 'id'>): Promise<Holiday> => {
+  const response = await api.post<Holiday>('/production/holidays', holiday);
+  return response.data;
+};
+
+// 更新节假日
+export const updateHoliday = async (id: number, holiday: HolidayUpdate): Promise<Holiday> => {
+  const response = await api.put<Holiday>(`/production/holidays/${id}`, holiday);
+  return response.data;
+};
+
+// 删除节假日
+export const deleteHoliday = async (id: number): Promise<void> => {
+  await api.delete(`/production/holidays/${id}`);
+};
+
+// 获取节假日详情
+export const getHoliday = async (id: number): Promise<Holiday> => {
+  const response = await api.get<Holiday>(`/production/holidays/${id}`);
+  return response.data;
+};
+
+// 批量更新节假日状态
+export const updateHolidaysStatus = async (ids: number[], enabled: boolean): Promise<void> => {
+  await api.patch('/production/holidays/batch-status', null, {
+    params: { ids: ids.join(','), enabled }
+  });
+};
+
+// 批量删除节假日
+export const deleteHolidays = async (ids: number[]): Promise<void> => {
+  await api.delete('/production/holidays/batch', {
+    params: { ids: ids.join(',') }
+  });
+};
+
+// 导入节假日
+export const importHolidays = async (file: File): Promise<Holiday[]> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post<Holiday[]>('/production/holidays/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+// 下载节假日导入模板
+export const downloadTemplate = () => {
+  window.open('/api/production/holidays/template', '_blank');
+};
+
+// 导出节假日
+export const exportHolidays = async (params: Partial<HolidayPageRequest>): Promise<Blob> => {
+  const response = await api.get('/production/holidays/export', {
+    params,
+    responseType: 'blob',
+  });
+  return response.data;
+};
