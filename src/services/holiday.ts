@@ -1,4 +1,4 @@
-import api from './api';
+import api, { PageResponse } from './api';
 
 /**
  * 节假日类型定义
@@ -119,6 +119,11 @@ export const deleteHolidays = async (ids: number[]): Promise<void> => {
   await api.delete('/production/holidays/batch', {
     params: { ids: ids.join(',') }
   });
+};
+
+// 自动生成双休日
+export const generateWeekendHolidays = async (year: number): Promise<void> => {
+  await api.post('/production/holidays/generate-weekends', { year });
 };
 
 // 导出节假日

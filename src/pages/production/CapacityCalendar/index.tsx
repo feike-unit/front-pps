@@ -12,7 +12,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import type {Dayjs} from 'dayjs';
-import {query, create, update, deleteHoliday, updateStatus, downloadTemplate, importHolidays} from '../../../services/holiday';
+import {query, create, update, deleteHoliday, updateStatus, downloadTemplate, importHolidays, generateWeekendHolidays} from '../../../services/holiday';
 import type {Holiday} from '../../../services/holiday';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
@@ -173,6 +173,20 @@ const CapacityCalendar: React.FC = () => {
                                 style={{marginRight: 8}}
                             />
                             <Button onClick={downloadTemplate} style={{marginRight: 8}}>下载模板</Button>
+                            <Button
+                                onClick={async () => {
+                                    try {
+                                        await generateWeekendHolidays(currentDate.year());
+                                        message.success('成功生成双休日');
+                                        fetchHolidays();
+                                    } catch (error: any) {
+                                        message.error(error.response?.data?.message || error.message || '生成双休日失败');
+                                    }
+                                }}
+                                style={{marginRight: 8}}
+                            >
+                                生成双休日
+                            </Button>
                             <Button style={{marginRight: 8}}>
                                 <label style={{cursor: 'pointer'}}>
                                     导入节假日
