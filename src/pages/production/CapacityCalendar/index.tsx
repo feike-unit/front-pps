@@ -50,49 +50,25 @@ const CapacityCalendar: React.FC = () => {
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
-            if (!values.holiday) {
-                throw new Error('节假日日期不能为空');
-            }
+            const holidayDate = moment(values.holiday).format('YYYY-MM-DD');
             
-            // 处理日期范围
-            const startDate = values.holiday[0];
-            const endDate = values.holiday[1] || values.holiday[0];
-            
-            // 生成日期范围内的所有日期
-            const dates = [];
-            let currentDate = startDate.clone();
-            while (currentDate.isSameOrBefore(endDate, 'day')) {
-                dates.push(currentDate.format('YYYY-MM-DD'));
-                currentDate = currentDate.add(1, 'day');
-            }
-            
-            // 批量创建或更新节假日
             if (editingId) {
-                // 编辑模式下只更新单个日期
-                const formData = {
+                await updateHoliday({
                     ...values,
-                    holiday: values.holiday[0].format('YYYY-MM-DD'),
-                    status: values.status ?? 1,
-                };
-                await update(editingId, formData);
-                message.success('更新成功');
-            } else {
-                // 新增模式下创建多个日期
-                const promises = dates.map(date => {
-                    const formData = {
-                        ...values,
-                        holiday: date,
-                        status: values.status ?? 1,
-                    };
-                    return create(formData);
+                    id: editingId,
+                    holiday: holidayDate
                 });
-                await Promise.all(promises);
-                message.success('创建成功');
+            } else {
+                await addHoliday({
+                    ...values,
+                    holiday: holidayDate
+                });
             }
+            message.success(editingId ? '更新成功' : '新增成功');
             setIsModalVisible(false);
             fetchHolidays();
-        } catch (error: any) {
-            message.error(error.response?.data?.message || error.message || '保存失败');
+        } catch (error) {
+            console.error(error);
         }
     };
 
@@ -260,10 +236,10 @@ const CapacityCalendar: React.FC = () => {
                             label="日期"
                             rules={[{required: true, message: '请选择日期'}]}
                         >
-                            <DatePicker.RangePicker 
+                            <DatePicker 
                                 style={{width: '100%'}} 
-                                disabled={!!editingId || isDateClick}
-                                placeholder={['开始日期', '结束日期']}
+                                disabled={!!editingId}
+                                placeholder="选择日期"
                             />
                         </Form.Item>
                         <Form.Item
