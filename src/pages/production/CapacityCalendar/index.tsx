@@ -50,7 +50,7 @@ const CapacityCalendar: React.FC = () => {
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
-            const holidayDate = moment(values.holiday).format('YYYY-MM-DD');
+            const holidayDate = dayjs(values.holiday).format('YYYY-MM-DD');
             
             if (editingId) {
                 await updateHoliday({
@@ -85,7 +85,7 @@ const CapacityCalendar: React.FC = () => {
         const existingHoliday = holidays.find(h => h.holiday === arg.dateStr);
         if (existingHoliday) {
             form.setFieldsValue({
-                holiday: [dayjs(existingHoliday.holiday)],
+                holiday: dayjs(existingHoliday.holiday),
                 holidayName: existingHoliday.holidayName,
                 status: existingHoliday.status,
                 remark: existingHoliday.remark
@@ -126,8 +126,6 @@ const CapacityCalendar: React.FC = () => {
             textColor: '#fff'
         }));
 
-    // 处理日历日期点击事件（删除重复的handleDateClick函数）
-
     // 处理节假日事件点击（编辑）
     const handleEventClick = (arg: any) => {
         const holiday = holidays.find(h => h.holiday === arg.event.startStr);
@@ -138,13 +136,17 @@ const CapacityCalendar: React.FC = () => {
                 status: holiday.status,
                 remark: holiday.remark
             });
-            setEditingId(holiday.id);
+            if (holiday.id !== undefined) {
+                setEditingId(holiday.id);
+            }
             setIsModalVisible(true);
         }
     };
 
     // 处理删除节假日
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number | null) => {
+        if (id === null) return;
+        
         try {
             await deleteHoliday(id);
             message.success('删除成功');
@@ -193,10 +195,20 @@ const CapacityCalendar: React.FC = () => {
                     dateClick={handleDateClick}
                     eventClick={handleEventClick}
                     locale="zh-cn"
+                    selectable={true}
+                    selectMirror={true}
+                    select={(arg) => {
+                        form.resetFields();
+                        form.setFieldsValue({
+                            holiday: [dayjs(arg.startStr), dayjs(arg.endStr)]
+                        });
+                        setEditingId(null);
+                        setIsModalVisible(true);
+                    }}
                     dayCellClassNames={(arg) => {
                         return arg.isOtherMonth ? ['fc-non-month-day'] : [];
                     }}
-                    headerToolbar={{}}
+                    headerToolbar={false}
                     eventContent={(arg) => (
                         <Tooltip
                             title={`${arg.event.title}${arg.event.extendedProps.remark ? ' - ' + arg.event.extendedProps.remark : ''}`}>
@@ -236,8 +248,8 @@ const CapacityCalendar: React.FC = () => {
                             label="日期"
                             rules={[{required: true, message: '请选择日期'}]}
                         >
-                            <DatePicker 
-                                style={{width: '100%'}} 
+                            <DatePicker
+                                style={{width: '100%'}}
                                 disabled={!!editingId}
                                 placeholder="选择日期"
                             />
