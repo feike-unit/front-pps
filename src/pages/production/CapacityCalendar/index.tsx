@@ -53,17 +53,40 @@ const CapacityCalendar: React.FC = () => {
             if (!values.holiday) {
                 throw new Error('节假日日期不能为空');
             }
-            const formData = {
-                ...values,
-                holiday: values.holiday.format('YYYY-MM-DD'),
-                status: values.status ?? 1,
-            };
-
+            
+            // 处理日期范围
+            const startDate = values.holiday[0];
+            const endDate = values.holiday[1] || values.holiday[0];
+            
+            // 生成日期范围内的所有日期
+            const dates = [];
+            let currentDate = startDate.clone();
+            while (currentDate.isSameOrBefore(endDate, 'day')) {
+                dates.push(currentDate.format('YYYY-MM-DD'));
+                currentDate = currentDate.add(1, 'day');
+            }
+            
+            // 批量创建或更新节假日
             if (editingId) {
+                // 编辑模式下只更新单个日期
+                const formData = {
+                    ...values,
+                    holiday: values.holiday[0].format('YYYY-MM-DD'),
+                    status: values.status ?? 1,
+                };
                 await update(editingId, formData);
                 message.success('更新成功');
             } else {
-                await create(formData);
+                // 新增模式下创建多个日期
+                const promises = dates.map(date => {
+                    const formData = {
+                        ...values,
+                        holiday: date,
+                        status: values.status ?? 1,
+                    };
+                    return create(formData);
+                });
+                await Promise.all(promises);
                 message.success('创建成功');
             }
             setIsModalVisible(false);
@@ -86,7 +109,7 @@ const CapacityCalendar: React.FC = () => {
         const existingHoliday = holidays.find(h => h.holiday === arg.dateStr);
         if (existingHoliday) {
             form.setFieldsValue({
-                holiday: dayjs(existingHoliday.holiday),
+                holiday: [dayjs(existingHoliday.holiday)],
                 holidayName: existingHoliday.holidayName,
                 status: existingHoliday.status,
                 remark: existingHoliday.remark
@@ -96,7 +119,7 @@ const CapacityCalendar: React.FC = () => {
         } else {
             form.resetFields();
             form.setFieldsValue({
-                holiday: dayjs(arg.dateStr)
+                holiday: [dayjs(arg.dateStr)]
             });
             setEditingId(null);
             setIsDateClick(true);
@@ -237,7 +260,11 @@ const CapacityCalendar: React.FC = () => {
                             label="日期"
                             rules={[{required: true, message: '请选择日期'}]}
                         >
-                            <DatePicker style={{width: '100%'}} disabled={!!editingId || isDateClick}/>
+                            <DatePicker.RangePicker 
+                                style={{width: '100%'}} 
+                                disabled={!!editingId || isDateClick}
+                                placeholder={['开始日期', '结束日期']}
+                            />
                         </Form.Item>
                         <Form.Item
                             name="holidayName"
