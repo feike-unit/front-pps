@@ -12,7 +12,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import type {Dayjs} from 'dayjs';
-import {query, create, update, deleteHoliday, updateStatus, downloadTemplate} from '../../../services/holiday';
+import {query, create, update, deleteHoliday, updateStatus, downloadTemplate, importHolidays} from '../../../services/holiday';
 import type {Holiday} from '../../../services/holiday';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
@@ -173,6 +173,29 @@ const CapacityCalendar: React.FC = () => {
                                 style={{marginRight: 8}}
                             />
                             <Button onClick={downloadTemplate} style={{marginRight: 8}}>下载模板</Button>
+                            <Button style={{marginRight: 8}}>
+                                <label style={{cursor: 'pointer'}}>
+                                    导入节假日
+                                    <input
+                                        type="file"
+                                        accept=".xls,.xlsx"
+                                        style={{display: 'none'}}
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                try {
+                                                    await importHolidays(file);
+                                                    message.success('导入成功');
+                                                    fetchHolidays();
+                                                } catch (error: any) {
+                                                    message.error(error.response?.data?.message || error.message || '导入失败');
+                                                }
+                                                e.target.value = '';
+                                            }
+                                        }}
+                                    />
+                                </label>
+                            </Button>
                             <Button type="primary" onClick={handleAdd}>新增节假日</Button>
                         </div>
                     </div>
