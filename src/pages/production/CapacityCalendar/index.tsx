@@ -26,7 +26,7 @@ const CapacityCalendar: React.FC = () => {
     const [holidays, setHolidays] = useState<Holiday[]>([]); // 节假日数据列表
     const [isModalVisible, setIsModalVisible] = useState(false); // 控制模态框显示
     const [form] = Form.useForm(); // 表单实例
-    const [editingId, setEditingId] = useState<number | null>(null); // 当前编辑的节假日ID
+    const [editingId, setEditingId] = useState<number | null | undefined>(null); // 当前编辑的节假日ID
     const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs()); // 当前选中的年份
     const [isDateClick, setIsDateClick] = useState(false); // 是否是通过点击日期新增
 
@@ -53,22 +53,25 @@ const CapacityCalendar: React.FC = () => {
             const holidayDate = dayjs(values.holiday).format('YYYY-MM-DD');
             
             if (editingId) {
-                await updateHoliday({
-                    ...values,
-                    id: editingId,
-                    holiday: holidayDate
+                await update(editingId, {
+                    holiday: holidayDate,
+                    holidayName: values.holidayName,
+                    status: values.status,
+                    remark: values.remark
                 });
             } else {
-                await addHoliday({
-                    ...values,
-                    holiday: holidayDate
+                await create({
+                    holiday: holidayDate,
+                    holidayName: values.holidayName,
+                    status: values.status,
+                    remark: values.remark
                 });
             }
             message.success(editingId ? '更新成功' : '新增成功');
             setIsModalVisible(false);
             fetchHolidays();
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            message.error(error.response?.data?.message || error.message || '操作失败');
         }
     };
 
@@ -250,7 +253,7 @@ const CapacityCalendar: React.FC = () => {
                         >
                             <DatePicker
                                 style={{width: '100%'}}
-                                disabled={!!editingId}
+                                disabled={!!editingId || isDateClick}
                                 placeholder="选择日期"
                             />
                         </Form.Item>
