@@ -6,7 +6,7 @@
  * 3. 支持按年份筛选节假日
  */
 import React, {useEffect, useState} from 'react';
-import {Card, Button, Modal, Form, Input, DatePicker, Select, message, ConfigProvider, Tooltip} from 'antd';
+import {Card, Button, Modal, Form, Input, DatePicker, Select, message, ConfigProvider, Tooltip, Popconfirm} from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -28,6 +28,7 @@ const CapacityCalendar: React.FC = () => {
     const [form] = Form.useForm(); // 表单实例
     const [editingId, setEditingId] = useState<number | null>(null); // 当前编辑的节假日ID
     const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs()); // 当前选中的年份
+    const [isDateClick, setIsDateClick] = useState(false); // 是否是通过点击日期新增
 
     // 获取节假日数据
     const fetchHolidays = async () => {
@@ -76,6 +77,30 @@ const CapacityCalendar: React.FC = () => {
     const handleAdd = () => {
         form.resetFields();
         setEditingId(null);
+        setIsDateClick(false);
+        setIsModalVisible(true);
+    };
+
+    // 处理日历日期点击事件
+    const handleDateClick = (arg: any) => {
+        const existingHoliday = holidays.find(h => h.holiday === arg.dateStr);
+        if (existingHoliday) {
+            form.setFieldsValue({
+                holiday: dayjs(existingHoliday.holiday),
+                holidayName: existingHoliday.holidayName,
+                status: existingHoliday.status,
+                remark: existingHoliday.remark
+            });
+            setEditingId(existingHoliday.id);
+            setIsDateClick(false);
+        } else {
+            form.resetFields();
+            form.setFieldsValue({
+                holiday: dayjs(arg.dateStr)
+            });
+            setEditingId(null);
+            setIsDateClick(true);
+        }
         setIsModalVisible(true);
     };
 
@@ -102,14 +127,7 @@ const CapacityCalendar: React.FC = () => {
             textColor: '#fff'
         }));
 
-    // 处理日历日期点击事件
-    const handleDateClick = (arg: any) => {
-        form.setFieldsValue({
-            holiday: dayjs(arg.dateStr)
-        });
-        setEditingId(null);
-        setIsModalVisible(true);
-    };
+    // 处理日历日期点击事件（删除重复的handleDateClick函数）
 
     // 处理节假日事件点击（编辑）
     const handleEventClick = (arg: any) => {
@@ -123,6 +141,17 @@ const CapacityCalendar: React.FC = () => {
             });
             setEditingId(holiday.id);
             setIsModalVisible(true);
+        }
+    };
+
+    // 处理删除节假日
+    const handleDelete = async (id: number) => {
+        try {
+            await deleteHoliday(id);
+            message.success('删除成功');
+            fetchHolidays();
+        } catch (error: any) {
+            message.error(error.response?.data?.message || error.message || '删除失败');
         }
     };
 
@@ -183,6 +212,24 @@ const CapacityCalendar: React.FC = () => {
                     open={isModalVisible}
                     onOk={handleModalOk}
                     onCancel={() => setIsModalVisible(false)}
+                    footer={[
+                        editingId && (
+                            <Popconfirm
+                                key="delete"
+                                title="确定要删除这个节假日吗？"
+                                onConfirm={() => {
+                                    handleDelete(editingId);
+                                    setIsModalVisible(false);
+                                }}
+                                okText="确定"
+                                cancelText="取消"
+                            >
+                                <Button danger>删除</Button>
+                            </Popconfirm>
+                        ),
+                        <Button key="cancel" onClick={() => setIsModalVisible(false)}>取消</Button>,
+                        <Button key="submit" type="primary" onClick={handleModalOk}>确定</Button>
+                    ].filter(Boolean)}
                 >
                     <Form form={form} layout="vertical">
                         <Form.Item
@@ -190,7 +237,7 @@ const CapacityCalendar: React.FC = () => {
                             label="日期"
                             rules={[{required: true, message: '请选择日期'}]}
                         >
-                            <DatePicker style={{width: '100%'}}/>
+                            <DatePicker style={{width: '100%'}} disabled={!!editingId || isDateClick}/>
                         </Form.Item>
                         <Form.Item
                             name="holidayName"
