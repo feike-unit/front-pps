@@ -36,10 +36,12 @@ const CapacityCalendar: React.FC = () => {
             const response = await query({
                 year: currentDate.year()
             });
-            console.log('0000000', response);
-            setHolidays(response);
+            console.log('获取到的节假日数据:', response);
+            setHolidays(response || []); // 确保response为空时设置为空数组
         } catch (error: any) {
+            console.error('获取节假日数据失败:', error);
             message.error(error.response?.data?.message || error.message || '获取节假日数据失败');
+            setHolidays([]); // 出错时设置为空数组
         }
     };
 
@@ -70,7 +72,7 @@ const CapacityCalendar: React.FC = () => {
             }
             message.success(editingId ? '更新成功' : '新增成功');
             setIsModalVisible(false);
-            fetchHolidays();
+            await fetchHolidays(); // 使用await确保数据更新完成
         } catch (error: any) {
             message.error(error.response?.data?.message || error.message || '操作失败');
         }
@@ -99,7 +101,7 @@ const CapacityCalendar: React.FC = () => {
         } else {
             form.resetFields();
             form.setFieldsValue({
-                holiday: [dayjs(arg.dateStr)]
+                holiday: dayjs(arg.dateStr)
             });
             setEditingId(null);
             setIsDateClick(true);
@@ -120,6 +122,7 @@ const CapacityCalendar: React.FC = () => {
     const calendarEvents = holidays
         .filter(holiday => holiday.status === 1)
         .map(holiday => ({
+            id: holiday.id?.toString(),
             title: holiday.holidayName,
             date: holiday.holiday,
             extendedProps: {
@@ -129,6 +132,8 @@ const CapacityCalendar: React.FC = () => {
             borderColor: '#666666',
             textColor: '#fff'
         }));
+
+    console.log('转换后的日历事件:', calendarEvents); // 调试日历事件数据
 
     // 处理节假日事件点击（编辑）
     const handleEventClick = (arg: any) => {
@@ -154,7 +159,7 @@ const CapacityCalendar: React.FC = () => {
         try {
             await deleteHoliday(id);
             message.success('删除成功');
-            fetchHolidays();
+            await fetchHolidays(); // 使用await确保数据更新完成
         } catch (error: any) {
             message.error(error.response?.data?.message || error.message || '删除失败');
         }
@@ -181,7 +186,7 @@ const CapacityCalendar: React.FC = () => {
                                     try {
                                         await generateHolidays(currentDate.year());
                                         message.success('成功生成节假日');
-                                        fetchHolidays();
+                                        await fetchHolidays(); // 直接获取最新数据
                                     } catch (error: any) {
                                         message.error(error.response?.data?.message || error.message || '生成节假日失败');
                                     }
@@ -206,7 +211,7 @@ const CapacityCalendar: React.FC = () => {
                                                 try {
                                                     await importHolidays(file);
                                                     message.success('导入成功');
-                                                    fetchHolidays();
+                                                    await fetchHolidays(); // 使用await确保数据更新完成
                                                 } catch (error: any) {
                                                     message.error(error.response?.data?.message || error.message || '导入失败');
                                                 }
@@ -221,18 +226,6 @@ const CapacityCalendar: React.FC = () => {
                     </div>
                 }
             >
-                {/* FullCalendar配置
-                  plugins: 使用的插件
-                  initialView: 初始视图
-                  multiMonthMaxColumns: 多月份视图最大列数
-                  events: 日历事件数据
-                  dateClick: 日期点击回调
-                  eventClick: 事件点击回调
-                  locale: 本地化语言
-                  dayCellClassNames: 非当前月份日期样式
-                  headerToolbar: 隐藏头部工具栏
-                  eventContent: 自定义事件内容
-                */}
                 <FullCalendar
                     plugins={[dayGridPlugin, interactionPlugin, multiMonthPlugin]}
                     initialView="multiMonthYear"
@@ -246,7 +239,7 @@ const CapacityCalendar: React.FC = () => {
                     select={(arg) => {
                         form.resetFields();
                         form.setFieldsValue({
-                            holiday: [dayjs(arg.startStr), dayjs(arg.endStr)]
+                            holiday: dayjs(arg.startStr)
                         });
                         setEditingId(null);
                         setIsModalVisible(true);
