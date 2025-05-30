@@ -12,7 +12,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import type {Dayjs} from 'dayjs';
-import {query, create, update, deleteHoliday, updateStatus, downloadTemplate, importHolidays, generateWeekendHolidays} from '../../../services/holiday';
+import {query, create, update, deleteHoliday, updateStatus, downloadTemplate, importHolidays, generateHolidays} from '../../../services/holiday';
 import type {Holiday} from '../../../services/holiday';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
@@ -36,6 +36,7 @@ const CapacityCalendar: React.FC = () => {
             const response = await query({
                 year: currentDate.year()
             });
+            console.log('0000000', response);
             setHolidays(response);
         } catch (error: any) {
             message.error(error.response?.data?.message || error.message || '获取节假日数据失败');
@@ -173,20 +174,25 @@ const CapacityCalendar: React.FC = () => {
                                 style={{marginRight: 8}}
                             />
                             <Button onClick={downloadTemplate} style={{marginRight: 8}}>下载模板</Button>
-                            <Button
-                                onClick={async () => {
+                            <Popconfirm
+                                title="确认同步节假日"
+                                description="确定要同步当前年度的节假日数据吗?"
+                                onConfirm={async () => {
                                     try {
-                                        await generateWeekendHolidays(currentDate.year());
-                                        message.success('成功生成双休日');
+                                        await generateHolidays(currentDate.year());
+                                        message.success('成功生成节假日');
                                         fetchHolidays();
                                     } catch (error: any) {
-                                        message.error(error.response?.data?.message || error.message || '生成双休日失败');
+                                        message.error(error.response?.data?.message || error.message || '生成节假日失败');
                                     }
                                 }}
-                                style={{marginRight: 8}}
+                                okText="确定"
+                                cancelText="取消"
                             >
-                                生成双休日
-                            </Button>
+                                <Button style={{marginRight: 8}}>
+                                    同步全年节假日
+                                </Button>
+                            </Popconfirm>
                             <Button style={{marginRight: 8}}>
                                 <label style={{cursor: 'pointer'}}>
                                     导入节假日

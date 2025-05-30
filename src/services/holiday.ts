@@ -121,9 +121,10 @@ export const deleteHolidays = async (ids: number[]): Promise<void> => {
   });
 };
 
-// 自动生成双休日
-export const generateWeekendHolidays = async (year: number): Promise<void> => {
-  await api.post('/production/holidays/generate-weekends', { year });
+// 一键生成指定年度节假日
+export const generateHolidays = async (year: number): Promise<Holiday[]> => {
+  const response = await api.post<Holiday[]>(`/production/holidays/generate/${year}`);
+  return response.data;
 };
 
 // 导出节假日
