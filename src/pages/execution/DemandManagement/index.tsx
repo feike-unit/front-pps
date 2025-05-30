@@ -31,8 +31,9 @@ import {
   ProFormSelect,
   ProFormDatePicker,
   ProFormTreeSelect,
+  ProDescriptions,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined, ScheduleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined, ScheduleOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Demand, 
@@ -84,6 +85,8 @@ const DemandManagement: React.FC = () => {
   const [rePlanScope, setRePlanScope] = useState<number>(0);
 
   const navigate = useNavigate();
+  const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
+  const [detailRecord, setDetailRecord] = useState<Demand | null>(null);
 
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
@@ -453,6 +456,11 @@ const DemandManagement: React.FC = () => {
       render: (_, record) => (
         <Space size="middle">
           {/* 添加插单按钮 */}
+          <Tooltip title="查看详情">
+            <a onClick={() => handleViewDetails(record)}>
+              <EyeOutlined style={{ color: '#1890ff' }} />
+            </a>
+          </Tooltip>
           <Tooltip title="插单">
             <a onClick={() => handleOpenInsertOrderModal(record)}>
               <SwapOutlined style={{ color: '#1890ff' }} />
@@ -462,6 +470,18 @@ const DemandManagement: React.FC = () => {
       ),
     },
   ];
+
+  // 处理查看详情
+  const handleViewDetails = async (record: Demand) => {
+    try {
+      const detailData = await getDemandById(record.id!);
+      setDetailRecord(detailData);
+      setDetailModalVisible(true);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取需求详情失败');
+    }
+  };
 
   return (
     <>
@@ -819,8 +839,109 @@ const DemandManagement: React.FC = () => {
           </Form>
         )}
       </Modal>
+
+      {/* 需求详情对话框 */}
+      <Modal
+        title="需求详情"
+        open={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        footer={null}
+        width={800}
+      >
+        {detailRecord && (
+          <ProDescriptions<Demand>
+            column={2}
+            dataSource={detailRecord}
+            columns={[
+              {
+                title: '货品编号',
+                dataIndex: 'productCode',
+              },
+              {
+                title: '货品名称',
+                dataIndex: 'productName',
+              },
+              {
+                title: '货品类型',
+                dataIndex: 'productType',
+                valueEnum: {
+                  1: { text: '采购件' },
+                  2: { text: '自制件' },
+                  3: { text: '委外件' },
+                },
+              },
+              {
+                title: '订单数量',
+                dataIndex: 'demandQuantity',
+              },
+              {
+                title: '生产数量',
+                dataIndex: 'purgeQuantity',
+              },
+              {
+                title: '报工数量',
+                dataIndex: 'registeredQuantity',
+              },
+              {
+                title: '完工数量',
+                dataIndex: 'completionQuantity',
+              },
+              {
+                title: '交期',
+                dataIndex: 'deliveryDate',
+              },
+              {
+                title: '开始日期',
+                dataIndex: 'startDate',
+              },
+              {
+                title: '结束日期',
+                dataIndex: 'endDate',
+              },
+              {
+                title: '状态',
+                dataIndex: 'status',
+                valueEnum: {
+                  [DemandStatus.INCOMPLETE]: { text: '未完成' },
+                  [DemandStatus.COMPLETED]: { text: '已完成' },
+                },
+              },
+              {
+                title: '业务类型',
+                dataIndex: 'businessType',
+              },
+              {
+                title: '业务单号',
+                dataIndex: 'businessDocNo',
+                copyable: true,
+              },
+              {
+                title: '客户订单号',
+                dataIndex: 'customerOrderDocNo',
+                copyable: true,
+              },
+              {
+                title: '客户编号',
+                dataIndex: 'customerCode',
+              },
+              {
+                title: '客户名称',
+                dataIndex: 'customerName',
+              },
+              {
+                title: '备注',
+                dataIndex: 'remark',
+              },
+              {
+                title: '创建时间',
+                dataIndex: 'createdAt',
+              },
+            ]}
+          />
+        )}
+      </Modal>
     </>
   );
 };
 
-export default DemandManagement; 
+export default DemandManagement;
