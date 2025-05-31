@@ -17,7 +17,9 @@ import {
   Divider,
   InputNumber,
   Modal,
-  Radio
+  Radio,
+  Badge,
+  Typography
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
@@ -56,6 +58,7 @@ import debounce from 'lodash/debounce';
 import dayjs from 'dayjs';
 import { RadioChangeEvent } from 'antd/lib/radio';
 import { useNavigate } from 'react-router-dom';
+import './index.css';
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
@@ -308,8 +311,12 @@ const DemandManagement: React.FC = () => {
       copyable: true,
       ellipsis: true,
       sorter: true,
-      width: 200,
-      render: (_, record) => `${record.productCode} - ${record.productName}`,
+      width: 250,
+      render: (_, record) => (
+        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {`${record.productCode} - ${record.productName}`}
+        </div>
+      ),
     },
     {
       title: '货品类型',
@@ -846,98 +853,180 @@ const DemandManagement: React.FC = () => {
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
-        width={800}
+        width={1200}
       >
         {detailRecord && (
-          <ProDescriptions<Demand>
-            column={2}
-            dataSource={detailRecord}
-            columns={[
-              {
-                title: '货品编号',
-                dataIndex: 'productCode',
-              },
-              {
-                title: '货品名称',
-                dataIndex: 'productName',
-              },
-              {
-                title: '货品类型',
-                dataIndex: 'productType',
-                valueEnum: {
-                  1: { text: '采购件' },
-                  2: { text: '自制件' },
-                  3: { text: '委外件' },
+          <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <Table<Demand>
+              columns={[
+                {
+                  title: '货品编号',
+                  dataIndex: 'productCode',
+                  key: 'productCode',
+                  width: 250,
+                  render: (text) => text && <Typography.Text copyable>{text}</Typography.Text>,
                 },
-              },
-              {
-                title: '订单数量',
-                dataIndex: 'demandQuantity',
-              },
-              {
-                title: '生产数量',
-                dataIndex: 'purgeQuantity',
-              },
-              {
-                title: '报工数量',
-                dataIndex: 'registeredQuantity',
-              },
-              {
-                title: '完工数量',
-                dataIndex: 'completionQuantity',
-              },
-              {
-                title: '交期',
-                dataIndex: 'deliveryDate',
-              },
-              {
-                title: '开始日期',
-                dataIndex: 'startDate',
-              },
-              {
-                title: '结束日期',
-                dataIndex: 'endDate',
-              },
-              {
-                title: '状态',
-                dataIndex: 'status',
-                valueEnum: {
-                  [DemandStatus.INCOMPLETE]: { text: '未完成' },
-                  [DemandStatus.COMPLETED]: { text: '已完成' },
+                {
+                  title: '货品名称',
+                  dataIndex: 'productName',
+                  key: 'productName',
+                  width: 200,
                 },
-              },
-              {
-                title: '业务类型',
-                dataIndex: 'businessType',
-              },
-              {
-                title: '业务单号',
-                dataIndex: 'businessDocNo',
-                copyable: true,
-              },
-              {
-                title: '客户订单号',
-                dataIndex: 'customerOrderDocNo',
-                copyable: true,
-              },
-              {
-                title: '客户编号',
-                dataIndex: 'customerCode',
-              },
-              {
-                title: '客户名称',
-                dataIndex: 'customerName',
-              },
-              {
-                title: '备注',
-                dataIndex: 'remark',
-              },
-              {
-                title: '创建时间',
-                dataIndex: 'createdAt',
-              },
-            ]}
-          />
+                {
+                  title: '货品类型',
+                  dataIndex: 'productType',
+                  key: 'productType',
+                  width: 100,
+                  render: (_, record) => {
+                    switch (record.productType) {
+                      case 1:
+                        return '采购件';
+                      case 2:
+                        return '自制件';
+                      case 3:
+                        return '委外件';
+                      default:
+                        return '-';
+                    }
+                  },
+                },
+                {
+                  title: '订单数量',
+                  dataIndex: 'demandQuantity',
+                  key: 'demandQuantity',
+                  width: 100,
+                },
+                {
+                  title: '生产数量',
+                  dataIndex: 'purgeQuantity',
+                  key: 'purgeQuantity',
+                  width: 100,
+                },
+                {
+                  title: '报工数量',
+                  dataIndex: 'registeredQuantity',
+                  key: 'registeredQuantity',
+                  width: 100,
+                },
+                {
+                  title: '完工数量',
+                  dataIndex: 'completionQuantity',
+                  key: 'completionQuantity',
+                  width: 100,
+                },
+                {
+                  title: '交期',
+                  dataIndex: 'deliveryDate',
+                  key: 'deliveryDate',
+                  width: 120,
+                },
+                {
+                  title: '开始日期',
+                  dataIndex: 'startDate',
+                  key: 'startDate',
+                  width: 120,
+                },
+                {
+                  title: '结束日期',
+                  dataIndex: 'endDate',
+                  key: 'endDate',
+                  width: 120,
+                },
+                {
+                  title: '状态',
+                  dataIndex: 'status',
+                  key: 'status',
+                  width: 100,
+                  render: (_, record) => {
+                    const statusMap: Record<number, { text: string; color: string }> = {
+                      [DemandStatus.INCOMPLETE]: { text: '未完成', color: '#1890ff' },
+                      [DemandStatus.COMPLETED]: { text: '已完成', color: '#52c41a' },
+                    };
+                    const { text, color } = statusMap[record.status] || { text: '-', color: '#000' };
+                    return <Badge color={color} text={text} />;
+                  },
+                },
+                {
+                  title: '业务类型',
+                  dataIndex: 'businessType',
+                  key: 'businessType',
+                  width: 120,
+                },
+                {
+                  title: '业务单号',
+                  dataIndex: 'businessDocNo',
+                  key: 'businessDocNo',
+                  width: 150,
+                  render: (text) => text && <Typography.Text copyable>{text}</Typography.Text>,
+                },
+                {
+                  title: '客户订单号',
+                  dataIndex: 'customerOrderDocNo',
+                  key: 'customerOrderDocNo',
+                  width: 150,
+                  render: (text) => text && <Typography.Text copyable>{text}</Typography.Text>,
+                },
+                {
+                  title: '客户名称',
+                  dataIndex: 'customerName',
+                  key: 'customerName',
+                  width: 150,
+                },
+                {
+                  title: '备注',
+                  dataIndex: 'remark',
+                  key: 'remark',
+                  width: 150,
+                },
+              ]}
+              dataSource={[detailRecord]}
+              rowKey="id"
+              pagination={false}
+              size="small"
+              bordered
+              scroll={{ x: 'max-content', y: '60vh' }}
+              expandable={{
+                defaultExpandedRowKeys: detailRecord?.children?.length ? [detailRecord.id!] : [],
+                childrenColumnName: 'children',
+                indentSize: 30,
+                expandIcon: ({ expanded, onExpand, record }) => {
+                  if (record.children && record.children.length > 0) {
+                    return expanded ? (
+                      <CaretDownOutlined onClick={e => onExpand(record, e)} />
+                    ) : (
+                      <CaretRightOutlined onClick={e => onExpand(record, e)} />
+                    );
+                  }
+                  return null;
+                },
+              }}
+              onRow={(record) => {
+                const completionQuantity = record.completionQuantity || 0;
+                const purgeQuantity = record.purgeQuantity || 0;
+                
+                // 计算进度，已完成状态显示100%进度
+                let progress = 0;
+                if (record.status === DemandStatus.COMPLETED) {
+                  progress = 100;
+                } else {
+                  progress = purgeQuantity > 0 ? (completionQuantity / purgeQuantity) * 100 : 0;
+                }
+                
+                // 使用状态颜色映射获取背景色
+                const bgColor = statusColorMap[record.status] || statusColorMap[DemandStatus.INCOMPLETE];
+                
+                return {
+                  style: {
+                    position: 'relative',
+                    backgroundImage: `linear-gradient(to right, ${bgColor} ${progress}%, transparent ${progress}%)`,
+                    backgroundPosition: 'bottom',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '100% 10px',
+                  },
+                };
+              }}
+            />
+          </div>
         )}
       </Modal>
     </>
