@@ -897,7 +897,7 @@ const DemandManagement: React.FC = () => {
                   width: 100,
                 },
                 {
-                  title: '生产数量',
+                  title: '生产/采购数量',
                   dataIndex: 'purgeQuantity',
                   key: 'purgeQuantity',
                   width: 100,
