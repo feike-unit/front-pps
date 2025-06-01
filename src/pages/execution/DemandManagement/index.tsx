@@ -849,7 +849,7 @@ const DemandManagement: React.FC = () => {
 
       {/* 需求详情对话框 */}
       <Modal
-        title="需求详情"
+        title="需求单详情"
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
