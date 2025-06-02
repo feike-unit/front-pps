@@ -35,7 +35,8 @@ import {
   syncProducts,
   ProductPageRequest, 
   ProductType,
-  ProductStatus
+  ProductStatus,
+  ProductUpdate
 } from '../../../services/product';
 import { searchLines } from '../../../services/line';
 import type { Line } from '../../../services/line';
@@ -192,17 +193,24 @@ const ProductManagement: React.FC = () => {
             }}
             onFinish={async (values) => {
               try {
-                const params = {
+                // 更新产品基本信息
+                const productData = {
                   productCode: values.productCode,
                   productName: values.productName,
                   model: values.model,
                   unit: values.unit,
                   productType: values.productType,
                   deliveryCycle: values.deliveryCycle,
-                  status: values.status ? ProductStatus.ENABLED : ProductStatus.DISABLED,
+                  status: values.status ? 1 : 0,
                   remark: values.remark,
+                  capacityRules: values.capacityRules?.map(rule => ({
+                    ...rule,
+                    status: rule.status ? 1 : 0,
+                    productId: record.id
+                  })) || []
                 };
-                await updateProduct(record.id!, params);
+                await updateProduct(record.id!, productData);
+
                 message.success('更新成功');
                 actionRef.current?.reload();
                 return true;
@@ -272,7 +280,11 @@ const ProductManagement: React.FC = () => {
                 label="状态"
                 checkedChildren="启用"
                 unCheckedChildren="禁用"
-                initialValue={true}
+                initialValue={1}
+                transform={(value) => value ? 1 : 0}
+                fieldProps={{
+                  defaultChecked: true,
+                }}
               />
             </ProForm.Group>
 
@@ -315,6 +327,28 @@ const ProductManagement: React.FC = () => {
                     formItemProps: {
                       rules: [{ required: true, message: '请输入工时产能' }],
                     },
+                  },
+                  {
+                    title: '状态',
+                    dataIndex: 'status',
+                    valueType: 'switch',
+                    initialValue: 1,
+                    fieldProps: {
+                      checkedChildren: '启用',
+                      unCheckedChildren: '禁用',
+                    },
+                    render: (_, record, __, action) => (
+                      <Switch
+                        checked={record.status === 1}
+                        checkedChildren="启用"
+                        unCheckedChildren="禁用"
+                        onChange={(checked) => {
+                          const newStatus = checked ? 1 : 0;
+                          record.status = newStatus;
+                          action?.reload();
+                        }}
+                      />
+                    ),
                   },
                   {
                     title: '备注',
@@ -365,6 +399,7 @@ const ProductManagement: React.FC = () => {
                       lineId: unusedLine?.id || 0,
                       productId: editingProductId || 0,
                       worksHourCapacity: 0,
+                      status: 1,
                       remark: '',
                     };
                   },
@@ -502,12 +537,24 @@ const ProductManagement: React.FC = () => {
           }
           onFinish={async (values) => {
             try {
-              const params = {
-                ...values,
-                status: values.status ? ProductStatus.ENABLED : ProductStatus.DISABLED,
-                capacityRules: values.capacityRules || []
+              // 创建产品基本信息
+              const productData = {
+                productCode: values.productCode,
+                productName: values.productName,
+                model: values.model,
+                unit: values.unit,
+                productType: values.productType,
+                deliveryCycle: values.deliveryCycle,
+                status: values.status ? 1 : 0,
+                remark: values.remark,
+                capacityRules: values.capacityRules?.map(rule => ({
+                  ...rule,
+                  status: rule.status ? 1 : 0,
+                  productId: 0 // 创建时先设置为0，后端会自动设置正确的ID
+                })) || []
               };
-              await createProduct(params);
+              const product = await createProduct(productData);
+
               message.success('创建成功');
               actionRef.current?.reload();
               return true;
@@ -577,7 +624,11 @@ const ProductManagement: React.FC = () => {
               label="状态"
               checkedChildren="启用"
               unCheckedChildren="禁用"
-              initialValue={true}
+              initialValue={1}
+              transform={(value) => value ? 1 : 0}
+              fieldProps={{
+                defaultChecked: true,
+              }}
             />
           </ProForm.Group>
 
@@ -620,6 +671,28 @@ const ProductManagement: React.FC = () => {
                   formItemProps: {
                     rules: [{ required: true, message: '请输入工时产能' }],
                   },
+                },
+                {
+                  title: '状态',
+                  dataIndex: 'status',
+                  valueType: 'switch',
+                  initialValue: 1,
+                  fieldProps: {
+                    checkedChildren: '启用',
+                    unCheckedChildren: '禁用',
+                  },
+                  render: (_, record, __, action) => (
+                    <Switch
+                      checked={record.status === 1}
+                      checkedChildren="启用"
+                      unCheckedChildren="禁用"
+                      onChange={(checked) => {
+                        const newStatus = checked ? 1 : 0;
+                        record.status = newStatus;
+                        action?.reload();
+                      }}
+                    />
+                  ),
                 },
                 {
                   title: '备注',
@@ -670,6 +743,7 @@ const ProductManagement: React.FC = () => {
                     lineId: unusedLine?.id || 0,
                     productId: editingProductId || 0,
                     worksHourCapacity: 0,
+                    status: 1,
                     remark: '',
                   };
                 },
