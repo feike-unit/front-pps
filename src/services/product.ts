@@ -1,9 +1,11 @@
 import api, { PageResponse } from './api';
+import type { CapacityRule } from './capacityRule';
 
 /**
  * 货品类型定义
  */
 export interface Product {
+  capacityRules?: CapacityRule[];
   id?: number;
   productCode: string;
   productName: string;
@@ -111,4 +113,4 @@ export const searchProducts = async (keyword: string): Promise<Product[]> => {
     params: { keyword }
   });
   return response.data;
-}; 
+};

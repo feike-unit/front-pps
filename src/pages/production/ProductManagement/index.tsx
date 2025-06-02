@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { debounce } from 'lodash';
 import {
   Button,
@@ -37,9 +37,14 @@ import {
   ProductType,
   ProductStatus
 } from '../../../services/product';
+import { searchLines } from '../../../services/line';
+import type { CapacityRule } from '../../../services/capacityRule';
+import { EditableProTable } from '@ant-design/pro-components';
 
 const ProductManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
+  const [capacityRules, setCapacityRules] = useState<CapacityRule[]>([]);
+  const [editingProductId, setEditingProductId] = useState<number>();
   const [searchParams, setSearchParams] = useState<{
     keyword?: string;
     productType?: ProductType;
@@ -151,7 +156,15 @@ const ProductManagement: React.FC = () => {
                 <a><EditOutlined style={{ color: '#1890ff' }} /></a>
               </Tooltip>
             }
-            initialValues={record}
+            initialValues={{
+              ...record,
+              capacityRules: record.capacityRules || []
+            }}
+            onValuesChange={(changedValues) => {
+              if (changedValues.capacityRules) {
+                setCapacityRules(changedValues.capacityRules);
+              }
+            }}
             onFinish={async (values) => {
               try {
                 const params = {
@@ -237,6 +250,89 @@ const ProductManagement: React.FC = () => {
                 initialValue={true}
               />
             </ProForm.Group>
+
+            <ProForm.Item
+              label="产能规则"
+              name="capacityRules"
+              trigger="onValuesChange"
+            >
+              <EditableProTable<CapacityRule>
+                rowKey="id"
+                columns={[
+                  {
+                    title: '拉线',
+                    dataIndex: 'lineId',
+                    valueType: 'select',
+                    fieldProps: {
+                      showSearch: true,
+                      filterOption: (input: string, option?: { label: string }) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase()),
+                    },
+                    request: async () => {
+                      const lines = await searchLines('');
+                      return lines.map(line => ({
+                        label: `${line.lineCode} - ${line.lineName}`,
+                        value: line.id,
+                      }));
+                    },
+                    formItemProps: {
+                      rules: [{ required: true, message: '请选择拉线' }],
+                    },
+                  },
+                  {
+                    title: '工时产能',
+                    dataIndex: 'worksHourCapacity',
+                    valueType: 'digit',
+                    fieldProps: {
+                      min: 0,
+                      precision: 2,
+                    },
+                    formItemProps: {
+                      rules: [{ required: true, message: '请输入工时产能' }],
+                    },
+                  },
+                  {
+                    title: '备注',
+                    dataIndex: 'remark',
+                    valueType: 'text',
+                  },
+                  {
+                    title: '操作',
+                    valueType: 'option',
+                    width: 80,
+                    render: (text, record, _, action) => [
+                      <a
+                        key="delete"
+                        onClick={() => {
+                          if (record.id) {
+                            setCapacityRules(capacityRules.filter(item => item.id !== record.id));
+                          }
+                        }}
+                      >
+                        删除
+                      </a>,
+                    ],
+                  },
+                ]}
+                value={capacityRules}
+                onChange={(value) => setCapacityRules([...value])}
+                editable={{
+                  type: 'multiple',
+                  actionRender: (row, config, defaultDoms) => {
+                    return [defaultDoms.delete];
+                  },
+                }}
+                recordCreatorProps={{
+                  record: (index, dataSource) => ({
+                    id: Date.now(),
+                    lineId: 0,
+                    productId: editingProductId || 0,
+                    worksHourCapacity: 0,
+                    remark: '',
+                  } as CapacityRule),
+                }}
+              />
+            </ProForm.Item>
           </ModalForm>
           <Popconfirm
             title="确定要删除该货品吗？"
@@ -350,7 +446,10 @@ const ProductManagement: React.FC = () => {
           key="create"
           title="新建货品"
           trigger={
-            <Button type="primary">
+            <Button type="primary" onClick={() => {
+              setEditingProductId(undefined);
+              setCapacityRules([]);
+            }}>
               <PlusOutlined />
               新建
             </Button>
@@ -360,6 +459,7 @@ const ProductManagement: React.FC = () => {
               const params = {
                 ...values,
                 status: values.status ? ProductStatus.ENABLED : ProductStatus.DISABLED,
+                capacityRules: values.capacityRules || []
               };
               await createProduct(params);
               message.success('创建成功');
@@ -434,6 +534,89 @@ const ProductManagement: React.FC = () => {
               initialValue={true}
             />
           </ProForm.Group>
+
+          <ProForm.Item
+            label="产能规则"
+            name="capacityRules"
+            trigger="onValuesChange"
+          >
+            <EditableProTable<CapacityRule>
+              rowKey="id"
+              columns={[
+                {
+                  title: '拉线',
+                  dataIndex: 'lineId',
+                  valueType: 'select',
+                  fieldProps: {
+                    showSearch: true,
+                    filterOption: (input: string, option?: { label: string }) =>
+                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase()),
+                  },
+                  request: async () => {
+                    const lines = await searchLines('');
+                    return lines.map(line => ({
+                      label: `${line.lineCode} - ${line.lineName}`,
+                      value: line.id,
+                    }));
+                  },
+                  formItemProps: {
+                    rules: [{ required: true, message: '请选择拉线' }],
+                  },
+                },
+                {
+                  title: '工时产能',
+                  dataIndex: 'worksHourCapacity',
+                  valueType: 'digit',
+                  fieldProps: {
+                    min: 0,
+                    precision: 2,
+                  },
+                  formItemProps: {
+                    rules: [{ required: true, message: '请输入工时产能' }],
+                  },
+                },
+                {
+                  title: '备注',
+                  dataIndex: 'remark',
+                  valueType: 'text',
+                },
+                {
+                  title: '操作',
+                  valueType: 'option',
+                  width: 80,
+                  render: (text, record, _, action) => [
+                    <a
+                      key="delete"
+                      onClick={() => {
+                        if (record.id) {
+                          setCapacityRules(capacityRules.filter(item => item.id !== record.id));
+                        }
+                      }}
+                    >
+                      删除
+                    </a>,
+                  ],
+                },
+              ]}
+              value={capacityRules}
+              onChange={(value) => setCapacityRules([...value])}
+              editable={{
+                type: 'multiple',
+                actionRender: (row, config, defaultDoms) => {
+                  return [defaultDoms.delete];
+                },
+              }}
+              recordCreatorProps={{
+                record: (index, dataSource) => ({
+                  id: Date.now(),
+                  lineId: 0,
+                  productId: editingProductId || 0,
+                  worksHourCapacity: 0,
+                  remark: '',
+                } as CapacityRule),
+              }}
+            />
+          </ProForm.Item>
         </ModalForm>,
         <Button
           key="sync"
@@ -479,4 +662,4 @@ const ProductManagement: React.FC = () => {
   );
 };
 
-export default ProductManagement; 
+export default ProductManagement;
