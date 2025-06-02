@@ -11,7 +11,6 @@ export interface CapacityRule {
   productCode?: string;
   productName?: string;
   worksHourCapacity: number;
-  coefficient: number;
   status?: number;
   remark?: string;
   createdAt?: string;
@@ -22,7 +21,6 @@ export interface CapacityRuleUpdateDto {
   lineId: number;
   productId: number;
   worksHourCapacity: number;
-  coefficient: number;
   status?: number;
   remark?: string;
 }
@@ -87,4 +85,4 @@ export const getCapacityRulesByProductId = async (productId: number): Promise<Ca
 // 更新产能规则状态
 export const updateCapacityRuleStatus = async (id: number, status: number): Promise<void> => {
   await api.patch(`/production/capacity-rules/${id}/status?status=${status}`);
-}; 
+};
