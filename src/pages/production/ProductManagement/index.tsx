@@ -411,7 +411,7 @@ const ProductManagement: React.FC = () => {
                       id: Date.now(),
                       lineId: unusedLine?.id || 0,
                       productId: editingProductId || 0,
-                      worksHourCapacity: 0,
+                      worksHourCapacity: 1.00,
                       status: 1,
                       remark: '',
                     };
@@ -755,7 +755,7 @@ const ProductManagement: React.FC = () => {
                     id: Date.now(),
                     lineId: unusedLine?.id || 0,
                     productId: editingProductId || 0,
-                    worksHourCapacity: 0,
+                    worksHourCapacity: 1.00,
                     status: 1,
                     remark: '',
                   };
