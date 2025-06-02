@@ -36,7 +36,7 @@ import {
   ProductPageRequest, 
   ProductType,
   ProductStatus,
-  ProductUpdate
+  getProductById
 } from '../../../services/product';
 import { searchLines } from '../../../services/line';
 import type { Line } from '../../../services/line';
@@ -189,6 +189,19 @@ const ProductManagement: React.FC = () => {
             onValuesChange={(changedValues) => {
               if (changedValues.capacityRules) {
                 setCapacityRules(changedValues.capacityRules);
+              }
+            }}
+            request={async () => {
+              try {
+                // 获取最新的货品详情
+                const latestProduct = await getProductById(record.id!);
+                // 更新产能规则状态
+                setCapacityRules(latestProduct.capacityRules || []);
+                return latestProduct;
+              } catch (error) {
+                const apiError = error as ApiError;
+                message.error(apiError.response?.data?.message || apiError.message || '获取货品详情失败');
+                return record;
               }
             }}
             onFinish={async (values) => {
