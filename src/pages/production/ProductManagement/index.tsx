@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { debounce } from 'lodash';
 import {
   Button,
@@ -38,13 +38,38 @@ import {
   ProductStatus
 } from '../../../services/product';
 import { searchLines } from '../../../services/line';
+import type { Line } from '../../../services/line';
 import type { CapacityRule } from '../../../services/capacityRule';
 import { EditableProTable } from '@ant-design/pro-components';
+
+type CapacityRuleCreatorProps = {
+  id: number;
+  lineId: number;
+  productId: number;
+  worksHourCapacity: number;
+  remark: string;
+};
 
 const ProductManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [capacityRules, setCapacityRules] = useState<CapacityRule[]>([]);
   const [editingProductId, setEditingProductId] = useState<number>();
+  const [lines, setLines] = useState<Line[]>([]);
+
+  // 初始化获取拉线数据
+  useEffect(() => {
+    const fetchLines = async () => {
+      try {
+        const lines = await searchLines('');
+        console.log('Loaded lines:', lines); // 调试日志
+        setLines(lines);
+      } catch (error) {
+        const apiError = error as ApiError;
+        message.error(apiError.response?.data?.message || apiError.message || '获取拉线数据失败');
+      }
+    };
+    fetchLines();
+  }, []);
   const [searchParams, setSearchParams] = useState<{
     keyword?: string;
     productType?: ProductType;
@@ -299,7 +324,7 @@ const ProductManagement: React.FC = () => {
                   {
                     title: '操作',
                     valueType: 'option',
-                    width: 80,
+                    width: 120,
                     render: (text, record, _, action) => [
                       <a
                         key="delete"
@@ -318,19 +343,40 @@ const ProductManagement: React.FC = () => {
                 onChange={(value) => setCapacityRules([...value])}
                 editable={{
                   type: 'multiple',
+                  editableKeys: capacityRules.map(item => item.id).filter(Boolean) as React.Key[],
                   actionRender: (row, config, defaultDoms) => {
                     return [defaultDoms.delete];
                   },
+                  onValuesChange: (record, recordList) => {
+                    setCapacityRules(recordList);
+                  },
                 }}
                 recordCreatorProps={{
-                  record: (index, dataSource) => ({
-                    id: Date.now(),
-                    lineId: 0,
-                    productId: editingProductId || 0,
-                    worksHourCapacity: 0,
-                    remark: '',
-                  } as CapacityRule),
+                  newRecordType: 'dataSource',
+                  record: () => {
+                    // 找到第一个未被使用的拉线
+                    const unusedLine = lines.find(line => 
+                      line.id !== undefined && 
+                      !capacityRules.some(rule => rule.lineId === line.id)
+                    );
+                    
+                    return {
+                      id: Date.now(),
+                      lineId: unusedLine?.id || 0,
+                      productId: editingProductId || 0,
+                      worksHourCapacity: 0,
+                      remark: '',
+                    };
+                  },
+                  creatorButtonText: '添加产能规则',
+                  position: 'bottom',
+                  disabled: !lines.some(line => 
+                    line.id !== undefined && 
+                    !capacityRules.some(rule => rule.lineId === line.id)
+                  ),
                 }}
+                bordered
+                scroll={{ y: 300 }}
               />
             </ProForm.Item>
           </ModalForm>
@@ -583,7 +629,7 @@ const ProductManagement: React.FC = () => {
                 {
                   title: '操作',
                   valueType: 'option',
-                  width: 80,
+                  width: 120,
                   render: (text, record, _, action) => [
                     <a
                       key="delete"
@@ -602,19 +648,40 @@ const ProductManagement: React.FC = () => {
               onChange={(value) => setCapacityRules([...value])}
               editable={{
                 type: 'multiple',
+                editableKeys: capacityRules.map(item => item.id).filter(Boolean) as React.Key[],
                 actionRender: (row, config, defaultDoms) => {
                   return [defaultDoms.delete];
                 },
+                onValuesChange: (record, recordList) => {
+                  setCapacityRules(recordList);
+                },
               }}
               recordCreatorProps={{
-                record: (index, dataSource) => ({
-                  id: Date.now(),
-                  lineId: 0,
-                  productId: editingProductId || 0,
-                  worksHourCapacity: 0,
-                  remark: '',
-                } as CapacityRule),
+                newRecordType: 'dataSource',
+                record: () => {
+                  // 找到第一个未被使用的拉线
+                  const unusedLine = lines.find(line => 
+                    line.id !== undefined && 
+                    !capacityRules.some(rule => rule.lineId === line.id)
+                  );
+                  
+                  return {
+                    id: Date.now(),
+                    lineId: unusedLine?.id || 0,
+                    productId: editingProductId || 0,
+                    worksHourCapacity: 0,
+                    remark: '',
+                  };
+                },
+                creatorButtonText: '添加产能规则',
+                position: 'bottom',
+                disabled: !lines.some(line => 
+                  line.id !== undefined && 
+                  !capacityRules.some(rule => rule.lineId === line.id)
+                ),
               }}
+              bordered
+              scroll={{ y: 300 }}
             />
           </ProForm.Item>
         </ModalForm>,
