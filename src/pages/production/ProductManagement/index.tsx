@@ -206,6 +206,19 @@ const ProductManagement: React.FC = () => {
             }}
             onFinish={async (values) => {
               try {
+                // 检查是否有重复的拉线
+                const lineIds = values.capacityRules?.map(rule => rule.lineId) || [];
+                const duplicateLines = lineIds.filter((id, index) => lineIds.indexOf(id) !== index);
+                if (duplicateLines.length > 0) {
+                  // 获取重复的拉线名称
+                  const duplicateLineNames = lines
+                    .filter(line => duplicateLines.includes(line.id!))
+                    .map(line => `${line.lineCode} - ${line.lineName}`)
+                    .join(', ');
+                  message.error(`存在重复的拉线: ${duplicateLineNames}`);
+                  return false;
+                }
+
                 // 更新产品基本信息
                 const productData = {
                   productCode: values.productCode,
@@ -550,6 +563,19 @@ const ProductManagement: React.FC = () => {
           }
           onFinish={async (values) => {
             try {
+              // 检查是否有重复的拉线
+              const lineIds = values.capacityRules?.map(rule => rule.lineId) || [];
+              const duplicateLines = lineIds.filter((id, index) => lineIds.indexOf(id) !== index);
+              if (duplicateLines.length > 0) {
+                // 获取重复的拉线名称
+                const duplicateLineNames = lines
+                  .filter(line => duplicateLines.includes(line.id!))
+                  .map(line => `${line.lineCode} - ${line.lineName}`)
+                  .join(', ');
+                message.error(`存在重复的拉线: ${duplicateLineNames}`);
+                return false;
+              }
+
               // 创建产品基本信息
               const productData = {
                 productCode: values.productCode,
