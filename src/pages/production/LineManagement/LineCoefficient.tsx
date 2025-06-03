@@ -115,12 +115,12 @@ const LineCoefficient: React.FC<LineCoefficientProps> = ({ lineId, visible, onCl
       title="拉线系数维护"
       open={visible}
       onCancel={onClose}
-      width={900}
+      width={1000}
       style={{ top: 20 }}
-      bodyStyle={{ padding: '12px' }}
+      bodyStyle={{ padding: '12px', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}
       footer={null}
     >
-      <Card bodyStyle={{ padding: '12px' }}>
+      <Card bodyStyle={{ padding: '12px', minHeight: '600px' }}>
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
@@ -131,7 +131,7 @@ const LineCoefficient: React.FC<LineCoefficientProps> = ({ lineId, visible, onCl
           events={calendarEvents}
           select={handleDateSelect}
           eventClick={handleEventClick}
-          height="auto"
+          height={550}
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
