@@ -1,20 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Modal, Form, Input, DatePicker, message, Popconfirm, Tooltip, Button } from 'antd';
+import React, {useEffect, useState} from 'react';
+import {Button, Card, DatePicker, Form, Input, message, Modal, Popconfirm, Tooltip} from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import multiMonthPlugin from '@fullcalendar/multimonth';
-import type { Dayjs } from 'dayjs';
+import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
-import type { LineCoefficient } from '../../../services/line';
+import type {LineCoefficient} from '../../../services/line';
 import {
-  getLineCoefficientsByLineId,
   createLineCoefficient,
-  updateLineCoefficient,
   deleteLineCoefficient,
+  getLineCoefficientsByLineId,
+  updateLineCoefficient,
 } from '../../../services/line';
-import type { ApiError } from '../../../services/api';
+import type {ApiError} from '../../../services/api';
 
 const { RangePicker } = DatePicker;
 
@@ -52,14 +51,13 @@ const LineCoefficient: React.FC<LineCoefficientProps> = ({ lineId, visible, onCl
   const calendarEvents = coefficients.map(coef => ({
     id: coef.id?.toString(),
     title: `系数: ${coef.coefficient}`,
-    start: coef.startDate,
-    end: dayjs(coef.endDate).add(1, 'day').format('YYYY-MM-DD'), // FullCalendar需要加1天
+    date: coef.dayDate,
     extendedProps: {
-      remark: coef.remark,
-      coefficient: coef.coefficient,
+      coefficient: coef.coefficient
     },
     backgroundColor: '#1890ff',
     borderColor: '#1890ff',
+    textColor: '#fff'
   }));
 
   // 处理日期选择
@@ -77,9 +75,8 @@ const LineCoefficient: React.FC<LineCoefficientProps> = ({ lineId, visible, onCl
     const coefficient = coefficients.find(c => c.id?.toString() === clickInfo.event.id);
     if (coefficient) {
       form.setFieldsValue({
-        dateRange: [dayjs(coefficient.startDate), dayjs(coefficient.endDate)],
+        dateRange: [dayjs(coefficient.dayDate), dayjs(coefficient.dayDate)],
         coefficient: coefficient.coefficient,
-        remark: coefficient.remark,
       });
       setEditingId(coefficient.id!);
       setIsModalVisible(true);
@@ -95,7 +92,6 @@ const LineCoefficient: React.FC<LineCoefficientProps> = ({ lineId, visible, onCl
         startDate: values.dateRange[0].format('YYYY-MM-DD'),
         endDate: values.dateRange[1].format('YYYY-MM-DD'),
         coefficient: values.coefficient,
-        remark: values.remark,
       };
 
       if (editingId) {
@@ -119,16 +115,24 @@ const LineCoefficient: React.FC<LineCoefficientProps> = ({ lineId, visible, onCl
       title="拉线系数维护"
       open={visible}
       onCancel={onClose}
-      width={1200}
-      footer={null}
+      width={900}
       style={{ top: 20 }}
       bodyStyle={{ padding: '12px' }}
+      footer={null}
     >
       <Card bodyStyle={{ padding: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <DatePicker
+            picker="month"
+            value={currentDate}
+            onChange={(date) => date && setCurrentDate(date)}
+            allowClear={false}
+          />
+        </div>
         <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin, multiMonthPlugin]}
-          initialView="multiMonthYear"
-          multiMonthMaxColumns={4}
+          plugins={[dayGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          initialDate={currentDate.format('YYYY-MM-DD')}
           locale="zh-cn"
           selectable={true}
           selectMirror={true}
@@ -139,10 +143,13 @@ const LineCoefficient: React.FC<LineCoefficientProps> = ({ lineId, visible, onCl
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
-            right: 'multiMonthYear,dayGridMonth'
+            right: ''
+          }}
+          datesSet={(dateInfo) => {
+            setCurrentDate(dayjs(dateInfo.view.currentStart));
           }}
           eventContent={(arg) => (
-            <Tooltip title={`系数: ${arg.event.extendedProps.coefficient}${arg.event.extendedProps.remark ? ' - ' + arg.event.extendedProps.remark : ''}`}>
+            <Tooltip title={`系数: ${arg.event.extendedProps.coefficient}`}>
               <div style={{ padding: '2px 4px', borderRadius: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {arg.event.title}
               </div>
@@ -198,17 +205,25 @@ const LineCoefficient: React.FC<LineCoefficientProps> = ({ lineId, visible, onCl
             <RangePicker style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
-            name="coefficient"
-            label="系数"
-            rules={[
-              { required: true, message: '请输入系数' },
-              { type: 'number', min: 0, message: '系数必须大于0' },
-            ]}
+              name="coefficient"
+              label="系数"
+              rules={[
+                { required: true, message: '请输入系数' },
+                {
+                  validator: (_, value) => {
+                    const num = parseFloat(value);
+                    if (isNaN(num)) {
+                      return Promise.reject('请输入有效的数字');
+                    }
+                    if (num <= 0) {
+                      return Promise.reject('系数必须大于0');
+                    }
+                    return Promise.resolve();
+                  }
+                }
+              ]}
           >
-            <Input type="number" step="0.01" />
-          </Form.Item>
-          <Form.Item name="remark" label="备注">
-            <Input.TextArea />
+            <Input type="number" step="0.1" min="0"/>
           </Form.Item>
         </Form>
       </Modal>

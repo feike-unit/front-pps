@@ -53,7 +53,6 @@ export interface LineCoefficient {
   startDate: string;
   endDate: string;
   coefficient: number;
-  remark?: string;
   createdAt?: string;
   updatedAt?: string;
 }
