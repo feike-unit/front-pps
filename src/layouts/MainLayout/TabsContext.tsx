@@ -41,7 +41,8 @@ export const TabsProvider: React.FC<{ children: ReactNode, userInfo: UserInfo }>
     return {
       ...tab,
       icon: metadata?.icon,
-      label: metadata?.label || tab.label,
+      // 优先使用存储的标签名称，而不是路由元数据中的名称
+      label: tab.label || metadata?.label || tab.key.split('/').pop() || '未知页面',
       closable: metadata?.closable ?? tab.closable
     };
   };
