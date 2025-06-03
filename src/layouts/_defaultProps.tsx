@@ -27,43 +27,62 @@ const isPathInUserMenus = (path: string, userMenus: Menu[]): boolean => {
     return menus.some(menu => {
       // 检查当前菜单的路径
       if (!menu.path) {
-        // console.log(`Menu without path:`, menu);
         return false;
       }
 
       // 将路径标准化（移除末尾的斜杠）
       const normalizedMenuPath = menu.path.replace(/\/$/, '');
 
-      // console.log(`Comparing paths - Menu: ${normalizedMenuPath}, Current: ${path}`);
-
       // 1. 完全匹配
       if (normalizedMenuPath === path) {
-        console.log(`Exact match found for ${path}`);
         return true;
       }
 
       // 2. 检查是否是父路径
       if (path.startsWith(normalizedMenuPath + '/')) {
-        // console.log(`Parent path match found: ${normalizedMenuPath} is parent of ${path}`);
         return true;
       }
 
       // 3. 检查子菜单
       if (menu.children && menu.children.length > 0) {
-        const childMatch = checkPath(menu.children);
-        if (childMatch) {
-          // console.log(`Child menu match found for ${path}`);
-        }
-        return childMatch;
+        return checkPath(menu.children);
       }
 
       return false;
     });
   };
 
-  const result = checkPath(userMenus);
-  // console.log(`Final result for path ${path}: ${result}`);
-  return result;
+  return checkPath(userMenus);
+};
+
+// 在用户菜单中查找对应路径的菜单名称
+const findMenuName = (path: string, userMenus: Menu[]): string | undefined => {
+  // 确保路径以/开头
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+
+  console.log('Finding menu name for path:', path);
+  console.log('Available menus:', userMenus);
+
+  for (const menu of userMenus) {
+    // 将菜单路径标准化
+    const menuPath = menu.path?.startsWith('/') ? menu.path : '/' + (menu.path || '');
+    console.log('Comparing with menu:', { path: menuPath, name: menu.name });
+
+    if (menuPath === path) {
+      console.log('Found exact match:', menu.name);
+      return menu.name;
+    }
+    if (menu.children && menu.children.length > 0) {
+      const childName = findMenuName(path, menu.children);
+      if (childName) {
+        return childName;
+      }
+    }
+  }
+  console.log('No match found for path:', path);
+  return undefined;
 };
 
 // 将路由配置转换为 ProLayout 所需的格式
@@ -88,36 +107,37 @@ const convertRoutesToProLayoutFormat = async (routes: any[]) => {
     return routes.map(route => {
       // 跳过隐藏的菜单
       if (route.metadata?.hideInMenu) {
-        // console.log(`Skipping hidden menu: ${route.path}`);
         return null;
       }
 
       // 检查路径是否在用户菜单中
       const hasPermission = isPathInUserMenus(route.path, userMenus);
-      console.log(`Route ${route.path} permission check: ${hasPermission}`);
+      console.log(`Route ${route.path} permission check:`, hasPermission);
 
       if (!hasPermission) {
-        console.log(`No permission for route: ${route.path}`);
         return null;
       }
 
+      // 查找数据库中的菜单名称
+      const menuName = findMenuName(route.path, userMenus);
+      console.log(`Found menu name for ${route.path}:`, menuName);
+
       const result: any = {
         path: route.path,
-        name: route.metadata?.label,
+        name: menuName || route.metadata?.label, // 优先使用数据库中的菜单名称
         icon: route.metadata?.icon,
       };
 
+      console.log('Created menu item:', result);
+
       // 处理子路由
       if (route.children) {
-        // console.log(`Processing children for route: ${route.path}`);
         const children = convert(route.children).filter(Boolean);
         if (children.length > 0) {
           result.routes = children;
-          // console.log(`Added ${children.length} children to route: ${route.path}`);
         }
       }
 
-      console.log(`Converted route:`, result);
       return result;
     }).filter(Boolean);
   };
@@ -134,7 +154,6 @@ const layoutRoutes = mainLayoutRoute?.children || [];
 // 由于 convertRoutesToProLayoutFormat 现在是异步的，我们需要一个函数来获取配置
 export const getDefaultProps = async () => {
   const menuRoutes = await convertRoutesToProLayoutFormat(layoutRoutes);
-  console.log('Final menu routes:', menuRoutes);
   return {
     route: {
       path: '/',
