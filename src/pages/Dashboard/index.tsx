@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Col, Row, Statistic, Progress, Table, Tag, DatePicker } from 'antd';
+import { Card, Col, Row, Statistic, Progress, Table, Tag, DatePicker, message } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import {
@@ -13,88 +13,98 @@ import {
   ScheduleOutlined,
 } from '@ant-design/icons';
 import { Line } from '@ant-design/plots';
+import {
+  DemandStats,
+  PlanStats,
+  PullLineStats,
+  TodayDemand,
+  TodayPlan,
+  TrendData,
+  getDemandStats,
+  getPlanStats,
+  getPullLineStats,
+  getTodayDemands,
+  getTodayPlans,
+  getDemandTrend,
+  getPlanTrend,
+} from '@/services/dashboard';
 import './index.less';
 
+// 默认空数据
+const emptyData = {
+  demandStats: {
+    totalCount: 0,
+    inProgressCount: 0,
+    completedCount: 0,
+    delayedCount: 0,
+    completionRate: 0,
+  },
+  planStats: {
+    totalCount: 0,
+    onScheduleCount: 0,
+    delayedCount: 0,
+    completionRate: 0,
+  },
+  pullLineStats: {
+    totalLines: 0,
+    activeLines: 0,
+    productTypes: 0,
+    totalPlannedQuantity: 0,
+  },
+  todayDemands: [] as TodayDemand[],
+  todayPlans: [] as TodayPlan[],
+  demandTrend: [] as TrendData[],
+  planTrend: [] as TrendData[],
+};
+
 const Dashboard: React.FC = () => {
-  const [dateRange, setDateRange] = useState<[string, string] | null>(null);
-  const [data, setData] = useState({
-    demandStats: {
-      totalCount: 156,
-      inProgressCount: 45,
-      completedCount: 98,
-      delayedCount: 13,
-      completionRate: 78.5,
-    },
-    planStats: {
-      totalCount: 245,
-      onScheduleCount: 220,
-      delayedCount: 25,
-      completionRate: 89.8,
-    },
-    recentDemands: [
-      {
-        id: 1,
-        businessDocNo: 'DD202403001',
-        customerName: '客户A',
-        productName: '产品A',
-        demandQuantity: 1000,
-        completionQuantity: 600,
-        deliveryDate: '2024-03-15',
-        status: 1,
-        updateTime: '2024-03-15 10:00:00',
-      },
-      {
-        id: 2,
-        businessDocNo: 'DD202403002',
-        customerName: '客户B',
-        productName: '产品B',
-        demandQuantity: 800,
-        completionQuantity: 400,
-        deliveryDate: '2024-03-16',
-        status: 1,
-        updateTime: '2024-03-15 09:30:00',
-      },
-      {
-        id: 3,
-        businessDocNo: 'DD202403003',
-        customerName: '客户C',
-        productName: '产品C',
-        demandQuantity: 500,
-        completionQuantity: 500,
-        deliveryDate: '2024-03-15',
-        status: 2,
-        updateTime: '2024-03-14 15:00:00',
-      },
-    ],
-    recentPlans: [
-      {
-        id: 1,
-        batchCode: 'BP202403001',
-        lineName: '产线A',
-        productName: '产品A',
-        taskQuantity: 500,
-        completionQuantity: 300,
-        startDate: '2024-03-01',
-        endDate: '2024-03-10',
-        status: 1,
-        updateTime: '2024-03-15 11:00:00',
-      },
-    ],
-    demandTrend: [
-      { date: '2024-03-01', value: 100 },
-      { date: '2024-03-02', value: 120 },
-      { date: '2024-03-03', value: 140 },
-      { date: '2024-03-04', value: 130 },
-      { date: '2024-03-05', value: 150 },
-    ],
-    planTrend: [
-      { date: '2024-03-01', value: 80 },
-      { date: '2024-03-02', value: 90 },
-      { date: '2024-03-03', value: 110 },
-      { date: '2024-03-04', value: 100 },
-      { date: '2024-03-05', value: 120 },
-    ],
-  });
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(emptyData);
+
+  // 获取看板数据
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [
+        demandStats,
+        planStats,
+        pullLineStats,
+        todayDemands,
+        todayPlans,
+        demandTrend,
+        planTrend,
+      ] = await Promise.all([
+        getDemandStats(),
+        getPlanStats(),
+        getPullLineStats(),
+        getTodayDemands(),
+        getTodayPlans(),
+        getDemandTrend(),
+        getPlanTrend(),
+      ]);
+
+      setData({
+        demandStats,
+        planStats,
+        pullLineStats,
+        todayDemands,
+        todayPlans,
+        demandTrend,
+        planTrend,
+      });
+    } catch (error: any) {
+      message.error(error.response?.data?.message || error.message || '获取看板数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+    // 每5分钟刷新一次数据
+    const timer = setInterval(fetchDashboardData, 5 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // 需求趋势配置
   const demandTrendConfig = {
@@ -142,28 +152,12 @@ const Dashboard: React.FC = () => {
     },
   };
 
-  // 获取今日的需求数据
-  const getTodayDemands = () => {
-    const today = dayjs().format('YYYY-MM-DD');
-    return data.recentDemands.filter(demand => 
-      dayjs(demand.updateTime).format('YYYY-MM-DD') === today
-    );
-  };
-
-  // 获取今日的计划数据
-  const getTodayPlans = () => {
-    const today = dayjs().format('YYYY-MM-DD');
-    return data.recentPlans.filter(plan => 
-      dayjs(plan.updateTime).format('YYYY-MM-DD') === today
-    );
-  };
-
   return (
     <ProCard className="dashboard-container">
       {/* 顶部统计卡片 */}
       <Row gutter={[16, 16]}>
         <Col span={12}>
-          <Card title="需求执行统计" className="stat-card" bordered={false}>
+          <Card title="需求执行统计" className="stat-card" bordered={false} loading={loading}>
             <Row gutter={[16, 16]}>
               <Col span={6}>
                 <Statistic
@@ -203,7 +197,7 @@ const Dashboard: React.FC = () => {
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="计划执行统计" className="stat-card" bordered={false}>
+          <Card title="计划执行统计" className="stat-card" bordered={false} loading={loading}>
             <Row gutter={[16, 16]}>
               <Col span={6}>
                 <Statistic
@@ -256,10 +250,11 @@ const Dashboard: React.FC = () => {
             } 
             className="progress-card" 
             bordered={false}
+            loading={loading}
           >
             <div className="progress-list">
-              {getTodayDemands().length > 0 ? (
-                getTodayDemands().map(demand => (
+              {data.todayDemands.length > 0 ? (
+                data.todayDemands.map((demand: TodayDemand) => (
                   <div key={demand.id} className="progress-item">
                     <div className="progress-info">
                       <div className="progress-title">
@@ -297,10 +292,11 @@ const Dashboard: React.FC = () => {
             }
             className="progress-card" 
             bordered={false}
+            loading={loading}
           >
             <div className="progress-list">
-              {getTodayPlans().length > 0 ? (
-                getTodayPlans().map(plan => (
+              {data.todayPlans.length > 0 ? (
+                data.todayPlans.map((plan: TodayPlan) => (
                   <div key={plan.id} className="progress-item">
                     <div className="progress-info">
                       <div className="progress-title">
