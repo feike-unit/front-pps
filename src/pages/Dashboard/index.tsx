@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Card, Col, Row, Statistic, Progress } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Col, Row, Statistic, Progress, Table, Tag, DatePicker } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
+import dayjs from 'dayjs';
 import {
   TeamOutlined,
   ClockCircleOutlined,
@@ -11,263 +12,320 @@ import {
   AlertOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
+import { Line } from '@ant-design/plots';
 import './index.less';
 
-// 模拟数据
-const mockData = {
-  // 生产计划总览
-  planOverview: {
-    totalPlans: 156,
-    inProgress: 45,
-    completed: 98,
-    delayed: 13,
-    planCompletionRate: 78.5,
-    onTimeDeliveryRate: 92.3,
-  },
-  // 产线状态
-  lineStatus: {
-    totalLines: 24,
-    running: 18,
-    idle: 4,
-    maintenance: 2,
-    utilization: 85.2,
-  },
-  // 产能分析
-  capacityAnalysis: {
-    plannedCapacity: 10000,
-    actualCapacity: 8500,
-    capacityUtilization: 85,
-    bottleneckLines: 3,
-  },
-  // 订单执行
-  orderExecution: {
-    totalOrders: 245,
-    onSchedule: 220,
-    delayed: 25,
-    urgentOrders: 8,
-  }
-};
-
 const Dashboard: React.FC = () => {
-  const [data] = useState(mockData);
+  const [dateRange, setDateRange] = useState<[string, string] | null>(null);
+  const [data, setData] = useState({
+    demandStats: {
+      totalCount: 156,
+      inProgressCount: 45,
+      completedCount: 98,
+      delayedCount: 13,
+      completionRate: 78.5,
+    },
+    planStats: {
+      totalCount: 245,
+      onScheduleCount: 220,
+      delayedCount: 25,
+      completionRate: 89.8,
+    },
+    recentDemands: [
+      {
+        id: 1,
+        businessDocNo: 'DD202403001',
+        customerName: '客户A',
+        productName: '产品A',
+        demandQuantity: 1000,
+        completionQuantity: 600,
+        deliveryDate: '2024-03-15',
+        status: 1,
+        updateTime: '2024-03-15 10:00:00',
+      },
+      {
+        id: 2,
+        businessDocNo: 'DD202403002',
+        customerName: '客户B',
+        productName: '产品B',
+        demandQuantity: 800,
+        completionQuantity: 400,
+        deliveryDate: '2024-03-16',
+        status: 1,
+        updateTime: '2024-03-15 09:30:00',
+      },
+      {
+        id: 3,
+        businessDocNo: 'DD202403003',
+        customerName: '客户C',
+        productName: '产品C',
+        demandQuantity: 500,
+        completionQuantity: 500,
+        deliveryDate: '2024-03-15',
+        status: 2,
+        updateTime: '2024-03-14 15:00:00',
+      },
+    ],
+    recentPlans: [
+      {
+        id: 1,
+        batchCode: 'BP202403001',
+        lineName: '产线A',
+        productName: '产品A',
+        taskQuantity: 500,
+        completionQuantity: 300,
+        startDate: '2024-03-01',
+        endDate: '2024-03-10',
+        status: 1,
+        updateTime: '2024-03-15 11:00:00',
+      },
+    ],
+    demandTrend: [
+      { date: '2024-03-01', value: 100 },
+      { date: '2024-03-02', value: 120 },
+      { date: '2024-03-03', value: 140 },
+      { date: '2024-03-04', value: 130 },
+      { date: '2024-03-05', value: 150 },
+    ],
+    planTrend: [
+      { date: '2024-03-01', value: 80 },
+      { date: '2024-03-02', value: 90 },
+      { date: '2024-03-03', value: 110 },
+      { date: '2024-03-04', value: 100 },
+      { date: '2024-03-05', value: 120 },
+    ],
+  });
+
+  // 需求趋势配置
+  const demandTrendConfig = {
+    data: data.demandTrend,
+    xField: 'date',
+    yField: 'value',
+    smooth: true,
+    meta: {
+      value: {
+        alias: '需求完成量',
+      },
+    },
+    color: '#1890ff',
+    point: {
+      size: 4,
+      shape: 'circle',
+      style: {
+        fill: 'white',
+        stroke: '#1890ff',
+        lineWidth: 2,
+      },
+    },
+  };
+
+  // 计划趋势配置
+  const planTrendConfig = {
+    data: data.planTrend,
+    xField: 'date',
+    yField: 'value',
+    smooth: true,
+    meta: {
+      value: {
+        alias: '计划完成量',
+      },
+    },
+    color: '#52c41a',
+    point: {
+      size: 4,
+      shape: 'circle',
+      style: {
+        fill: 'white',
+        stroke: '#52c41a',
+        lineWidth: 2,
+      },
+    },
+  };
+
+  // 获取今日的需求数据
+  const getTodayDemands = () => {
+    const today = dayjs().format('YYYY-MM-DD');
+    return data.recentDemands.filter(demand => 
+      dayjs(demand.updateTime).format('YYYY-MM-DD') === today
+    );
+  };
+
+  // 获取今日的计划数据
+  const getTodayPlans = () => {
+    const today = dayjs().format('YYYY-MM-DD');
+    return data.recentPlans.filter(plan => 
+      dayjs(plan.updateTime).format('YYYY-MM-DD') === today
+    );
+  };
 
   return (
     <ProCard className="dashboard-container">
-      {/* 生产计划总览 */}
+      {/* 顶部统计卡片 */}
       <Row gutter={[16, 16]}>
-        <Col span={24}>
-          <Card 
-            title={<div className="card-title">生产计划总览</div>} 
-            className="overview-card"
-            bordered={false}
-          >
+        <Col span={12}>
+          <Card title="需求执行统计" className="stat-card" bordered={false}>
             <Row gutter={[16, 16]}>
-              <Col span={4}>
-                <div className="stat-card">
-                  <Statistic
-                    title="总计划数"
-                    value={data.planOverview.totalPlans}
-                    prefix={<ScheduleOutlined />}
-                  />
-                </div>
+              <Col span={6}>
+                <Statistic
+                  title="总需求数"
+                  value={data.demandStats.totalCount}
+                  prefix={<ScheduleOutlined />}
+                />
               </Col>
-              <Col span={4}>
-                <div className="stat-card">
-                  <Statistic
-                    title="执行中"
-                    value={data.planOverview.inProgress}
-                    prefix={<LoadingOutlined spin />}
-                    valueStyle={{ color: '#1890ff' }}
-                  />
-                </div>
+              <Col span={6}>
+                <Statistic
+                  title="执行中"
+                  value={data.demandStats.inProgressCount}
+                  valueStyle={{ color: '#1890ff' }}
+                  prefix={<LoadingOutlined />}
+                />
               </Col>
-              <Col span={4}>
-                <div className="stat-card">
-                  <Statistic
-                    title="已完成"
-                    value={data.planOverview.completed}
-                    prefix={<CheckCircleOutlined />}
-                    valueStyle={{ color: '#52c41a' }}
-                  />
-                </div>
+              <Col span={6}>
+                <Statistic
+                  title="已完成"
+                  value={data.demandStats.completedCount}
+                  valueStyle={{ color: '#52c41a' }}
+                  prefix={<CheckCircleOutlined />}
+                />
               </Col>
-              <Col span={4}>
-                <div className="stat-card">
-                  <Statistic
-                    title="延期数"
-                    value={data.planOverview.delayed}
-                    prefix={<AlertOutlined />}
-                    valueStyle={{ color: '#ff4d4f' }}
-                  />
-                </div>
-              </Col>
-              <Col span={4}>
-                <div className="stat-card">
-                  <Statistic
-                    title="计划完成率"
-                    value={data.planOverview.planCompletionRate}
-                    suffix="%"
-                    prefix={<BarChartOutlined />}
-                  />
-                </div>
-              </Col>
-              <Col span={4}>
-                <div className="stat-card">
-                  <Statistic
-                    title="准时交付率"
-                    value={data.planOverview.onTimeDeliveryRate}
-                    suffix="%"
-                    prefix={<BarChartOutlined />}
-                  />
-                </div>
+              <Col span={6}>
+                <Statistic
+                  title="延期数"
+                  value={data.demandStats.delayedCount}
+                  valueStyle={{ color: '#ff4d4f' }}
+                  prefix={<AlertOutlined />}
+                />
               </Col>
             </Row>
+            <div style={{ marginTop: 24 }}>
+              <Line {...demandTrendConfig} height={200} />
+            </div>
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card title="计划执行统计" className="stat-card" bordered={false}>
+            <Row gutter={[16, 16]}>
+              <Col span={6}>
+                <Statistic
+                  title="总计划数"
+                  value={data.planStats.totalCount}
+                  prefix={<ScheduleOutlined />}
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic
+                  title="按期执行"
+                  value={data.planStats.onScheduleCount}
+                  valueStyle={{ color: '#52c41a' }}
+                  prefix={<CheckCircleOutlined />}
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic
+                  title="延期计划"
+                  value={data.planStats.delayedCount}
+                  valueStyle={{ color: '#ff4d4f' }}
+                  prefix={<AlertOutlined />}
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic
+                  title="完成率"
+                  value={data.planStats.completionRate}
+                  suffix="%"
+                  prefix={<BarChartOutlined />}
+                />
+              </Col>
+            </Row>
+            <div style={{ marginTop: 24 }}>
+              <Line {...planTrendConfig} height={200} />
+            </div>
           </Card>
         </Col>
       </Row>
 
-      {/* 产线状态和产能分析 */}
+      {/* 需求和计划执行进度 */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={12}>
           <Card 
-            title={<div className="card-title">产线状态</div>} 
-            className="status-card"
+            title={
+              <div className="card-header">
+                <span>今日需求执行进度</span>
+                <span className="card-date">{dayjs().format('YYYY-MM-DD')}</span>
+              </div>
+            } 
+            className="progress-card" 
             bordered={false}
           >
-            <Row gutter={[16, 16]}>
-              <Col span={12}>
-                <div className="stat-card">
-                  <Statistic
-                    title="总产线数"
-                    value={data.lineStatus.totalLines}
-                    prefix={<RocketOutlined />}
-                  />
-                </div>
-              </Col>
-              <Col span={12}>
-                <div className="stat-card">
-                  <Statistic
-                    title="运行中"
-                    value={data.lineStatus.running}
-                    valueStyle={{ color: '#52c41a' }}
-                    prefix={<RocketOutlined />}
-                  />
-                </div>
-              </Col>
-              <Col span={24} style={{ marginTop: 16 }}>
-                <div className="progress-container">
-                  <Progress
-                    percent={data.lineStatus.utilization}
-                    status="active"
-                    strokeColor={{
-                      '0%': '#108ee9',
-                      '100%': '#87d068',
-                    }}
-                    strokeWidth={12}
-                  />
-                  <div className="progress-title">
-                    产线利用率
+            <div className="progress-list">
+              {getTodayDemands().length > 0 ? (
+                getTodayDemands().map(demand => (
+                  <div key={demand.id} className="progress-item">
+                    <div className="progress-info">
+                      <div className="progress-title">
+                        {demand.businessDocNo} - {demand.productName}
+                      </div>
+                      <div className="progress-sub">
+                        客户: {demand.customerName} | 交付日期: {demand.deliveryDate}
+                      </div>
+                    </div>
+                    <div className="progress-status">
+                      <Progress
+                        percent={Math.round((demand.completionQuantity / demand.demandQuantity) * 100)}
+                        status={demand.status === 2 ? 'success' : 'active'}
+                        strokeWidth={8}
+                      />
+                      <div className="progress-value">
+                        {demand.completionQuantity}/{demand.demandQuantity}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </Col>
-            </Row>
+                ))
+              ) : (
+                <div className="no-data">今日暂无需求执行数据</div>
+              )}
+            </div>
           </Card>
         </Col>
         <Col span={12}>
           <Card 
-            title={<div className="card-title">产能分析</div>} 
-            className="analysis-card"
+            title={
+              <div className="card-header">
+                <span>今日计划执行进度</span>
+                <span className="card-date">{dayjs().format('YYYY-MM-DD')}</span>
+              </div>
+            }
+            className="progress-card" 
             bordered={false}
           >
-            <Row gutter={[16, 16]}>
-              <Col span={12}>
-                <div className="stat-card">
-                  <Statistic
-                    title="计划产能"
-                    value={data.capacityAnalysis.plannedCapacity}
-                    prefix={<BarChartOutlined />}
-                  />
-                </div>
-              </Col>
-              <Col span={12}>
-                <div className="stat-card">
-                  <Statistic
-                    title="实际产能"
-                    value={data.capacityAnalysis.actualCapacity}
-                    prefix={<BarChartOutlined />}
-                  />
-                </div>
-              </Col>
-              <Col span={24} style={{ marginTop: 16 }}>
-                <div className="progress-container">
-                  <Progress
-                    percent={data.capacityAnalysis.capacityUtilization}
-                    status="active"
-                    strokeColor={{
-                      '0%': '#108ee9',
-                      '100%': '#87d068',
-                    }}
-                    strokeWidth={12}
-                  />
-                  <div className="progress-title">
-                    产能利用率
+            <div className="progress-list">
+              {getTodayPlans().length > 0 ? (
+                getTodayPlans().map(plan => (
+                  <div key={plan.id} className="progress-item">
+                    <div className="progress-info">
+                      <div className="progress-title">
+                        {plan.batchCode} - {plan.productName}
+                      </div>
+                      <div className="progress-sub">
+                        产线: {plan.lineName} | {plan.startDate} ~ {plan.endDate}
+                      </div>
+                    </div>
+                    <div className="progress-status">
+                      <Progress
+                        percent={Math.round((plan.completionQuantity / plan.taskQuantity) * 100)}
+                        status={plan.status === 2 ? 'success' : 'active'}
+                        strokeWidth={8}
+                      />
+                      <div className="progress-value">
+                        {plan.completionQuantity}/{plan.taskQuantity}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* 订单执行情况 */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col span={24}>
-          <Card 
-            title={<div className="card-title">订单执行情况</div>} 
-            className="order-card"
-            bordered={false}
-          >
-            <Row gutter={[16, 16]}>
-              <Col span={6}>
-                <div className="stat-card">
-                  <Statistic
-                    title="总订单数"
-                    value={data.orderExecution.totalOrders}
-                    prefix={<TeamOutlined />}
-                  />
-                </div>
-              </Col>
-              <Col span={6}>
-                <div className="stat-card">
-                  <Statistic
-                    title="按期执行"
-                    value={data.orderExecution.onSchedule}
-                    prefix={<CheckCircleOutlined />}
-                    valueStyle={{ color: '#52c41a' }}
-                  />
-                </div>
-              </Col>
-              <Col span={6}>
-                <div className="stat-card">
-                  <Statistic
-                    title="延期订单"
-                    value={data.orderExecution.delayed}
-                    prefix={<ClockCircleOutlined />}
-                    valueStyle={{ color: '#ff4d4f' }}
-                  />
-                </div>
-              </Col>
-              <Col span={6}>
-                <div className="stat-card">
-                  <Statistic
-                    title="紧急订单"
-                    value={data.orderExecution.urgentOrders}
-                    prefix={<AlertOutlined />}
-                    valueStyle={{ color: '#faad14' }}
-                  />
-                </div>
-              </Col>
-            </Row>
+                ))
+              ) : (
+                <div className="no-data">今日暂无计划执行数据</div>
+              )}
+            </div>
           </Card>
         </Col>
       </Row>
@@ -275,4 +333,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;
