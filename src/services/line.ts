@@ -50,11 +50,8 @@ export enum LineStatus {
 export interface LineCoefficient {
   id?: number;
   lineId: number;
-  startDate: string;
-  endDate: string;
+  dayDate: string;
   coefficient: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 // 分页查询拉线列表

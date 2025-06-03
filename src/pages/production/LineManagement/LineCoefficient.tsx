@@ -121,14 +121,6 @@ const LineCoefficient: React.FC<LineCoefficientProps> = ({ lineId, visible, onCl
       footer={null}
     >
       <Card bodyStyle={{ padding: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-          <DatePicker
-            picker="month"
-            value={currentDate}
-            onChange={(date) => date && setCurrentDate(date)}
-            allowClear={false}
-          />
-        </div>
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
