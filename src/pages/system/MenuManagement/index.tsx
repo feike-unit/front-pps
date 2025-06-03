@@ -226,7 +226,11 @@ const MenuManagement: React.FC = () => {
             key="edit"
             title="编辑菜单"
             trigger={
-              <Button type="link" style={{ padding: 0 }}>
+              <Button 
+                type="link" 
+                style={{ padding: 0 }}
+                onClick={() => setCurrentMenu(record)}
+              >
                 <EditOutlined />
               </Button>
             }
@@ -237,6 +241,9 @@ const MenuManagement: React.FC = () => {
             onFinish={handleSaveMenu}
             modalProps={{
               destroyOnClose: true,
+              onCancel: () => {
+                setCurrentMenu(null);
+              },
             }}
             width={800}
           >
