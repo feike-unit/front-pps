@@ -1,0 +1,78 @@
+/* 全局样式重置 */
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 全局加载动画容器样式 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Ant Design 组件样式覆盖 */
+.ant-layout {
+  min-height: 100vh;
+
+  &-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px !important;
+  }
+
+  &-content {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    min-height: 280px;
+  }
+}
+
+/* 数据表格样式 */
+.ant-table-wrapper {
+  background: #fff;
+  border-radius: 2px;
+}
+
+/* 表单样式 */
+.ant-form-item-label {
+  font-weight: 500;
+}
+
+/* 按钮样式 */
+.ant-btn {
+  border-radius: 6px;
+}
+
+/* 卡片样式 */
+.ant-card {
+  border-radius: 2px;
+}
+
+/* 统计数值样式 */
+.ant-statistic {
+  &-title {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  &-content {
+    font-size: 24px;
+    font-weight: 600;
+  }
+}
+
+/* Pro组件样式 */
+.ant-pro-card {
+  .ant-pro-card-body {
+    display: block;
+    box-sizing: border-box;
+    height: 100%;
+    padding: 12px;
+  }
+} 

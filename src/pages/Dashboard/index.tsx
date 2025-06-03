@@ -11,6 +11,7 @@ import {
   AlertOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
+import './index.less';
 
 // 模拟数据
 const mockData = {
@@ -51,58 +52,74 @@ const Dashboard: React.FC = () => {
   const [data] = useState(mockData);
 
   return (
-    <ProCard>
+    <ProCard className="dashboard-container">
       {/* 生产计划总览 */}
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Card title="生产计划总览" bordered={false}>
+          <Card 
+            title={<div className="card-title">生产计划总览</div>} 
+            className="overview-card"
+            bordered={false}
+          >
             <Row gutter={[16, 16]}>
               <Col span={4}>
-                <Statistic
-                  title="总计划数"
-                  value={data.planOverview.totalPlans}
-                  prefix={<ScheduleOutlined />}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="总计划数"
+                    value={data.planOverview.totalPlans}
+                    prefix={<ScheduleOutlined />}
+                  />
+                </div>
               </Col>
               <Col span={4}>
-                <Statistic
-                  title="执行中"
-                  value={data.planOverview.inProgress}
-                  prefix={<LoadingOutlined />}
-                  valueStyle={{ color: '#1890ff' }}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="执行中"
+                    value={data.planOverview.inProgress}
+                    prefix={<LoadingOutlined spin />}
+                    valueStyle={{ color: '#1890ff' }}
+                  />
+                </div>
               </Col>
               <Col span={4}>
-                <Statistic
-                  title="已完成"
-                  value={data.planOverview.completed}
-                  prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: '#52c41a' }}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="已完成"
+                    value={data.planOverview.completed}
+                    prefix={<CheckCircleOutlined />}
+                    valueStyle={{ color: '#52c41a' }}
+                  />
+                </div>
               </Col>
               <Col span={4}>
-                <Statistic
-                  title="延期数"
-                  value={data.planOverview.delayed}
-                  prefix={<AlertOutlined />}
-                  valueStyle={{ color: '#ff4d4f' }}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="延期数"
+                    value={data.planOverview.delayed}
+                    prefix={<AlertOutlined />}
+                    valueStyle={{ color: '#ff4d4f' }}
+                  />
+                </div>
               </Col>
               <Col span={4}>
-                <Statistic
-                  title="计划完成率"
-                  value={data.planOverview.planCompletionRate}
-                  suffix="%"
-                  prefix={<BarChartOutlined />}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="计划完成率"
+                    value={data.planOverview.planCompletionRate}
+                    suffix="%"
+                    prefix={<BarChartOutlined />}
+                  />
+                </div>
               </Col>
               <Col span={4}>
-                <Statistic
-                  title="准时交付率"
-                  value={data.planOverview.onTimeDeliveryRate}
-                  suffix="%"
-                  prefix={<BarChartOutlined />}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="准时交付率"
+                    value={data.planOverview.onTimeDeliveryRate}
+                    suffix="%"
+                    prefix={<BarChartOutlined />}
+                  />
+                </div>
               </Col>
             </Row>
           </Card>
@@ -112,25 +129,33 @@ const Dashboard: React.FC = () => {
       {/* 产线状态和产能分析 */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={12}>
-          <Card title="产线状态" bordered={false}>
+          <Card 
+            title={<div className="card-title">产线状态</div>} 
+            className="status-card"
+            bordered={false}
+          >
             <Row gutter={[16, 16]}>
               <Col span={12}>
-                <Statistic
-                  title="总产线数"
-                  value={data.lineStatus.totalLines}
-                  prefix={<RocketOutlined />}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="总产线数"
+                    value={data.lineStatus.totalLines}
+                    prefix={<RocketOutlined />}
+                  />
+                </div>
               </Col>
               <Col span={12}>
-                <Statistic
-                  title="运行中"
-                  value={data.lineStatus.running}
-                  valueStyle={{ color: '#52c41a' }}
-                  prefix={<RocketOutlined />}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="运行中"
+                    value={data.lineStatus.running}
+                    valueStyle={{ color: '#52c41a' }}
+                    prefix={<RocketOutlined />}
+                  />
+                </div>
               </Col>
               <Col span={24} style={{ marginTop: 16 }}>
-                <div style={{ padding: '0 24px' }}>
+                <div className="progress-container">
                   <Progress
                     percent={data.lineStatus.utilization}
                     status="active"
@@ -138,8 +163,9 @@ const Dashboard: React.FC = () => {
                       '0%': '#108ee9',
                       '100%': '#87d068',
                     }}
+                    strokeWidth={12}
                   />
-                  <div style={{ textAlign: 'center', marginTop: 8 }}>
+                  <div className="progress-title">
                     产线利用率
                   </div>
                 </div>
@@ -148,24 +174,32 @@ const Dashboard: React.FC = () => {
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="产能分析" bordered={false}>
+          <Card 
+            title={<div className="card-title">产能分析</div>} 
+            className="analysis-card"
+            bordered={false}
+          >
             <Row gutter={[16, 16]}>
               <Col span={12}>
-                <Statistic
-                  title="计划产能"
-                  value={data.capacityAnalysis.plannedCapacity}
-                  prefix={<BarChartOutlined />}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="计划产能"
+                    value={data.capacityAnalysis.plannedCapacity}
+                    prefix={<BarChartOutlined />}
+                  />
+                </div>
               </Col>
               <Col span={12}>
-                <Statistic
-                  title="实际产能"
-                  value={data.capacityAnalysis.actualCapacity}
-                  prefix={<BarChartOutlined />}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="实际产能"
+                    value={data.capacityAnalysis.actualCapacity}
+                    prefix={<BarChartOutlined />}
+                  />
+                </div>
               </Col>
               <Col span={24} style={{ marginTop: 16 }}>
-                <div style={{ padding: '0 24px' }}>
+                <div className="progress-container">
                   <Progress
                     percent={data.capacityAnalysis.capacityUtilization}
                     status="active"
@@ -173,8 +207,9 @@ const Dashboard: React.FC = () => {
                       '0%': '#108ee9',
                       '100%': '#87d068',
                     }}
+                    strokeWidth={12}
                   />
-                  <div style={{ textAlign: 'center', marginTop: 8 }}>
+                  <div className="progress-title">
                     产能利用率
                   </div>
                 </div>
@@ -187,38 +222,50 @@ const Dashboard: React.FC = () => {
       {/* 订单执行情况 */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={24}>
-          <Card title="订单执行情况" bordered={false}>
+          <Card 
+            title={<div className="card-title">订单执行情况</div>} 
+            className="order-card"
+            bordered={false}
+          >
             <Row gutter={[16, 16]}>
               <Col span={6}>
-                <Statistic
-                  title="总订单数"
-                  value={data.orderExecution.totalOrders}
-                  prefix={<TeamOutlined />}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="总订单数"
+                    value={data.orderExecution.totalOrders}
+                    prefix={<TeamOutlined />}
+                  />
+                </div>
               </Col>
               <Col span={6}>
-                <Statistic
-                  title="按期执行"
-                  value={data.orderExecution.onSchedule}
-                  prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: '#52c41a' }}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="按期执行"
+                    value={data.orderExecution.onSchedule}
+                    prefix={<CheckCircleOutlined />}
+                    valueStyle={{ color: '#52c41a' }}
+                  />
+                </div>
               </Col>
               <Col span={6}>
-                <Statistic
-                  title="延期订单"
-                  value={data.orderExecution.delayed}
-                  prefix={<ClockCircleOutlined />}
-                  valueStyle={{ color: '#ff4d4f' }}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="延期订单"
+                    value={data.orderExecution.delayed}
+                    prefix={<ClockCircleOutlined />}
+                    valueStyle={{ color: '#ff4d4f' }}
+                  />
+                </div>
               </Col>
               <Col span={6}>
-                <Statistic
-                  title="紧急订单"
-                  value={data.orderExecution.urgentOrders}
-                  prefix={<AlertOutlined />}
-                  valueStyle={{ color: '#faad14' }}
-                />
+                <div className="stat-card">
+                  <Statistic
+                    title="紧急订单"
+                    value={data.orderExecution.urgentOrders}
+                    prefix={<AlertOutlined />}
+                    valueStyle={{ color: '#faad14' }}
+                  />
+                </div>
               </Col>
             </Row>
           </Card>

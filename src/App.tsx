@@ -4,7 +4,7 @@ import { createHashRouter, RouterProvider } from 'react-router-dom';
 import { ConfigProvider, Spin } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { routes } from './routes';
-import './App.css';
+import './App.less';
 
 // 创建路由实例，使用预定义的路由配置，并采用Hash路由模式
 const router = createHashRouter(routes);

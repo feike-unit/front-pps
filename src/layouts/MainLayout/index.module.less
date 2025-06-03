@@ -1,0 +1,141 @@
+/* 系统Logo样式 */
+.logo {
+  height: 32px;
+  margin: 16px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 左侧菜单样式 */
+:global {
+  .ant-menu-item, .ant-menu-submenu-title {
+    .ant-menu-item-title, .ant-menu-title-content {
+      font-weight: 500 !important;
+    }
+  }
+
+  .ant-space-item {
+    font-weight: 500 !important;
+  }
+}
+
+/* 用户信息和操作区域 */
+.userInfo {
+  height: 48px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s;
+  cursor: pointer;
+  gap: 8px;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.025);
+  }
+
+  .userName {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.85);
+    margin-left: 8px;
+  }
+}
+
+.logoutButton {
+  float: right;
+  margin-right: 16px;
+}
+
+.actionIcon {
+  padding: 4px 12px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.3s;
+
+  &:hover {
+    color: #1890ff;
+  }
+}
+
+/* 内容区域动画 */
+.contentWrapper {
+  animation: fadeIn 0.2s ease-in-out;
+  position: relative;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ProLayout 样式覆盖 */
+:global {
+  .ant-pro-page-container {
+    margin: -24px -24px 0 !important;
+
+    .ant-tabs-nav {
+      margin: 0 !important;
+      padding: 0 24px;
+    }
+
+    .ant-tabs-tab {
+      padding: 12px 24px !important;
+      transition: all 0.3s;
+      position: relative;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.025);
+      }
+
+      &.ant-tabs-tab-active {
+        background: #f0f2f5 !important;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 2px;
+          right: 2px;
+          height: 3px;
+          background-color: #1890ff;
+          border-radius: 3px 3px 0 0;
+        }
+      }
+    }
+  }
+
+  .ant-pro-page-container-warp {
+    background-color: transparent !important;
+  }
+
+  .ant-pro-page-container-children-content {
+    margin: 24px;
+  }
+
+  .ant-pro-card-ghost {
+    padding: 0 !important;
+  }
+
+  .ant-pro-global-header {
+    padding: 0 16px !important;
+
+    &-logo {
+      padding: 16px !important;
+    }
+  }
+}
+
+/* 暗色主题适配 */
+.ant-layout-dark {
+  .userName {
+    color: rgba(255, 255, 255, 0.85);
+  }
+} 

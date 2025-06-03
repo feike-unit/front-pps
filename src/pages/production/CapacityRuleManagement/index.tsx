@@ -40,7 +40,7 @@ import {
 import { Line, searchLines } from '../../../services/line';
 import { Product, searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
-import './index.css';
+import './index.less';
 
 const CapacityRuleManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();

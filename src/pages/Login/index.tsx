@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { login } from '../../services/auth';
-import styles from './index.module.css';
+import styles from './index.module.less';
 
 // 登录表单数据接口定义
 interface LoginForm {

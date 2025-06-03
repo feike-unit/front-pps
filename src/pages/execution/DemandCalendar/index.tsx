@@ -15,7 +15,7 @@ import debounce from 'lodash/debounce';
 import { searchProducts } from '../../../services/product';
 
 // 导入自定义样式
-import './calendar.css';
+import './calendar.less';
 
 // 导入需求相关服务
 import {

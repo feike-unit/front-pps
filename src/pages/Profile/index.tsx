@@ -4,7 +4,7 @@ import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined } from '@ant-de
 import { getProfile} from '../../services/auth';
 import { updateUserProfile, updateUserPassword } from '../../services/auth';
 import type { UserInfo } from '../../services/user';
-import styles from './index.module.css';
+import styles from './index.module.less';
 
 const { TabPane } = Tabs;
 

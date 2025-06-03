@@ -58,7 +58,7 @@ import debounce from 'lodash/debounce';
 import dayjs from 'dayjs';
 import { RadioChangeEvent } from 'antd/lib/radio';
 import { useNavigate } from 'react-router-dom';
-import './index.css';
+import './index.less';
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {

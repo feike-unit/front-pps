@@ -1,0 +1,60 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f0f2f5;
+
+  :global {
+    .ant-pro-form-login-container {
+      padding: 32px 0;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-width: 600px;
+    }
+
+    .ant-pro-form-login-title {
+      color: rgba(0, 0, 0, 0.85);
+      font-weight: 600;
+      font-size: 24px;
+      line-height: 32px;
+    }
+
+    .ant-pro-form-login-subtitle {
+      margin-top: 12px;
+      color: rgba(0, 0, 0, 0.45);
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .prefixIcon {
+      color: rgba(0, 0, 0, 0.25);
+    }
+  }
+}
+
+/* 暗黑主题 */
+[data-theme='dark'] {
+  .container {
+    background: #1f1f1f;
+
+    :global {
+      .ant-pro-form-login-container {
+        background: #141414;
+      }
+
+      .ant-pro-form-login-title {
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .ant-pro-form-login-subtitle {
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      .prefixIcon {
+        color: rgba(255, 255, 255, 0.25);
+      }
+    }
+  }
+} 

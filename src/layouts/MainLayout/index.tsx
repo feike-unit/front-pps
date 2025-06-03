@@ -8,7 +8,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import styles from './index.module.css';
+import styles from './index.module.less';
 import { getProfile, logout } from '../../services/auth';
 import { TabsProvider, useTabs } from './TabsContext';
 import type { UserInfo } from '../../services/user';

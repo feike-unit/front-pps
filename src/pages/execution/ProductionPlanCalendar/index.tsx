@@ -16,7 +16,7 @@ import { searchLines } from '../../../services/line';
 import { searchProducts } from '../../../services/product';
 
 // 导入自定义样式
-import './calendar.css';
+import './calendar.less';
 
 import {
   PlanRuntime,

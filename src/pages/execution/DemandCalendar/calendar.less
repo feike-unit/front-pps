@@ -1,0 +1,196 @@
+/* Google Calendar风格的FullCalendar自定义样式 */
+
+.calendar-container {
+  height: calc(100vh - 200px);
+  min-height: 600px;
+  margin-top: 10px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  .ant-btn {
+    border-radius: 4px;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    margin-right: 8px;
+
+    &:hover {
+      background-color: #f1f3f4;
+      color: #202124;
+    }
+
+    &-primary {
+      background-color: #e8f0fe;
+      color: #1a73e8;
+      border-color: #e8f0fe;
+
+      &:hover {
+        background-color: #d2e3fc;
+        border-color: #d2e3fc;
+      }
+    }
+  }
+}
+
+/* FullCalendar覆盖样式 */
+.fc {
+  --fc-border-color: #e0e0e0;
+  --fc-today-bg-color: #e8f5e9;
+  --fc-event-bg-color: #4285F4;
+  --fc-event-border-color: #4285F4;
+  --fc-event-text-color: #fff;
+  --fc-page-bg-color: #fff;
+  --fc-button-text-color: #606060;
+  --fc-button-bg-color: #f1f1f1;
+  --fc-button-border-color: #f1f1f1;
+  --fc-button-hover-bg-color: #e0e0e0;
+  --fc-button-hover-border-color: #e0e0e0;
+  --fc-button-active-bg-color: #d0d0d0;
+  --fc-button-active-border-color: #d0d0d0;
+
+  .fc-toolbar-title {
+    font-size: 22px;
+    font-weight: 400;
+    color: #3c4043;
+  }
+
+  .fc-button {
+    border-radius: 4px;
+    text-transform: capitalize;
+    box-shadow: none;
+    height: 36px;
+    padding: 0 12px;
+    transition: all 0.2s;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .fc-col-header-cell {
+    background-color: #fff;
+    padding: 8px 0;
+
+    &-cushion {
+      color: #70757a;
+      font-weight: 500;
+      text-decoration: none;
+      padding: 4px;
+    }
+  }
+
+  .fc-daygrid-day {
+    min-height: 120px;
+
+    &-number {
+      color: #3c4043;
+      font-size: 14px;
+      text-decoration: none;
+      padding: 8px;
+    }
+  }
+
+  .fc-day-today {
+    background-color: #e8f5e9 !important;
+
+    .fc-daygrid-day-number {
+      font-weight: bold;
+      color: #1a73e8;
+    }
+  }
+
+  .fc-daygrid-more-link {
+    color: #1a73e8;
+    font-size: 12px;
+  }
+
+  .fc-timegrid {
+    &-slot {
+      height: 40px;
+    }
+
+    &-axis {
+      padding: 0 8px;
+    }
+
+    &-slot-label {
+      color: #70757a;
+      font-size: 12px;
+      font-weight: normal;
+    }
+  }
+}
+
+/* 事件样式 */
+.fc-event {
+  border-radius: 4px;
+  font-size: 13px;
+  padding: 2px 4px;
+  margin: 1px 0;
+  border: none;
+  cursor: pointer;
+  position: relative;
+
+  &:hover {
+    z-index: 99999 !important;
+
+    &::after {
+      content: attr(data-title);
+      position: fixed;
+      left: var(--tooltip-x);
+      top: var(--tooltip-y);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      white-space: nowrap;
+      z-index: 99999999;
+      pointer-events: none;
+      margin-left: 5px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  &[title] {
+    position: relative;
+
+    &:hover:before {
+      display: none;
+    }
+  }
+}
+
+.fc-daygrid-event {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+/* 周末样式 */
+.fc-day-sat, .fc-day-sun {
+  background-color: #f8f9fa;
+}
+
+/* 事件时间和标题样式 */
+.fc-event-time {
+  font-weight: bold;
+}
+
+.fc-event-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 事件容器样式 */
+.fc-daygrid-event-harness {
+  z-index: auto !important;
+
+  &:hover {
+    z-index: 99999 !important;
+  }
+} 
