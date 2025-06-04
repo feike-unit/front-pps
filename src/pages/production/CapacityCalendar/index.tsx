@@ -1,169 +1,171 @@
 /**
  * 产能日历组件
  * 功能：
- * 1. 展示节假日日历
- * 2. 支持新增/编辑/删除节假日
- * 3. 支持按年份筛选节假日
+ * 1. 展示拉线工作日历
+ * 2. 支持新增/编辑/删除工作日历
+ * 3. 支持按年份和拉线筛选
+ * 4. 支持设置多个工作时间段
  */
 import React, {useEffect, useState} from 'react';
-import {Card, Button, Modal, Form, Input, DatePicker, Select, message, ConfigProvider, Tooltip, Popconfirm} from 'antd';
+import {Card, Button, Modal, Form, Input, DatePicker, InputNumber, message, ConfigProvider, Tooltip, Popconfirm, Select, Space, TimePicker} from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import type {Dayjs} from 'dayjs';
-import {query, create, update, deleteHoliday, updateStatus, downloadTemplate, importHolidays, generateHolidays} from '../../../services/holiday';
-import type {Holiday} from '../../../services/holiday';
 import dayjs from 'dayjs';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isBetween from 'dayjs/plugin/isBetween';
 import 'dayjs/locale/zh-cn';
 import zhCN from 'antd/locale/zh_CN';
+import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { queryCapacityCalendars, createCapacityCalendar, updateCapacityCalendar, deleteCapacityCalendar } from '../../../services/capacityCalendar';
+import type { CapacityCalendar, TimeRange } from '../../../services/capacityCalendar';
 
 // 配置 dayjs
 dayjs.locale('zh-cn');
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isBetween);
 
-const CapacityCalendar: React.FC = () => {
+const { RangePicker } = DatePicker;
+
+const CapacityCalendarPage: React.FC = () => {
     // 组件状态管理
-    const [holidays, setHolidays] = useState<Holiday[]>([]); // 节假日数据列表
+    const [calendars, setCalendars] = useState<CapacityCalendar[]>([]); // 产能日历数据列表
     const [isModalVisible, setIsModalVisible] = useState(false); // 控制模态框显示
     const [form] = Form.useForm(); // 表单实例
-    const [editingId, setEditingId] = useState<number | null | undefined>(null); // 当前编辑的节假日ID
+    const [editingId, setEditingId] = useState<number | null | undefined>(null); // 当前编辑的ID
     const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs()); // 当前选中的年份
-    const [isDateClick, setIsDateClick] = useState(false); // 是否是通过点击日期新增
+    const [selectedLineId, setSelectedLineId] = useState<number>(); // 选中的拉线ID
 
-    // 获取节假日数据
-    const fetchHolidays = async () => {
+    // TODO: 获取拉线列表
+    const [lines] = useState([
+        { id: 1, name: '拉线1' },
+        { id: 2, name: '拉线2' },
+    ]);
+
+    // 获取产能日历数据
+    const fetchCalendars = async () => {
         try {
-            const response = await query({
-                year: currentDate.year()
-            });
-            console.log('获取到的节假日数据:', response);
-            setHolidays(response || []); // 确保response为空时设置为空数组
+            const response = await queryCapacityCalendars(selectedLineId!, currentDate.year());
+            setCalendars(response);
         } catch (error: any) {
-            console.error('获取节假日数据失败:', error);
-            message.error(error.response?.data?.message || error.message || '获取节假日数据失败');
-            setHolidays([]); // 出错时设置为空数组
+            console.error('获取产能日历数据失败:', error);
+            message.error(error.response?.data?.message || error.message || '获取产能日历数据失败');
+            setCalendars([]);
         }
     };
 
     useEffect(() => {
-        fetchHolidays();
-    }, [currentDate]);
+        if (selectedLineId) {
+            fetchCalendars();
+        }
+    }, [currentDate, selectedLineId]);
 
-    // 处理模态框确认操作（新增/编辑节假日）
+    // 处理模态框确认操作
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
-            const holidayDate = dayjs(values.holiday).format('YYYY-MM-DD');
+            const startDate = dayjs(values.dateRange[0]).format('YYYY-MM-DD');
+            const endDate = dayjs(values.dateRange[1]).format('YYYY-MM-DD');
             
+            const data = {
+                lineId: values.lineId,
+                startDate,
+                endDate,
+                coefficient: values.coefficient,
+                remark: values.remark,
+                timeRanges: values.timeRanges.map((range: any) => ({
+                    startTime: range.timeRange[0].format('HH:mm:ss'),
+                    endTime: range.timeRange[1].format('HH:mm:ss'),
+                    periodName: range.periodName
+                }))
+            };
+
             if (editingId) {
-                await update(editingId, {
-                    holiday: holidayDate,
-                    holidayName: values.holidayName,
-                    status: values.status,
-                    remark: values.remark
-                });
+                await updateCapacityCalendar(editingId, data);
             } else {
-                await create({
-                    holiday: holidayDate,
-                    holidayName: values.holidayName,
-                    status: values.status,
-                    remark: values.remark
-                });
+                await createCapacityCalendar(data);
             }
+            
             message.success(editingId ? '更新成功' : '新增成功');
             setIsModalVisible(false);
-            await fetchHolidays(); // 使用await确保数据更新完成
+            await fetchCalendars();
         } catch (error: any) {
             message.error(error.response?.data?.message || error.message || '操作失败');
         }
     };
 
-    // 处理新增节假日按钮点击
+    // 处理新增按钮点击
     const handleAdd = () => {
         form.resetFields();
+        if (selectedLineId) {
+            form.setFieldsValue({
+                lineId: selectedLineId,
+                coefficient: 1.0
+            });
+        }
         setEditingId(null);
-        setIsDateClick(false);
         setIsModalVisible(true);
     };
 
     // 处理日历日期点击事件
     const handleDateClick = (arg: any) => {
-        const existingHoliday = holidays.find(h => h.holiday === arg.dateStr);
-        if (existingHoliday) {
+        const existingCalendar = calendars.find(c => 
+            dayjs(arg.dateStr).isBetween(c.startDate, c.endDate, 'day', '[]')
+        );
+        
+        if (existingCalendar) {
             form.setFieldsValue({
-                holiday: dayjs(existingHoliday.holiday),
-                holidayName: existingHoliday.holidayName,
-                status: existingHoliday.status,
-                remark: existingHoliday.remark
+                lineId: existingCalendar.lineId,
+                dateRange: [dayjs(existingCalendar.startDate), dayjs(existingCalendar.endDate)],
+                coefficient: existingCalendar.coefficient,
+                remark: existingCalendar.remark,
+                timeRanges: existingCalendar.timeRanges.map(range => ({
+                    timeRange: [dayjs(range.startTime, 'HH:mm:ss'), dayjs(range.endTime, 'HH:mm:ss')],
+                    periodName: range.periodName
+                }))
             });
-            setEditingId(existingHoliday.id);
-            setIsDateClick(false);
+            setEditingId(existingCalendar.id);
         } else {
             form.resetFields();
             form.setFieldsValue({
-                holiday: dayjs(arg.dateStr)
+                lineId: selectedLineId,
+                dateRange: [dayjs(arg.dateStr), dayjs(arg.dateStr)],
+                coefficient: 1.0
             });
             setEditingId(null);
-            setIsDateClick(true);
         }
         setIsModalVisible(true);
     };
 
-    // 处理日历日期选择
-    const handleCalendarSelect = (date: Dayjs) => {
+    // 处理日期选择
+    const handleDateSelect = (selectInfo: any) => {
+        form.resetFields();
         form.setFieldsValue({
-            holiday: date,
+            lineId: selectedLineId,
+            dateRange: [dayjs(selectInfo.start), dayjs(selectInfo.end).subtract(1, 'day')],
+            coefficient: 1.0
         });
         setEditingId(null);
         setIsModalVisible(true);
     };
 
-    // 将节假日数据转换为FullCalendar可识别的格式
-    const calendarEvents = holidays
-        .filter(holiday => holiday.status === 1)
-        .map(holiday => ({
-            id: holiday.id?.toString(),
-            title: holiday.holidayName,
-            date: holiday.holiday,
-            extendedProps: {
-                remark: holiday.remark
-            },
-            backgroundColor: '#666666',
-            borderColor: '#666666',
-            textColor: '#fff'
-        }));
-
-    console.log('转换后的日历事件:', calendarEvents); // 调试日历事件数据
-
-    // 处理节假日事件点击（编辑）
-    const handleEventClick = (arg: any) => {
-        const holiday = holidays.find(h => h.holiday === arg.event.startStr);
-        if (holiday) {
-            form.setFieldsValue({
-                holiday: dayjs(holiday.holiday),
-                holidayName: holiday.holidayName,
-                status: holiday.status,
-                remark: holiday.remark
-            });
-            if (holiday.id !== undefined) {
-                setEditingId(holiday.id);
-            }
-            setIsModalVisible(true);
-        }
-    };
-
-    // 处理删除节假日
-    const handleDelete = async (id: number | null) => {
-        if (id === null) return;
-        
-        try {
-            await deleteHoliday(id);
-            message.success('删除成功');
-            await fetchHolidays(); // 使用await确保数据更新完成
-        } catch (error: any) {
-            message.error(error.response?.data?.message || error.message || '删除失败');
-        }
-    };
+    // 将产能日历数据转换为FullCalendar可识别的格式
+    const calendarEvents = calendars.map(calendar => ({
+        id: calendar.id?.toString(),
+        title: `系数: ${calendar.coefficient}`,
+        start: calendar.startDate,
+        end: dayjs(calendar.endDate).add(1, 'day').format('YYYY-MM-DD'), // FullCalendar的end日期是不包含的
+        extendedProps: {
+            timeRanges: calendar.timeRanges,
+            remark: calendar.remark
+        },
+        backgroundColor: '#1890ff',
+        borderColor: '#1890ff',
+        textColor: '#fff',
+        allDay: true
+    }));
 
     return (
         <ConfigProvider locale={zhCN}>
@@ -172,56 +174,22 @@ const CapacityCalendar: React.FC = () => {
                     <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
                         <span>产能日历 ({currentDate.year()}年)</span>
                         <div>
+                            <Select
+                                placeholder="请选择拉线"
+                                style={{width: 200, marginRight: 8}}
+                                options={lines.map(line => ({label: line.name, value: line.id}))}
+                                value={selectedLineId}
+                                onChange={setSelectedLineId}
+                            />
                             <DatePicker
                                 picker="year"
                                 value={currentDate}
                                 onChange={(date) => date && setCurrentDate(date)}
                                 style={{marginRight: 8}}
                             />
-                            <Button onClick={downloadTemplate} style={{marginRight: 8}}>下载模板</Button>
-                            <Popconfirm
-                                title="确认同步节假日"
-                                description="确定要同步当前年度的节假日数据吗?"
-                                onConfirm={async () => {
-                                    try {
-                                        await generateHolidays(currentDate.year());
-                                        message.success('成功生成节假日');
-                                        await fetchHolidays(); // 直接获取最新数据
-                                    } catch (error: any) {
-                                        message.error(error.response?.data?.message || error.message || '生成节假日失败');
-                                    }
-                                }}
-                                okText="确定"
-                                cancelText="取消"
-                            >
-                                <Button style={{marginRight: 8}}>
-                                    同步全年节假日
-                                </Button>
-                            </Popconfirm>
-                            <Button style={{marginRight: 8}}>
-                                <label style={{cursor: 'pointer'}}>
-                                    导入节假日
-                                    <input
-                                        type="file"
-                                        accept=".xls,.xlsx"
-                                        style={{display: 'none'}}
-                                        onChange={async (e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                try {
-                                                    await importHolidays(file);
-                                                    message.success('导入成功');
-                                                    await fetchHolidays(); // 使用await确保数据更新完成
-                                                } catch (error: any) {
-                                                    message.error(error.response?.data?.message || error.message || '导入失败');
-                                                }
-                                                e.target.value = '';
-                                            }
-                                        }}
-                                    />
-                                </label>
+                            <Button type="primary" onClick={handleAdd} disabled={!selectedLineId}>
+                                新增产能日历
                             </Button>
-                            <Button type="primary" onClick={handleAdd}>新增节假日</Button>
                         </div>
                     </div>
                 }
@@ -232,44 +200,57 @@ const CapacityCalendar: React.FC = () => {
                     multiMonthMaxColumns={4}
                     events={calendarEvents}
                     dateClick={handleDateClick}
-                    eventClick={handleEventClick}
                     locale="zh-cn"
                     selectable={true}
                     selectMirror={true}
-                    select={(arg) => {
-                        form.resetFields();
-                        form.setFieldsValue({
-                            holiday: dayjs(arg.startStr)
-                        });
-                        setEditingId(null);
-                        setIsModalVisible(true);
-                    }}
-                    dayCellClassNames={(arg) => {
-                        return arg.isOtherMonth ? ['fc-non-month-day'] : [];
-                    }}
+                    select={handleDateSelect}
                     headerToolbar={false}
-                    eventContent={(arg) => (
-                        <Tooltip
-                            title={`${arg.event.title}${arg.event.extendedProps.remark ? ' - ' + arg.event.extendedProps.remark : ''}`}>
-                            <div style={{padding: '2px 4px', borderRadius: 2}}>
-                                {arg.event.title}
-                            </div>
-                        </Tooltip>
-                    )}
+                    eventContent={(arg) => {
+                        const timeRanges = arg.event.extendedProps.timeRanges;
+                        const timeRangeText = timeRanges?.map((range: TimeRange) => 
+                            `${range.periodName}: ${range.startTime.substring(0, 5)}-${range.endTime.substring(0, 5)}`
+                        ).join('\n');
+                        
+                        return (
+                            <Tooltip title={
+                                <div>
+                                    <div>系数: {arg.event.title.split(': ')[1]}</div>
+                                    {timeRangeText && timeRangeText.split('\n').map((text: string, index: number) => (
+                                        <div key={index}>{text}</div>
+                                    ))}
+                                    {arg.event.extendedProps.remark && (
+                                        <div>备注: {arg.event.extendedProps.remark}</div>
+                                    )}
+                                </div>
+                            }>
+                                <div style={{padding: '2px 4px', borderRadius: 2}}>
+                                    {arg.event.title}
+                                </div>
+                            </Tooltip>
+                        );
+                    }}
                 />
+
                 <Modal
-                    title={editingId ? '编辑节假日' : '新增节假日'}
+                    title={editingId ? '编辑产能日历' : '新增产能日历'}
                     open={isModalVisible}
                     onOk={handleModalOk}
                     onCancel={() => setIsModalVisible(false)}
+                    width={800}
                     footer={[
                         editingId && (
                             <Popconfirm
                                 key="delete"
-                                title="确定要删除这个节假日吗？"
-                                onConfirm={() => {
-                                    handleDelete(editingId);
-                                    setIsModalVisible(false);
+                                title="确定要删除这条记录吗？"
+                                onConfirm={async () => {
+                                    try {
+                                        await deleteCapacityCalendar(editingId!);
+                                        message.success('删除成功');
+                                        setIsModalVisible(false);
+                                        await fetchCalendars();
+                                    } catch (error: any) {
+                                        message.error(error.response?.data?.message || error.message || '删除失败');
+                                    }
                                 }}
                                 okText="确定"
                                 cancelText="取消"
@@ -283,38 +264,108 @@ const CapacityCalendar: React.FC = () => {
                 >
                     <Form form={form} layout="vertical">
                         <Form.Item
-                            name="holiday"
-                            label="日期"
-                            rules={[{required: true, message: '请选择日期'}]}
+                            name="lineId"
+                            label="拉线"
+                            rules={[{required: true, message: '请选择拉线'}]}
                         >
-                            <DatePicker
-                                style={{width: '100%'}}
-                                disabled={!!editingId || isDateClick}
-                                placeholder="选择日期"
+                            <Select
+                                options={lines.map(line => ({label: line.name, value: line.id}))}
+                                disabled={!!editingId}
                             />
                         </Form.Item>
                         <Form.Item
-                            name="holidayName"
-                            label="名称"
-                            rules={[{required: true, message: '请输入名称'}]}
+                            name="dateRange"
+                            label="日期范围"
+                            rules={[{required: true, message: '请选择日期范围'}]}
                         >
-                            <Input/>
+                            <RangePicker 
+                                style={{width: '100%'}} 
+                                disabled={!!editingId}
+                            />
                         </Form.Item>
                         <Form.Item
-                            name="status"
-                            label="状态"
-                            initialValue={1}
+                            name="coefficient"
+                            label="产能系数"
+                            rules={[
+                                {required: true, message: '请输入产能系数'},
+                                {type: 'number', min: 0, message: '系数必须大于0'}
+                            ]}
                         >
-                            <Select>
-                                <Select.Option value={1}>启用</Select.Option>
-                                <Select.Option value={0}>禁用</Select.Option>
-                            </Select>
+                            <InputNumber style={{width: '100%'}} step={0.1} precision={2} />
                         </Form.Item>
+                        
                         <Form.Item
-                            name="remark"
-                            label="备注"
+                            label="工作时段"
+                            required
+                            help="请至少添加一个工作时段"
                         >
-                            <Input.TextArea/>
+                            <Form.List 
+                                name="timeRanges" 
+                                initialValue={[{}]}
+                                rules={[
+                                    {
+                                        validator: async (_, timeRanges) => {
+                                            if (!timeRanges || timeRanges.length < 1) {
+                                                return Promise.reject(new Error('请至少添加一个工作时段'));
+                                            }
+                                        },
+                                    },
+                                ]}
+                            >
+                                {(fields, { add, remove }) => (
+                                    <div style={{ width: '100%' }}>
+                                        {fields.map(({ key, name, ...restField }) => (
+                                            <div key={key} style={{ 
+                                                display: 'flex', 
+                                                marginBottom: 8,
+                                                gap: 8,
+                                                width: '100%'
+                                            }}>
+                                                <Form.Item
+                                                    {...restField}
+                                                    name={[name, 'periodName']}
+                                                    rules={[{ required: true, message: '请输入时段名称' }]}
+                                                    style={{ flex: '0 0 200px', marginBottom: 0 }}
+                                                >
+                                                    <Input placeholder="时段名称" />
+                                                </Form.Item>
+                                                <Form.Item
+                                                    {...restField}
+                                                    name={[name, 'timeRange']}
+                                                    rules={[{ required: true, message: '请选择时间范围' }]}
+                                                    style={{ flex: 1, marginBottom: 0 }}
+                                                >
+                                                    <TimePicker.RangePicker 
+                                                        format="HH:mm" 
+                                                        style={{ width: '100%' }}
+                                                    />
+                                                </Form.Item>
+                                                {fields.length > 1 && (
+                                                    <Button 
+                                                        type="text"
+                                                        icon={<MinusCircleOutlined />}
+                                                        onClick={() => remove(name)}
+                                                        style={{ flex: '0 0 32px' }}
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                        <Form.Item style={{ marginBottom: 0 }}>
+                                            <Button 
+                                                type="dashed" 
+                                                onClick={() => add()} 
+                                                block 
+                                                icon={<PlusOutlined />}
+                                            >
+                                                添加时间段
+                                            </Button>
+                                        </Form.Item>
+                                    </div>
+                                )}
+                            </Form.List>
+                        </Form.Item>
+                        <Form.Item name="remark" label="备注">
+                            <Input.TextArea />
                         </Form.Item>
                     </Form>
                 </Modal>
@@ -323,4 +374,5 @@ const CapacityCalendar: React.FC = () => {
     );
 };
 
-export default CapacityCalendar;
+export default CapacityCalendarPage;
+
