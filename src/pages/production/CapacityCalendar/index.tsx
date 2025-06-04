@@ -3,11 +3,10 @@
  * 功能：
  * 1. 展示拉线工作日历
  * 2. 支持新增/编辑/删除工作日历
- * 3. 支持按年份和拉线筛选
- * 4. 支持设置多个工作时间段
+ * 3. 支持按年月和拉线筛选
  */
 import React, {useEffect, useState} from 'react';
-import {Card, Button, Modal, Form, Input, DatePicker, InputNumber, message, ConfigProvider, Tooltip, Popconfirm, Select, Space, TimePicker} from 'antd';
+import {Card, Button, Modal, Form, Input, DatePicker, InputNumber, message, ConfigProvider, Tooltip, Popconfirm, Select} from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -19,9 +18,8 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isBetween from 'dayjs/plugin/isBetween';
 import 'dayjs/locale/zh-cn';
 import zhCN from 'antd/locale/zh_CN';
-import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { queryCapacityCalendars, createCapacityCalendar, updateCapacityCalendar, deleteCapacityCalendar } from '../../../services/capacityCalendar';
-import type { CapacityCalendar, TimeRange } from '../../../services/capacityCalendar';
+import type { CapacityCalendar } from '../../../services/capacityCalendar';
 import { getAllEnabledLines } from '../../../services/line';
 import type { Line } from '../../../services/line';
 
@@ -38,7 +36,7 @@ const CapacityCalendarPage: React.FC = () => {
     const [isModalVisible, setIsModalVisible] = useState(false); // 控制模态框显示
     const [form] = Form.useForm(); // 表单实例
     const [editingId, setEditingId] = useState<number | null | undefined>(null); // 当前编辑的ID
-    const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs()); // 当前选中的年份
+    const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs()); // 当前选中的日期
     const [selectedLineId, setSelectedLineId] = useState<number>(); // 选中的拉线ID
     const [lines, setLines] = useState<Line[]>([]);
     const [currentView, setCurrentView] = useState('dayGridMonth');
@@ -60,8 +58,8 @@ const CapacityCalendarPage: React.FC = () => {
     // 获取产能日历数据
     const fetchCalendars = async () => {
         try {
-            console.log('正在获取产能日历数据:', selectedLineId, currentDate.year());
-            const response = await queryCapacityCalendars(selectedLineId, currentDate.year());
+            console.log('正在获取产能日历数据:', selectedLineId, currentDate.year(), currentDate.month() + 1);
+            const response = await queryCapacityCalendars(selectedLineId, currentDate.year(), currentDate.month() + 1);
             console.log('获取到的产能日历数据:', response);
             setCalendars(response);
         } catch (error: any) {
@@ -85,20 +83,13 @@ const CapacityCalendarPage: React.FC = () => {
     const handleModalOk = async () => {
         try {
             const values = await form.validateFields();
-            const startDate = dayjs(values.dateRange[0]).format('YYYY-MM-DD');
-            const endDate = dayjs(values.dateRange[1]).format('YYYY-MM-DD');
-            
             const data = {
                 lineId: values.lineId,
-                startDate,
-                endDate,
+                startDateTime: dayjs(values.dateTimeRange[0]).format('YYYY-MM-DD HH:mm:ss'),
+                endDateTime: dayjs(values.dateTimeRange[1]).format('YYYY-MM-DD HH:mm:ss'),
                 coefficient: values.coefficient,
-                remark: values.remark,
-                timeRanges: values.timeRanges.map((range: any) => ({
-                    startTime: range.timeRange[0].format('HH:mm:ss'),
-                    endTime: range.timeRange[1].format('HH:mm:ss'),
-                    periodName: range.periodName
-                }))
+                name: values.name,
+                remark: values.remark
             };
 
             if (editingId) {
@@ -128,30 +119,94 @@ const CapacityCalendarPage: React.FC = () => {
         setIsModalVisible(true);
     };
 
+    // 将产能日历数据转换为FullCalendar可识别的格式
+    const transformCalendarEvents = () => {
+        // 月视图显示连续事件，周视图和日视图显示拆分的事件
+        if (currentView === 'dayGridMonth') {
+            return calendars.map(calendar => {
+                const line = lines.find(l => l.id === calendar.lineId);
+                return {
+                    id: calendar.id?.toString(),
+                    title: `${line?.lineName || ''} - ${calendar.name} - 系数: ${calendar.coefficient}`,
+                    start: calendar.startDateTime,
+                    end: calendar.endDateTime,
+                    extendedProps: {
+                        remark: calendar.remark,
+                        lineName: line?.lineName,
+                        name: calendar.name,
+                        coefficient: calendar.coefficient,
+                        originalId: calendar.id
+                    },
+                    backgroundColor: '#1890ff',
+                    borderColor: '#1890ff',
+                    textColor: '#fff'
+                };
+            });
+        } else {
+            // 周视图和日视图需要拆分事件
+            const events: any[] = [];
+            calendars.forEach(calendar => {
+                const line = lines.find(l => l.id === calendar.lineId);
+                const startDate = dayjs(calendar.startDateTime);
+                const endDate = dayjs(calendar.endDateTime);
+                const startTime = startDate.format('HH:mm:ss');
+                const endTime = endDate.format('HH:mm:ss');
+                
+                // 计算日期范围内的每一天
+                let currentDate = startDate;
+                while (currentDate.isSameOrBefore(endDate, 'day')) {
+                    events.push({
+                        id: `${calendar.id}-${currentDate.format('YYYY-MM-DD')}`,
+                        title: `${line?.lineName || ''} - ${calendar.name} - 系数: ${calendar.coefficient}`,
+                        start: `${currentDate.format('YYYY-MM-DD')} ${startTime}`,
+                        end: `${currentDate.format('YYYY-MM-DD')} ${endTime}`,
+                        extendedProps: {
+                            remark: calendar.remark,
+                            lineName: line?.lineName,
+                            name: calendar.name,
+                            coefficient: calendar.coefficient,
+                            originalId: calendar.id
+                        },
+                        backgroundColor: '#1890ff',
+                        borderColor: '#1890ff',
+                        textColor: '#fff'
+                    });
+                    currentDate = currentDate.add(1, 'day');
+                }
+            });
+            return events;
+        }
+    };
+
     // 处理日历日期点击事件
     const handleDateClick = (arg: any) => {
-        const existingCalendar = calendars.find(c => 
-            dayjs(arg.dateStr).isBetween(c.startDate, c.endDate, 'day', '[]')
-        );
+        const clickedDateTime = dayjs(arg.dateStr);
+        const existingEvent = calendars.find(c => {
+            const startDate = dayjs(c.startDateTime);
+            const endDate = dayjs(c.endDateTime);
+            return clickedDateTime.isBetween(startDate, endDate, 'day', '[]') &&
+                   clickedDateTime.format('HH:mm:ss') >= startDate.format('HH:mm:ss') &&
+                   clickedDateTime.format('HH:mm:ss') <= endDate.format('HH:mm:ss');
+        });
         
-        if (existingCalendar) {
+        if (existingEvent) {
             form.setFieldsValue({
-                lineId: existingCalendar.lineId,
-                dateRange: [dayjs(existingCalendar.startDate), dayjs(existingCalendar.endDate)],
-                coefficient: existingCalendar.coefficient,
-                remark: existingCalendar.remark,
-                timeRanges: existingCalendar.timeRanges.map(range => ({
-                    timeRange: [dayjs(range.startTime, 'HH:mm:ss'), dayjs(range.endTime, 'HH:mm:ss')],
-                    periodName: range.periodName
-                }))
+                lineId: existingEvent.lineId,
+                dateTimeRange: [dayjs(existingEvent.startDateTime), dayjs(existingEvent.endDateTime)],
+                coefficient: existingEvent.coefficient,
+                name: existingEvent.name,
+                remark: existingEvent.remark
             });
-            setEditingId(existingCalendar.id);
+            setEditingId(existingEvent.id);
         } else {
+            const startTime = clickedDateTime.hour(9).minute(0).second(0);
+            const endTime = clickedDateTime.hour(17).minute(0).second(0);
             form.resetFields();
             form.setFieldsValue({
                 lineId: selectedLineId,
-                dateRange: [dayjs(arg.dateStr), dayjs(arg.dateStr)],
-                coefficient: 1.0
+                dateTimeRange: [startTime, endTime],
+                coefficient: 1.0,
+                name: '早班'
             });
             setEditingId(null);
         }
@@ -160,74 +215,20 @@ const CapacityCalendarPage: React.FC = () => {
 
     // 处理日期选择
     const handleDateSelect = (selectInfo: any) => {
+        const startDate = dayjs(selectInfo.start);
+        const endDate = dayjs(selectInfo.end).subtract(1, 'day');
         form.resetFields();
         form.setFieldsValue({
             lineId: selectedLineId,
-            dateRange: [dayjs(selectInfo.start), dayjs(selectInfo.end).subtract(1, 'day')],
-            coefficient: 1.0
+            dateTimeRange: [
+                startDate.hour(9).minute(0).second(0),
+                endDate.hour(17).minute(0).second(0)
+            ],
+            coefficient: 1.0,
+            name: '早班'
         });
         setEditingId(null);
         setIsModalVisible(true);
-    };
-
-    // 将产能日历数据转换为FullCalendar可识别的格式
-    const transformCalendarEvents = (view: string) => {
-        if (view === 'dayGridMonth') {
-            // 月视图显示整天的事件
-            return calendars.map(calendar => {
-                const line = lines.find(l => l.id === calendar.lineId);
-                return {
-                    id: calendar.id?.toString(),
-                    title: `${line?.lineName || ''} - 系数: ${calendar.coefficient}`,
-                    start: calendar.startDate,
-                    end: dayjs(calendar.endDate).add(1, 'day').format('YYYY-MM-DD'),
-                    extendedProps: {
-                        timeRanges: calendar.timeRanges,
-                        remark: calendar.remark,
-                        lineName: line?.lineName
-                    },
-                    backgroundColor: '#1890ff',
-                    borderColor: '#1890ff',
-                    textColor: '#fff',
-                    allDay: true
-                };
-            });
-        } else {
-            // 周视图、日视图、列表视图显示具体时间段
-            return calendars.flatMap(calendar => {
-                const line = lines.find(l => l.id === calendar.lineId);
-                const startDate = dayjs(calendar.startDate);
-                const endDate = dayjs(calendar.endDate);
-                const dates: string[] = [];
-                
-                // 生成日期范围内的所有日期
-                let currentDate = startDate;
-                while (currentDate.isSameOrBefore(endDate)) {
-                    dates.push(currentDate.format('YYYY-MM-DD'));
-                    currentDate = currentDate.add(1, 'day');
-                }
-
-                // 为每个日期的每个时间段创建事件
-                return dates.flatMap(date => 
-                    calendar.timeRanges.map(timeRange => ({
-                        id: `${calendar.id}-${date}-${timeRange.periodName}`,
-                        title: `${line?.lineName || ''} - ${timeRange.periodName} - 系数: ${calendar.coefficient}`,
-                        start: `${date}T${timeRange.startTime}`,
-                        end: `${date}T${timeRange.endTime}`,
-                        extendedProps: {
-                            timeRange,
-                            remark: calendar.remark,
-                            lineName: line?.lineName,
-                            coefficient: calendar.coefficient
-                        },
-                        backgroundColor: '#1890ff',
-                        borderColor: '#1890ff',
-                        textColor: '#fff',
-                        allDay: false
-                    }))
-                );
-            });
-        }
     };
 
     return (
@@ -236,7 +237,7 @@ const CapacityCalendarPage: React.FC = () => {
                 title={
                     <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
                         <span>产能日历</span>
-                        <div>
+                        <div style={{display: 'flex', gap: '8px'}}>
                             <Select
                                 style={{ width: 200 }}
                                 placeholder="选择拉线（可选）"
@@ -247,6 +248,7 @@ const CapacityCalendarPage: React.FC = () => {
                                     label: line.lineName
                                 }))}
                             />
+                            <Button type="primary" onClick={handleAdd}>新增</Button>
                         </div>
                     </div>
                 }
@@ -259,7 +261,7 @@ const CapacityCalendarPage: React.FC = () => {
                         multiMonthPlugin
                     ]}
                     initialView="dayGridMonth"
-                    events={transformCalendarEvents(currentView)}
+                    events={transformCalendarEvents()}
                     dateClick={handleDateClick}
                     locale="zh-cn"
                     selectable={true}
@@ -284,68 +286,33 @@ const CapacityCalendarPage: React.FC = () => {
                     viewDidMount={(arg) => {
                         setCurrentView(arg.view.type);
                     }}
-                    eventContent={(arg) => {
-                        if (currentView === 'dayGridMonth') {
-                            // 月视图的显示
-                            const timeRanges = arg.event.extendedProps.timeRanges;
-                            const timeRangeText = timeRanges?.map((range: TimeRange) => 
-                                `${range.periodName}: ${range.startTime.substring(0, 5)}-${range.endTime.substring(0, 5)}`
-                            ).join('\n');
-                            
-                            return (
-                                <Tooltip title={
-                                    <div>
-                                        <div>拉线: {arg.event.extendedProps.lineName}</div>
-                                        <div>系数: {arg.event.title.split('系数: ')[1]}</div>
-                                        {timeRangeText && timeRangeText.split('\n').map((text: string, index: number) => (
-                                            <div key={index}>{text}</div>
-                                        ))}
-                                        {arg.event.extendedProps.remark && (
-                                            <div>备注: {arg.event.extendedProps.remark}</div>
-                                        )}
-                                    </div>
-                                }>
-                                    <div style={{
-                                        padding: '2px 4px',
-                                        borderRadius: 2,
-                                        fontSize: '12px',
-                                        lineHeight: '1.2',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }}>
-                                        {arg.event.title}
-                                    </div>
-                                </Tooltip>
-                            );
-                        } else {
-                            // 周视图、日视图、列表视图的显示
-                            return (
-                                <Tooltip title={
-                                    <div>
-                                        <div>拉线: {arg.event.extendedProps.lineName}</div>
-                                        <div>时段: {arg.event.extendedProps.timeRange.periodName}</div>
-                                        <div>系数: {arg.event.extendedProps.coefficient}</div>
-                                        {arg.event.extendedProps.remark && (
-                                            <div>备注: {arg.event.extendedProps.remark}</div>
-                                        )}
-                                    </div>
-                                }>
-                                    <div style={{
-                                        padding: '2px 4px',
-                                        borderRadius: 2,
-                                        fontSize: '12px',
-                                        lineHeight: '1.2',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }}>
-                                        {arg.event.title}
-                                    </div>
-                                </Tooltip>
-                            );
-                        }
+                    datesSet={(dateInfo) => {
+                        setCurrentDate(dayjs(dateInfo.view.currentStart));
                     }}
+                    eventContent={(arg) => (
+                        <Tooltip title={
+                            <div>
+                                <div>拉线: {arg.event.extendedProps.lineName}</div>
+                                <div>时段: {arg.event.extendedProps.name}</div>
+                                <div>系数: {arg.event.extendedProps.coefficient}</div>
+                                {arg.event.extendedProps.remark && (
+                                    <div>备注: {arg.event.extendedProps.remark}</div>
+                                )}
+                            </div>
+                        }>
+                            <div style={{
+                                padding: '2px 4px',
+                                borderRadius: 2,
+                                fontSize: '12px',
+                                lineHeight: '1.2',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}>
+                                {arg.event.title}
+                            </div>
+                        </Tooltip>
+                    )}
                 />
 
                 <Modal
@@ -391,14 +358,22 @@ const CapacityCalendarPage: React.FC = () => {
                             />
                         </Form.Item>
                         <Form.Item
-                            name="dateRange"
-                            label="日期范围"
-                            rules={[{required: true, message: '请选择日期范围'}]}
+                            name="dateTimeRange"
+                            label="时间范围"
+                            rules={[{required: true, message: '请选择时间范围'}]}
                         >
                             <RangePicker 
                                 style={{width: '100%'}} 
-                                disabled={!!editingId}
+                                showTime={{ format: 'HH:mm' }}
+                                format="YYYY-MM-DD HH:mm"
                             />
+                        </Form.Item>
+                        <Form.Item
+                            name="name"
+                            label="时段名称"
+                            rules={[{required: true, message: '请输入时段名称'}]}
+                        >
+                            <Input placeholder="如：早班、中班、晚班" />
                         </Form.Item>
                         <Form.Item
                             name="coefficient"
@@ -409,77 +384,6 @@ const CapacityCalendarPage: React.FC = () => {
                             ]}
                         >
                             <InputNumber style={{width: '100%'}} step={0.1} precision={2} />
-                        </Form.Item>
-                        
-                        <Form.Item
-                            label="工作时段"
-                            required
-                            help="请至少添加一个工作时段"
-                        >
-                            <Form.List 
-                                name="timeRanges" 
-                                initialValue={[{}]}
-                                rules={[
-                                    {
-                                        validator: async (_, timeRanges) => {
-                                            if (!timeRanges || timeRanges.length < 1) {
-                                                return Promise.reject(new Error('请至少添加一个工作时段'));
-                                            }
-                                        },
-                                    },
-                                ]}
-                            >
-                                {(fields, { add, remove }) => (
-                                    <div style={{ width: '100%' }}>
-                                        {fields.map(({ key, name, ...restField }) => (
-                                            <div key={key} style={{ 
-                                                display: 'flex', 
-                                                marginBottom: 8,
-                                                gap: 8,
-                                                width: '100%'
-                                            }}>
-                                                <Form.Item
-                                                    {...restField}
-                                                    name={[name, 'periodName']}
-                                                    rules={[{ required: true, message: '请输入时段名称' }]}
-                                                    style={{ flex: '0 0 200px', marginBottom: 0 }}
-                                                >
-                                                    <Input placeholder="时段名称" />
-                                                </Form.Item>
-                                                <Form.Item
-                                                    {...restField}
-                                                    name={[name, 'timeRange']}
-                                                    rules={[{ required: true, message: '请选择时间范围' }]}
-                                                    style={{ flex: 1, marginBottom: 0 }}
-                                                >
-                                                    <TimePicker.RangePicker 
-                                                        format="HH:mm" 
-                                                        style={{ width: '100%' }}
-                                                    />
-                                                </Form.Item>
-                                                {fields.length > 1 && (
-                                                    <Button 
-                                                        type="text"
-                                                        icon={<MinusCircleOutlined />}
-                                                        onClick={() => remove(name)}
-                                                        style={{ flex: '0 0 32px' }}
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
-                                        <Form.Item style={{ marginBottom: 0 }}>
-                                            <Button 
-                                                type="dashed" 
-                                                onClick={() => add()} 
-                                                block 
-                                                icon={<PlusOutlined />}
-                                            >
-                                                添加时间段
-                                            </Button>
-                                        </Form.Item>
-                                    </div>
-                                )}
-                            </Form.List>
                         </Form.Item>
                         <Form.Item name="remark" label="备注">
                             <Input.TextArea />
