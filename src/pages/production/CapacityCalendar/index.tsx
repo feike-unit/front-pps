@@ -323,31 +323,51 @@ const CapacityCalendarPage: React.FC = () => {
                     datesSet={(dateInfo) => {
                         setCurrentDate(dayjs(dateInfo.view.currentStart));
                     }}
-                    eventContent={(arg) => (
-                        <Tooltip title={
-                            <div>
-                                <div>拉线: {arg.event.extendedProps.lineName}</div>
-                                <div>时段: {arg.event.extendedProps.name}</div>
-                                <div>时间: {dayjs(arg.event.start).format('HH:mm')} - {dayjs(arg.event.end).format('HH:mm')}</div>
-                                <div>系数: {arg.event.extendedProps.coefficient}</div>
-                                {arg.event.extendedProps.remark && (
-                                    <div>备注: {arg.event.extendedProps.remark}</div>
-                                )}
-                            </div>
-                        }>
-                            <div style={{
-                                padding: '2px 4px',
-                                borderRadius: 2,
-                                fontSize: '12px',
-                                lineHeight: '1.2',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                            }}>
-                                {`${arg.event.extendedProps.lineName} - ${arg.event.extendedProps.name}[${arg.event.extendedProps.coefficient}] (${dayjs(arg.event.start).format('HH:mm')}-${dayjs(arg.event.end).format('HH:mm')})`}
-                            </div>
-                        </Tooltip>
-                    )}
+                    eventContent={(arg) => {
+                        // 如果是选择的临时事件（未保存），只显示时间
+                        if (arg.event.display === 'background' || !arg.event.extendedProps.originalId) {
+                            return (
+                                <div style={{
+                                    padding: '2px 4px',
+                                    borderRadius: 2,
+                                    fontSize: '12px',
+                                    lineHeight: '1.2',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}>
+                                    {`${dayjs(arg.event.start).format('HH:mm')}-${dayjs(arg.event.end).format('HH:mm')}`}
+                                </div>
+                            );
+                        }
+
+                        // 已保存的事件显示完整信息
+                        return (
+                            <Tooltip title={
+                                <div>
+                                    <div>拉线: {arg.event.extendedProps.lineName}</div>
+                                    <div>时段: {arg.event.extendedProps.name}</div>
+                                    <div>时间: {dayjs(arg.event.start).format('HH:mm')} - {dayjs(arg.event.end).format('HH:mm')}</div>
+                                    <div>系数: {arg.event.extendedProps.coefficient}</div>
+                                    {arg.event.extendedProps.remark && (
+                                        <div>备注: {arg.event.extendedProps.remark}</div>
+                                    )}
+                                </div>
+                            }>
+                                <div style={{
+                                    padding: '2px 4px',
+                                    borderRadius: 2,
+                                    fontSize: '12px',
+                                    lineHeight: '1.2',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}>
+                                    {`${arg.event.extendedProps.lineName} - ${arg.event.extendedProps.name}[${arg.event.extendedProps.coefficient}] (${dayjs(arg.event.start).format('HH:mm')}-${dayjs(arg.event.end).format('HH:mm')})`}
+                                </div>
+                            </Tooltip>
+                        );
+                    }}
                 />
 
                 <Modal
