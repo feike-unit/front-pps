@@ -10,6 +10,8 @@ import React, {useEffect, useState} from 'react';
 import {Card, Button, Modal, Form, Input, DatePicker, InputNumber, message, ConfigProvider, Tooltip, Popconfirm, Select, Space, TimePicker} from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import type {Dayjs} from 'dayjs';
@@ -170,15 +172,18 @@ const CapacityCalendarPage: React.FC = () => {
 
     // 将产能日历数据转换为FullCalendar可识别的格式
     const calendarEvents = calendars.map(calendar => {
+        // 查找对应的拉线信息
+        const line = lines.find(l => l.id === calendar.lineId);
         console.log('转换日历数据:', calendar);
         return {
             id: calendar.id?.toString(),
-            title: `系数: ${calendar.coefficient}`,
+            title: `${line?.lineName || ''} - 系数: ${calendar.coefficient}`,
             start: calendar.startDate,
             end: dayjs(calendar.endDate).add(1, 'day').format('YYYY-MM-DD'), // FullCalendar的end日期是不包含的
             extendedProps: {
                 timeRanges: calendar.timeRanges,
-                remark: calendar.remark
+                remark: calendar.remark,
+                lineName: line?.lineName
             },
             backgroundColor: '#1890ff',
             borderColor: '#1890ff',
@@ -193,7 +198,7 @@ const CapacityCalendarPage: React.FC = () => {
             <Card
                 title={
                     <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-                        <span>产能日历 ({currentDate.year()}年)</span>
+                        <span>产能日历</span>
                         <div>
                             <Select
                                 style={{ width: 200 }}
@@ -205,30 +210,54 @@ const CapacityCalendarPage: React.FC = () => {
                                     label: line.lineName
                                 }))}
                             />
-                            <DatePicker
-                                picker="year"
-                                value={currentDate}
-                                onChange={(date) => date && setCurrentDate(date)}
-                                style={{marginRight: 8}}
-                            />
-                            <Button type="primary" onClick={handleAdd} disabled={!selectedLineId}>
-                                新增产能日历
-                            </Button>
                         </div>
                     </div>
                 }
             >
                 <FullCalendar
-                    plugins={[dayGridPlugin, interactionPlugin, multiMonthPlugin]}
-                    initialView="multiMonthYear"
-                    multiMonthMaxColumns={4}
+                    plugins={[
+                        dayGridPlugin,
+                        timeGridPlugin,
+                        listPlugin,
+                        interactionPlugin,
+                        multiMonthPlugin
+                    ]}
+                    initialView="dayGridMonth"
                     events={calendarEvents}
                     dateClick={handleDateClick}
                     locale="zh-cn"
                     selectable={true}
                     selectMirror={true}
                     select={handleDateSelect}
-                    headerToolbar={false}
+                    headerToolbar={{
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                    }}
+                    buttonText={{
+                        today: '今天',
+                        month: '月',
+                        week: '周',
+                        day: '日',
+                        list: '列表'
+                    }}
+                    dayMaxEvents={true}
+                    height="auto"
+                    eventDisplay="block"
+                    views={{
+                        dayGridMonth: {
+                            titleFormat: { year: 'numeric', month: 'long' }
+                        },
+                        timeGridWeek: {
+                            titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
+                        },
+                        timeGridDay: {
+                            titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
+                        },
+                        listWeek: {
+                            titleFormat: { year: 'numeric', month: 'long' }
+                        }
+                    }}
                     eventContent={(arg) => {
                         const timeRanges = arg.event.extendedProps.timeRanges;
                         const timeRangeText = timeRanges?.map((range: TimeRange) => 
@@ -238,7 +267,8 @@ const CapacityCalendarPage: React.FC = () => {
                         return (
                             <Tooltip title={
                                 <div>
-                                    <div>系数: {arg.event.title.split(': ')[1]}</div>
+                                    <div>拉线: {arg.event.extendedProps.lineName}</div>
+                                    <div>系数: {arg.event.title.split('系数: ')[1]}</div>
                                     {timeRangeText && timeRangeText.split('\n').map((text: string, index: number) => (
                                         <div key={index}>{text}</div>
                                     ))}
@@ -247,7 +277,15 @@ const CapacityCalendarPage: React.FC = () => {
                                     )}
                                 </div>
                             }>
-                                <div style={{padding: '2px 4px', borderRadius: 2}}>
+                                <div style={{
+                                    padding: '2px 4px',
+                                    borderRadius: 2,
+                                    fontSize: '12px',
+                                    lineHeight: '1.2',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}>
                                     {arg.event.title}
                                 </div>
                             </Tooltip>
