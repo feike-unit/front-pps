@@ -57,10 +57,6 @@ const CapacityCalendarPage: React.FC = () => {
 
     // 获取产能日历数据
     const fetchCalendars = async () => {
-        if (!selectedLineId) {
-            setCalendars([]);
-            return;
-        }
         try {
             console.log('正在获取产能日历数据:', selectedLineId, currentDate.year());
             const response = await queryCapacityCalendars(selectedLineId, currentDate.year());
@@ -74,14 +70,14 @@ const CapacityCalendarPage: React.FC = () => {
     };
 
     useEffect(() => {
-        if (selectedLineId) {
-            console.log('选择了拉线，开始获取数据:', selectedLineId);
-            fetchCalendars();
-        } else {
-            console.log('未选择拉线，清空日历数据');
-            setCalendars([]);
-        }
+        console.log('开始获取数据, 选中的拉线:', selectedLineId);
+        fetchCalendars();
     }, [currentDate, selectedLineId]);
+
+    // 拉线选择改变
+    const handleLineChange = (value: number | undefined) => {
+        setSelectedLineId(value);
+    };
 
     // 处理模态框确认操作
     const handleModalOk = async () => {
@@ -200,11 +196,14 @@ const CapacityCalendarPage: React.FC = () => {
                         <span>产能日历 ({currentDate.year()}年)</span>
                         <div>
                             <Select
-                                placeholder="请选择拉线"
-                                style={{width: 200, marginRight: 8}}
-                                options={lines.filter(line => line.status === 1).map(line => ({label: line.lineName, value: line.id}))}
-                                value={selectedLineId}
-                                onChange={setSelectedLineId}
+                                style={{ width: 200 }}
+                                placeholder="选择拉线（可选）"
+                                allowClear
+                                onChange={handleLineChange}
+                                options={lines.map(line => ({
+                                    value: line.id,
+                                    label: line.lineName
+                                }))}
                             />
                             <DatePicker
                                 picker="year"

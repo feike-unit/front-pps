@@ -19,9 +19,12 @@ export interface CapacityCalendar {
 }
 
 // 查询产能日历
-export const queryCapacityCalendars = async (lineId: number, year: number): Promise<CapacityCalendar[]> => {
+export const queryCapacityCalendars = async (lineId: number | undefined, year: number): Promise<CapacityCalendar[]> => {
     console.log('调用产能日历查询接口:', { lineId, year });
-    const response = await api.get<CapacityCalendar[]>(`/production/capacity-calendar?lineId=${lineId}&year=${year}`);
+    const url = lineId 
+        ? `/production/capacity-calendar?lineId=${lineId}&year=${year}`
+        : `/production/capacity-calendar?year=${year}`;
+    const response = await api.get<CapacityCalendar[]>(url);
     console.log('产能日历查询接口返回:', response.data);
     return response.data;
 };
