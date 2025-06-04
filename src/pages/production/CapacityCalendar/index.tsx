@@ -241,16 +241,13 @@ const CapacityCalendarPage: React.FC = () => {
             // 月视图下的处理
             startDate = dayjs(selectInfo.start);
             endDate = dayjs(selectInfo.end).subtract(1, 'day');
+            // 月视图下设置默认时间为 9:00-17:00
+            startDate = startDate.hour(9).minute(0).second(0);
+            endDate = endDate.hour(17).minute(0).second(0);
         } else {
-            // 周视图和日视图下的处理
+            // 周视图和日视图下的处理，直接使用选择的时间
             startDate = dayjs(selectInfo.start);
             endDate = dayjs(selectInfo.end);
-            
-            // 如果开始和结束时间在同一天，使用默认的时间范围
-            if (startDate.isSame(endDate, 'day')) {
-                startDate = startDate.hour(9).minute(0).second(0);
-                endDate = endDate.hour(17).minute(0).second(0);
-            }
         }
 
         form.resetFields();
@@ -281,7 +278,7 @@ const CapacityCalendarPage: React.FC = () => {
                                     label: line.lineName
                                 }))}
                             />
-                            <Button type="primary" onClick={handleAdd}>新增</Button>
+                            <Button type="primary" onClick={handleAdd}>新增产能日历</Button>
                         </div>
                     </div>
                 }
