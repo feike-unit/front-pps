@@ -199,39 +199,37 @@ const CapacityCalendarPage: React.FC = () => {
         }
     };
 
-    // 处理日历日期点击事件
+    // 处理日期点击事件
     const handleDateClick = (arg: any) => {
         const clickedDateTime = dayjs(arg.dateStr);
-        const existingEvent = calendars.find(c => {
-            const startDate = dayjs(c.startDateTime);
-            const endDate = dayjs(c.endDateTime);
-            return clickedDateTime.isBetween(startDate, endDate, 'day', '[]') &&
-                   clickedDateTime.format('HH:mm:ss') >= startDate.format('HH:mm:ss') &&
-                   clickedDateTime.format('HH:mm:ss') <= endDate.format('HH:mm:ss');
+        form.resetFields();
+        form.setFieldsValue({
+            lineId: selectedLineId,
+            dateTimeRange: [
+                clickedDateTime.hour(9).minute(0).second(0),
+                clickedDateTime.hour(17).minute(0).second(0)
+            ],
+            coefficient: 1.0,
+            name: '早班'
         });
-        
-        if (existingEvent) {
-            form.setFieldsValue({
-                lineId: existingEvent.lineId,
-                dateTimeRange: [dayjs(existingEvent.startDateTime), dayjs(existingEvent.endDateTime)],
-                coefficient: existingEvent.coefficient,
-                name: existingEvent.name,
-                remark: existingEvent.remark
-            });
-            setEditingId(existingEvent.id);
-        } else {
-            const startTime = clickedDateTime.hour(9).minute(0).second(0);
-            const endTime = clickedDateTime.hour(17).minute(0).second(0);
-            form.resetFields();
-            form.setFieldsValue({
-                lineId: selectedLineId,
-                dateTimeRange: [startTime, endTime],
-                coefficient: 1.0,
-                name: '早班'
-            });
-            setEditingId(null);
-        }
+        setEditingId(null);
         setIsModalVisible(true);
+    };
+
+    // 处理事件点击
+    const handleEventClick = (arg: any) => {
+        const calendar = calendars.find(c => c.id === Number(arg.event.extendedProps.originalId));
+        if (calendar) {
+            form.setFieldsValue({
+                lineId: calendar.lineId,
+                dateTimeRange: [dayjs(calendar.startDateTime), dayjs(calendar.endDateTime)],
+                coefficient: calendar.coefficient,
+                name: calendar.name,
+                remark: calendar.remark
+            });
+            setEditingId(calendar.id);
+            setIsModalVisible(true);
+        }
     };
 
     // 处理日期选择
@@ -298,6 +296,7 @@ const CapacityCalendarPage: React.FC = () => {
                     initialView="dayGridMonth"
                     events={transformCalendarEvents()}
                     dateClick={handleDateClick}
+                    eventClick={handleEventClick}
                     locale="zh-cn"
                     selectable={true}
                     selectMirror={true}
