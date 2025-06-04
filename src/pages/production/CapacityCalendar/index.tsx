@@ -41,6 +41,25 @@ const CapacityCalendarPage: React.FC = () => {
     const [lines, setLines] = useState<Line[]>([]);
     const [currentView, setCurrentView] = useState('dayGridMonth');
 
+    // 预定义的颜色数组
+    const LINE_COLORS = [
+        '#1890ff', // 蓝色
+        '#52c41a', // 绿色
+        '#722ed1', // 紫色
+        '#fa8c16', // 橙色
+        '#eb2f96', // 粉色
+        '#faad14', // 黄色
+        '#13c2c2', // 青色
+        '#f5222d', // 红色
+        '#2f54eb', // 深蓝色
+        '#fa541c'  // 橘红色
+    ];
+
+    // 获取拉线的颜色
+    const getLineColor = (lineId: number) => {
+        return LINE_COLORS[lineId % LINE_COLORS.length];
+    };
+
     // 获取拉线列表
     useEffect(() => {
         const fetchLines = async () => {
@@ -125,6 +144,7 @@ const CapacityCalendarPage: React.FC = () => {
         if (currentView === 'dayGridMonth') {
             return calendars.map(calendar => {
                 const line = lines.find(l => l.id === calendar.lineId);
+                const color = getLineColor(calendar.lineId);
                 return {
                     id: calendar.id?.toString(),
                     title: `${line?.lineName || ''} - ${calendar.name} - 系数: ${calendar.coefficient}`,
@@ -137,8 +157,8 @@ const CapacityCalendarPage: React.FC = () => {
                         coefficient: calendar.coefficient,
                         originalId: calendar.id
                     },
-                    backgroundColor: '#1890ff',
-                    borderColor: '#1890ff',
+                    backgroundColor: color,
+                    borderColor: color,
                     textColor: '#fff'
                 };
             });
@@ -147,6 +167,7 @@ const CapacityCalendarPage: React.FC = () => {
             const events: any[] = [];
             calendars.forEach(calendar => {
                 const line = lines.find(l => l.id === calendar.lineId);
+                const color = getLineColor(calendar.lineId);
                 const startDate = dayjs(calendar.startDateTime);
                 const endDate = dayjs(calendar.endDateTime);
                 const startTime = startDate.format('HH:mm:ss');
@@ -167,8 +188,8 @@ const CapacityCalendarPage: React.FC = () => {
                             coefficient: calendar.coefficient,
                             originalId: calendar.id
                         },
-                        backgroundColor: '#1890ff',
-                        borderColor: '#1890ff',
+                        backgroundColor: color,
+                        borderColor: color,
                         textColor: '#fff'
                     });
                     currentDate = currentDate.add(1, 'day');
@@ -294,6 +315,7 @@ const CapacityCalendarPage: React.FC = () => {
                             <div>
                                 <div>拉线: {arg.event.extendedProps.lineName}</div>
                                 <div>时段: {arg.event.extendedProps.name}</div>
+                                <div>时间: {dayjs(arg.event.start).format('HH:mm')} - {dayjs(arg.event.end).format('HH:mm')}</div>
                                 <div>系数: {arg.event.extendedProps.coefficient}</div>
                                 {arg.event.extendedProps.remark && (
                                     <div>备注: {arg.event.extendedProps.remark}</div>
@@ -309,7 +331,7 @@ const CapacityCalendarPage: React.FC = () => {
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis'
                             }}>
-                                {arg.event.title}
+                                {`${arg.event.extendedProps.lineName} - ${arg.event.extendedProps.name}[${arg.event.extendedProps.coefficient}] (${dayjs(arg.event.start).format('HH:mm')}-${dayjs(arg.event.end).format('HH:mm')})`}
                             </div>
                         </Tooltip>
                     )}
