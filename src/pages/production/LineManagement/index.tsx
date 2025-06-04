@@ -22,7 +22,7 @@ import {
   ProFormTreeSelect,
   ProFormDatePicker,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CalendarOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import {
   Line,
@@ -38,7 +38,6 @@ import {
 } from '../../../services/line';
 import { getAllDepartments } from '../../../services/department';
 import debounce from 'lodash/debounce';
-import LineCoefficient from './LineCoefficient';
 
 const LineManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
@@ -47,8 +46,6 @@ const LineManagement: React.FC = () => {
     keyword?: string;
     deptId?: number;
   }>({});
-  const [coefficientModalVisible, setCoefficientModalVisible] = useState(false);
-  const [selectedLineId, setSelectedLineId] = useState<number | null>(null);
 
   // 防抖处理函数
   const handleSearchWithDebounce = debounce((value: string) => {
@@ -235,16 +232,6 @@ const LineManagement: React.FC = () => {
       key: 'option',
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="系数维护">
-            <a
-              onClick={() => {
-                setSelectedLineId(record.id!);
-                setCoefficientModalVisible(true);
-              }}
-            >
-              <CalendarOutlined style={{ color: '#1890ff' }} />
-            </a>
-          </Tooltip>
           <ModalForm<Line>
             title="编辑拉线"
             trigger={
@@ -562,16 +549,6 @@ const LineManagement: React.FC = () => {
           </ModalForm>,
         ]}
       />
-      {selectedLineId && (
-        <LineCoefficient
-          lineId={selectedLineId}
-          visible={coefficientModalVisible}
-          onClose={() => {
-            setCoefficientModalVisible(false);
-            setSelectedLineId(null);
-          }}
-        />
-      )}
     </>
   );
 };

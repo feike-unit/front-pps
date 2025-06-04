@@ -37,21 +37,13 @@ export interface LinePageRequest {
   deptId?: number;
   status?: number;
   sortField?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: string;
 }
 
 // 状态枚举
 export enum LineStatus {
-  DISABLED = 0, // 禁用
-  ENABLED = 1, // 启用
-}
-
-// 拉线系数接口
-export interface LineCoefficient {
-  id?: number;
-  lineId: number;
-  dayDate: string;
-  coefficient: number;
+  Disabled = 0,
+  Enabled = 1
 }
 
 // 分页查询拉线列表
@@ -99,26 +91,6 @@ export const searchLines = async (keyword: string): Promise<Line[]> => {
   return response.data;
 };
 
-// 获取拉线系数列表
-export const getLineCoefficientsByLineId = async (lineId: number): Promise<LineCoefficient[]> => {
-  const response = await api.get<LineCoefficient[]>(`/production/lines/${lineId}/coefficients`);
-  return response.data;
-};
-
-// 创建拉线系数
-export const createLineCoefficient = async (params: Omit<LineCoefficient, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
-  await api.post(`/production/lines/${params.lineId}/coefficients`, params);
-};
-
-// 更新拉线系数
-export const updateLineCoefficient = async (id: number, params: Partial<Omit<LineCoefficient, 'id' | 'lineId' | 'createdAt' | 'updatedAt'>>): Promise<void> => {
-  await api.put(`/production/lines/coefficients/${id}`, params);
-};
-
-// 删除拉线系数
-export const deleteLineCoefficient = async (id: number): Promise<void> => {
-  await api.delete(`/production/lines/coefficients/${id}`);
-};
 
 // 获取所有拉线
 export const getAllLines = async (): Promise<Line[]> => {
