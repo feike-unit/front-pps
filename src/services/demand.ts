@@ -111,12 +111,6 @@ export const updateDemandStatus = async (id: number, status: DemandStatus): Prom
   return response.data;
 };
 
-// 确认执行需求
-export const confirmAndExecuteDemand = async (id: number): Promise<Demand> => {
-  const response = await api.patch(`/execution/demands/${id}/confirm-execute`);
-  return response.data;
-};
-
 // 同步需求
 export const syncDemands = async (): Promise<void> => {
   const response = await api.post('/execution/demands/sync');
@@ -126,5 +120,14 @@ export const syncDemands = async (): Promise<void> => {
 // 提交插单计划
 export const submitInsertOrder = async (data: InsertOrderRequest): Promise<void> => {
   const response = await api.post('/execution/demands/insert-order', data);
+  return response.data;
+};
+
+/**
+ * 执行排产计划
+ * @param demandIds 需求ID列表
+ */
+export const schedulerDemands = async (demandIds: number[]): Promise<void> => {
+  const response = await api.patch<void>('/execution/demands/scheduler', demandIds);
   return response.data;
 }; 

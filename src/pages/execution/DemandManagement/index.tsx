@@ -19,7 +19,8 @@ import {
   Modal,
   Radio,
   Badge,
-  Typography
+  Typography,
+  Alert
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
@@ -46,12 +47,12 @@ import {
   DemandPageRequest,
   deleteDemand,
   updateDemandStatus,
-  confirmAndExecuteDemand,
   syncDemands,
   DateQuantity,
   InsertOrderRequest,
   submitInsertOrder,
-  getDemandById
+  getDemandById,
+  schedulerDemands
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
@@ -62,6 +63,7 @@ import './index.less';
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
+  [-1]: 'rgba(250, 173, 20, 0.15)',  // 未排产 - 橙色
   [DemandStatus.INCOMPLETE]: 'rgba(24, 144, 255, 0.15)', // 未完成 - 蓝色
   [DemandStatus.COMPLETED]: 'rgba(82, 196, 26, 0.15)',   // 已完成 - 绿色
 };
@@ -90,6 +92,10 @@ const DemandManagement: React.FC = () => {
   const navigate = useNavigate();
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<Demand | null>(null);
+
+  const [selectedRows, setSelectedRows] = useState<Demand[]>([]);
+  const [batchPlanModalVisible, setBatchPlanModalVisible] = useState<boolean>(false);
+  const [batchPlanForm] = Form.useForm();
 
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
@@ -382,6 +388,7 @@ const DemandManagement: React.FC = () => {
       onFilter: true,
       valueType: 'select',
       valueEnum: {
+        [-1]: { text: '未排产', status: 'warning' },
         [0]: { text: '未完成', status: 'processing' },
         [1]: { text: '已完成', status: 'success' },
       },
@@ -462,12 +469,29 @@ const DemandManagement: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
-          {/* 添加插单按钮 */}
+          {/* 添加排产按钮 */}
+          {record.status === -1 && (
+            <Popconfirm
+              title="确认排产"
+              description={`是否确认对货品"${record.productCode} - ${record.productName}"进行排产？`}
+              onConfirm={() => handleSinglePlan(record)}
+              okText="确认"
+              cancelText="取消"
+            >
+              <Tooltip title="排产">
+                <a>
+                  <PlayCircleOutlined style={{ color: '#1890ff' }} />
+                </a>
+              </Tooltip>
+            </Popconfirm>
+          )}
+          {/* 查看详情按钮 */}
           <Tooltip title="查看详情">
             <a onClick={() => handleViewDetails(record)}>
               <EyeOutlined style={{ color: '#1890ff' }} />
             </a>
           </Tooltip>
+          {/* 插单按钮 */}
           <Tooltip title="插单">
             <a onClick={() => handleOpenInsertOrderModal(record)}>
               <SwapOutlined style={{ color: '#1890ff' }} />
@@ -487,6 +511,33 @@ const DemandManagement: React.FC = () => {
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取需求详情失败');
+    }
+  };
+
+  // 处理批量排产
+  const handleBatchPlan = async () => {
+    try {
+      const demandIds = selectedRows.map(row => row.id!);
+      await schedulerDemands(demandIds);
+      message.success('批量排产成功');
+      setBatchPlanModalVisible(false);
+      actionRef.current?.reload();
+      setSelectedRows([]);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '批量排产失败');
+    }
+  };
+
+  // 处理单个排产
+  const handleSinglePlan = async (record: Demand) => {
+    try {
+      await schedulerDemands([record.id!]);
+      message.success('排产成功');
+      actionRef.current?.reload();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '排产失败');
     }
   };
 
@@ -676,6 +727,44 @@ const DemandManagement: React.FC = () => {
         }}
         childrenColumnName="children"
         indentSize={24}
+        rowSelection={{
+          onChange: (_, selectedRows) => {
+            setSelectedRows(selectedRows);
+          },
+          getCheckboxProps: (record) => ({
+            disabled: record.status !== -1, // 只允许选择未排产的记录
+          }),
+        }}
+        tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
+          <Space size={24}>
+            <Alert
+              message={
+                <Space>
+                  已选择 <a style={{ fontWeight: 600 }}>{selectedRowKeys.length}</a> 项
+                  <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
+                    取消选择
+                  </a>
+                </Space>
+              }
+              type="info"
+              showIcon
+            />
+          </Space>
+        )}
+        tableAlertOptionRender={() => {
+          return (
+            <Space size={16}>
+              <Button
+                type="primary"
+                onClick={() => {
+                  setBatchPlanModalVisible(true);
+                }}
+              >
+                批量排产
+              </Button>
+            </Space>
+          );
+        }}
         toolBarRender={() => [
           <Button
             key="calendar"
@@ -693,7 +782,6 @@ const DemandManagement: React.FC = () => {
               try {
                 await syncDemands();
                 message.success('需求同步成功');
-                // 刷新表格数据
                 actionRef.current?.reload();
               } catch (error) {
                 const apiError = error as ApiError;
@@ -939,6 +1027,7 @@ const DemandManagement: React.FC = () => {
                   width: 100,
                   render: (_, record) => {
                     const statusMap: Record<number, { text: string; color: string }> = {
+                      [-1]: { text: '未排产', color: '#faad14' },
                       [DemandStatus.INCOMPLETE]: { text: '未完成', color: '#1890ff' },
                       [DemandStatus.COMPLETED]: { text: '已完成', color: '#52c41a' },
                     };
@@ -1028,6 +1117,66 @@ const DemandManagement: React.FC = () => {
             />
           </div>
         )}
+      </Modal>
+
+      {/* 批量排产对话框 */}
+      <Modal
+        title="批量排产"
+        open={batchPlanModalVisible}
+        onCancel={() => setBatchPlanModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setBatchPlanModalVisible(false)}>
+            取消
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary" 
+            onClick={handleBatchPlan}
+          >
+            确认排产
+          </Button>
+        ]}
+        width={800}
+      >
+        <Alert
+          message={`已选择 ${selectedRows.length} 个未排产需求进行批量排产`}
+          type="info"
+          showIcon
+          style={{ marginBottom: 24 }}
+        />
+        
+        <div style={{ marginBottom: 24 }}>
+          <Typography.Text type="warning">
+            注意：系统将自动为选中的需求进行排产计划安排。
+          </Typography.Text>
+        </div>
+
+        {/* 显示选中的需求列表 */}
+        <Table
+          dataSource={selectedRows}
+          columns={[
+            {
+              title: '货品编号/名称',
+              dataIndex: 'productCode',
+              render: (_, record) => `${record.productCode} - ${record.productName}`,
+            },
+            {
+              title: '订单数量',
+              dataIndex: 'demandQuantity',
+            },
+            {
+              title: '交期',
+              dataIndex: 'deliveryDate',
+            }
+          ]}
+          size="small"
+          pagination={false}
+          scroll={{ y: 200 }}
+          expandable={{
+            showExpandColumn: false
+          }}
+          rowKey="id"
+        />
       </Modal>
     </>
   );
