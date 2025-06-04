@@ -21,6 +21,8 @@ import zhCN from 'antd/locale/zh_CN';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { queryCapacityCalendars, createCapacityCalendar, updateCapacityCalendar, deleteCapacityCalendar } from '../../../services/capacityCalendar';
 import type { CapacityCalendar, TimeRange } from '../../../services/capacityCalendar';
+import { getAllEnabledLines } from '../../../services/line';
+import type { Line } from '../../../services/line';
 
 // 配置 dayjs
 dayjs.locale('zh-cn');
@@ -37,17 +39,32 @@ const CapacityCalendarPage: React.FC = () => {
     const [editingId, setEditingId] = useState<number | null | undefined>(null); // 当前编辑的ID
     const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs()); // 当前选中的年份
     const [selectedLineId, setSelectedLineId] = useState<number>(); // 选中的拉线ID
+    const [lines, setLines] = useState<Line[]>([]);
 
-    // TODO: 获取拉线列表
-    const [lines] = useState([
-        { id: 1, name: '拉线1' },
-        { id: 2, name: '拉线2' },
-    ]);
+    // 获取拉线列表
+    useEffect(() => {
+        const fetchLines = async () => {
+            try {
+                const response = await getAllEnabledLines();
+                setLines(response);
+            } catch (error: any) {
+                console.error('获取拉线列表失败:', error);
+                message.error(error.response?.data?.message || error.message || '获取拉线列表失败');
+            }
+        };
+        fetchLines();
+    }, []);
 
     // 获取产能日历数据
     const fetchCalendars = async () => {
+        if (!selectedLineId) {
+            setCalendars([]);
+            return;
+        }
         try {
-            const response = await queryCapacityCalendars(selectedLineId!, currentDate.year());
+            console.log('正在获取产能日历数据:', selectedLineId, currentDate.year());
+            const response = await queryCapacityCalendars(selectedLineId, currentDate.year());
+            console.log('获取到的产能日历数据:', response);
             setCalendars(response);
         } catch (error: any) {
             console.error('获取产能日历数据失败:', error);
@@ -58,7 +75,11 @@ const CapacityCalendarPage: React.FC = () => {
 
     useEffect(() => {
         if (selectedLineId) {
+            console.log('选择了拉线，开始获取数据:', selectedLineId);
             fetchCalendars();
+        } else {
+            console.log('未选择拉线，清空日历数据');
+            setCalendars([]);
         }
     }, [currentDate, selectedLineId]);
 
@@ -152,20 +173,24 @@ const CapacityCalendarPage: React.FC = () => {
     };
 
     // 将产能日历数据转换为FullCalendar可识别的格式
-    const calendarEvents = calendars.map(calendar => ({
-        id: calendar.id?.toString(),
-        title: `系数: ${calendar.coefficient}`,
-        start: calendar.startDate,
-        end: dayjs(calendar.endDate).add(1, 'day').format('YYYY-MM-DD'), // FullCalendar的end日期是不包含的
-        extendedProps: {
-            timeRanges: calendar.timeRanges,
-            remark: calendar.remark
-        },
-        backgroundColor: '#1890ff',
-        borderColor: '#1890ff',
-        textColor: '#fff',
-        allDay: true
-    }));
+    const calendarEvents = calendars.map(calendar => {
+        console.log('转换日历数据:', calendar);
+        return {
+            id: calendar.id?.toString(),
+            title: `系数: ${calendar.coefficient}`,
+            start: calendar.startDate,
+            end: dayjs(calendar.endDate).add(1, 'day').format('YYYY-MM-DD'), // FullCalendar的end日期是不包含的
+            extendedProps: {
+                timeRanges: calendar.timeRanges,
+                remark: calendar.remark
+            },
+            backgroundColor: '#1890ff',
+            borderColor: '#1890ff',
+            textColor: '#fff',
+            allDay: true
+        };
+    });
+    console.log('转换后的日历事件:', calendarEvents);
 
     return (
         <ConfigProvider locale={zhCN}>
@@ -177,7 +202,7 @@ const CapacityCalendarPage: React.FC = () => {
                             <Select
                                 placeholder="请选择拉线"
                                 style={{width: 200, marginRight: 8}}
-                                options={lines.map(line => ({label: line.name, value: line.id}))}
+                                options={lines.filter(line => line.status === 1).map(line => ({label: line.lineName, value: line.id}))}
                                 value={selectedLineId}
                                 onChange={setSelectedLineId}
                             />
@@ -269,7 +294,7 @@ const CapacityCalendarPage: React.FC = () => {
                             rules={[{required: true, message: '请选择拉线'}]}
                         >
                             <Select
-                                options={lines.map(line => ({label: line.name, value: line.id}))}
+                                options={lines.filter(line => line.status === 1).map(line => ({label: line.lineName, value: line.id}))}
                                 disabled={!!editingId}
                             />
                         </Form.Item>

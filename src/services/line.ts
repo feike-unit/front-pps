@@ -4,11 +4,11 @@ import api, { PageResponse } from './api';
  * 生产拉线类型定义
  */
 export interface Line {
-  id?: number;
+  id: number;
   lineCode: string;
   lineName: string;
-  startDate?: string; // 投产日期
-  worksHour?: number; // 一天工时数(默认24小时)
+  startDate: string;
+  worksHour: number;
   deptId: number;
   deptName?: string;
   status: number;
@@ -118,4 +118,16 @@ export const updateLineCoefficient = async (id: number, params: Partial<Omit<Lin
 // 删除拉线系数
 export const deleteLineCoefficient = async (id: number): Promise<void> => {
   await api.delete(`/production/lines/coefficients/${id}`);
+};
+
+// 获取所有拉线
+export const getAllLines = async (): Promise<Line[]> => {
+  const response = await api.get<Line[]>('/production/lines');
+  return response.data;
+};
+
+// 获取所有启用的拉线
+export const getAllEnabledLines = async (): Promise<Line[]> => {
+  const response = await api.get<Line[]>('/production/lines/enabled');
+  return response.data;
 }; 
