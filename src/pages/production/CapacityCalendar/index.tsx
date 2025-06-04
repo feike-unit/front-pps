@@ -11,7 +11,6 @@ import {Card, Button, Modal, Form, Input, DatePicker, InputNumber, message, Conf
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import type {Dayjs} from 'dayjs';
@@ -42,6 +41,7 @@ const CapacityCalendarPage: React.FC = () => {
     const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs()); // 当前选中的年份
     const [selectedLineId, setSelectedLineId] = useState<number>(); // 选中的拉线ID
     const [lines, setLines] = useState<Line[]>([]);
+    const [currentView, setCurrentView] = useState('dayGridMonth');
 
     // 获取拉线列表
     useEffect(() => {
@@ -171,27 +171,64 @@ const CapacityCalendarPage: React.FC = () => {
     };
 
     // 将产能日历数据转换为FullCalendar可识别的格式
-    const calendarEvents = calendars.map(calendar => {
-        // 查找对应的拉线信息
-        const line = lines.find(l => l.id === calendar.lineId);
-        console.log('转换日历数据:', calendar);
-        return {
-            id: calendar.id?.toString(),
-            title: `${line?.lineName || ''} - 系数: ${calendar.coefficient}`,
-            start: calendar.startDate,
-            end: dayjs(calendar.endDate).add(1, 'day').format('YYYY-MM-DD'), // FullCalendar的end日期是不包含的
-            extendedProps: {
-                timeRanges: calendar.timeRanges,
-                remark: calendar.remark,
-                lineName: line?.lineName
-            },
-            backgroundColor: '#1890ff',
-            borderColor: '#1890ff',
-            textColor: '#fff',
-            allDay: true
-        };
-    });
-    console.log('转换后的日历事件:', calendarEvents);
+    const transformCalendarEvents = (view: string) => {
+        if (view === 'dayGridMonth') {
+            // 月视图显示整天的事件
+            return calendars.map(calendar => {
+                const line = lines.find(l => l.id === calendar.lineId);
+                return {
+                    id: calendar.id?.toString(),
+                    title: `${line?.lineName || ''} - 系数: ${calendar.coefficient}`,
+                    start: calendar.startDate,
+                    end: dayjs(calendar.endDate).add(1, 'day').format('YYYY-MM-DD'),
+                    extendedProps: {
+                        timeRanges: calendar.timeRanges,
+                        remark: calendar.remark,
+                        lineName: line?.lineName
+                    },
+                    backgroundColor: '#1890ff',
+                    borderColor: '#1890ff',
+                    textColor: '#fff',
+                    allDay: true
+                };
+            });
+        } else {
+            // 周视图、日视图、列表视图显示具体时间段
+            return calendars.flatMap(calendar => {
+                const line = lines.find(l => l.id === calendar.lineId);
+                const startDate = dayjs(calendar.startDate);
+                const endDate = dayjs(calendar.endDate);
+                const dates: string[] = [];
+                
+                // 生成日期范围内的所有日期
+                let currentDate = startDate;
+                while (currentDate.isSameOrBefore(endDate)) {
+                    dates.push(currentDate.format('YYYY-MM-DD'));
+                    currentDate = currentDate.add(1, 'day');
+                }
+
+                // 为每个日期的每个时间段创建事件
+                return dates.flatMap(date => 
+                    calendar.timeRanges.map(timeRange => ({
+                        id: `${calendar.id}-${date}-${timeRange.periodName}`,
+                        title: `${line?.lineName || ''} - ${timeRange.periodName} - 系数: ${calendar.coefficient}`,
+                        start: `${date}T${timeRange.startTime}`,
+                        end: `${date}T${timeRange.endTime}`,
+                        extendedProps: {
+                            timeRange,
+                            remark: calendar.remark,
+                            lineName: line?.lineName,
+                            coefficient: calendar.coefficient
+                        },
+                        backgroundColor: '#1890ff',
+                        borderColor: '#1890ff',
+                        textColor: '#fff',
+                        allDay: false
+                    }))
+                );
+            });
+        }
+    };
 
     return (
         <ConfigProvider locale={zhCN}>
@@ -218,12 +255,11 @@ const CapacityCalendarPage: React.FC = () => {
                     plugins={[
                         dayGridPlugin,
                         timeGridPlugin,
-                        listPlugin,
                         interactionPlugin,
                         multiMonthPlugin
                     ]}
                     initialView="dayGridMonth"
-                    events={calendarEvents}
+                    events={transformCalendarEvents(currentView)}
                     dateClick={handleDateClick}
                     locale="zh-cn"
                     selectable={true}
@@ -232,64 +268,83 @@ const CapacityCalendarPage: React.FC = () => {
                     headerToolbar={{
                         left: 'prev,next today',
                         center: 'title',
-                        right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
                     }}
                     buttonText={{
                         today: '今天',
                         month: '月',
                         week: '周',
-                        day: '日',
-                        list: '列表'
+                        day: '日'
                     }}
                     dayMaxEvents={true}
                     height="auto"
                     eventDisplay="block"
-                    views={{
-                        dayGridMonth: {
-                            titleFormat: { year: 'numeric', month: 'long' }
-                        },
-                        timeGridWeek: {
-                            titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
-                        },
-                        timeGridDay: {
-                            titleFormat: { year: 'numeric', month: 'long', day: '2-digit' }
-                        },
-                        listWeek: {
-                            titleFormat: { year: 'numeric', month: 'long' }
-                        }
+                    slotMinTime="00:00:00"
+                    slotMaxTime="24:00:00"
+                    viewDidMount={(arg) => {
+                        setCurrentView(arg.view.type);
                     }}
                     eventContent={(arg) => {
-                        const timeRanges = arg.event.extendedProps.timeRanges;
-                        const timeRangeText = timeRanges?.map((range: TimeRange) => 
-                            `${range.periodName}: ${range.startTime.substring(0, 5)}-${range.endTime.substring(0, 5)}`
-                        ).join('\n');
-                        
-                        return (
-                            <Tooltip title={
-                                <div>
-                                    <div>拉线: {arg.event.extendedProps.lineName}</div>
-                                    <div>系数: {arg.event.title.split('系数: ')[1]}</div>
-                                    {timeRangeText && timeRangeText.split('\n').map((text: string, index: number) => (
-                                        <div key={index}>{text}</div>
-                                    ))}
-                                    {arg.event.extendedProps.remark && (
-                                        <div>备注: {arg.event.extendedProps.remark}</div>
-                                    )}
-                                </div>
-                            }>
-                                <div style={{
-                                    padding: '2px 4px',
-                                    borderRadius: 2,
-                                    fontSize: '12px',
-                                    lineHeight: '1.2',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                }}>
-                                    {arg.event.title}
-                                </div>
-                            </Tooltip>
-                        );
+                        if (currentView === 'dayGridMonth') {
+                            // 月视图的显示
+                            const timeRanges = arg.event.extendedProps.timeRanges;
+                            const timeRangeText = timeRanges?.map((range: TimeRange) => 
+                                `${range.periodName}: ${range.startTime.substring(0, 5)}-${range.endTime.substring(0, 5)}`
+                            ).join('\n');
+                            
+                            return (
+                                <Tooltip title={
+                                    <div>
+                                        <div>拉线: {arg.event.extendedProps.lineName}</div>
+                                        <div>系数: {arg.event.title.split('系数: ')[1]}</div>
+                                        {timeRangeText && timeRangeText.split('\n').map((text: string, index: number) => (
+                                            <div key={index}>{text}</div>
+                                        ))}
+                                        {arg.event.extendedProps.remark && (
+                                            <div>备注: {arg.event.extendedProps.remark}</div>
+                                        )}
+                                    </div>
+                                }>
+                                    <div style={{
+                                        padding: '2px 4px',
+                                        borderRadius: 2,
+                                        fontSize: '12px',
+                                        lineHeight: '1.2',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    }}>
+                                        {arg.event.title}
+                                    </div>
+                                </Tooltip>
+                            );
+                        } else {
+                            // 周视图、日视图、列表视图的显示
+                            return (
+                                <Tooltip title={
+                                    <div>
+                                        <div>拉线: {arg.event.extendedProps.lineName}</div>
+                                        <div>时段: {arg.event.extendedProps.timeRange.periodName}</div>
+                                        <div>系数: {arg.event.extendedProps.coefficient}</div>
+                                        {arg.event.extendedProps.remark && (
+                                            <div>备注: {arg.event.extendedProps.remark}</div>
+                                        )}
+                                    </div>
+                                }>
+                                    <div style={{
+                                        padding: '2px 4px',
+                                        borderRadius: 2,
+                                        fontSize: '12px',
+                                        lineHeight: '1.2',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    }}>
+                                        {arg.event.title}
+                                    </div>
+                                </Tooltip>
+                            );
+                        }
                     }}
                 />
 
