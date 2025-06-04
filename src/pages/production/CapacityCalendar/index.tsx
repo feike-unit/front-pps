@@ -236,15 +236,29 @@ const CapacityCalendarPage: React.FC = () => {
 
     // 处理日期选择
     const handleDateSelect = (selectInfo: any) => {
-        const startDate = dayjs(selectInfo.start);
-        const endDate = dayjs(selectInfo.end).subtract(1, 'day');
+        console.log('选择的时间范围:', selectInfo);
+        let startDate, endDate;
+        
+        if (currentView === 'dayGridMonth') {
+            // 月视图下的处理
+            startDate = dayjs(selectInfo.start);
+            endDate = dayjs(selectInfo.end).subtract(1, 'day');
+        } else {
+            // 周视图和日视图下的处理
+            startDate = dayjs(selectInfo.start);
+            endDate = dayjs(selectInfo.end);
+            
+            // 如果开始和结束时间在同一天，使用默认的时间范围
+            if (startDate.isSame(endDate, 'day')) {
+                startDate = startDate.hour(9).minute(0).second(0);
+                endDate = endDate.hour(17).minute(0).second(0);
+            }
+        }
+
         form.resetFields();
         form.setFieldsValue({
             lineId: selectedLineId,
-            dateTimeRange: [
-                startDate.hour(9).minute(0).second(0),
-                endDate.hour(17).minute(0).second(0)
-            ],
+            dateTimeRange: [startDate, endDate],
             coefficient: 1.0,
             name: '早班'
         });
