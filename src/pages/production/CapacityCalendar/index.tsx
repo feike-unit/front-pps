@@ -200,11 +200,28 @@ const CapacityCalendarPage: React.FC = () => {
     // 处理日期点击事件
     const handleDateClick = (arg: any) => {
         const clickedDateTime = dayjs(arg.dateStr);
+        let startDate, endDate, startTime, endTime;
+
+        if (currentView === 'dayGridMonth') {
+            // 月视图下使用默认时间范围
+            startDate = clickedDateTime;
+            endDate = clickedDateTime;
+            startTime = dayjs().hour(9).minute(0);
+            endTime = dayjs().hour(17).minute(0);
+        } else {
+            // 周视图和日视图下使用点击的时间
+            startDate = clickedDateTime;
+            endDate = clickedDateTime;
+            startTime = clickedDateTime;
+            // 设置结束时间为点击时间后的1小时
+            endTime = clickedDateTime.add(1, 'hour');
+        }
+
         form.resetFields();
         form.setFieldsValue({
             lineId: selectedLineId,
-            dateRange: [clickedDateTime, clickedDateTime],
-            timeRange: [dayjs().hour(9).minute(0), dayjs().hour(17).minute(0)],
+            dateRange: [startDate, endDate],
+            timeRange: [startTime, endTime],
             coefficient: 1.0,
             name: '早班'
         });
