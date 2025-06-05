@@ -6,7 +6,7 @@
  * 3. 支持按年月和拉线筛选
  */
 import React, {useEffect, useState} from 'react';
-import {Card, Button, Modal, Form, Input, DatePicker, InputNumber, message, ConfigProvider, Tooltip, Popconfirm, Select} from 'antd';
+import {Card, Button, Modal, Form, Input, DatePicker, InputNumber, message, ConfigProvider, Tooltip, Popconfirm, Select, TimePicker} from 'antd';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -27,8 +27,6 @@ import type { Line } from '../../../services/line';
 dayjs.locale('zh-cn');
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isBetween);
-
-const { RangePicker } = DatePicker;
 
 const CapacityCalendarPage: React.FC = () => {
     // 组件状态管理
@@ -104,8 +102,10 @@ const CapacityCalendarPage: React.FC = () => {
             const values = await form.validateFields();
             const data = {
                 lineId: values.lineId,
-                startDateTime: dayjs(values.dateTimeRange[0]).format('YYYY-MM-DD HH:mm:ss'),
-                endDateTime: dayjs(values.dateTimeRange[1]).format('YYYY-MM-DD HH:mm:ss'),
+                startDate: dayjs(values.dateRange[0]).format('YYYY-MM-DD'),
+                endDate: dayjs(values.dateRange[1]).format('YYYY-MM-DD'),
+                startTime: dayjs(values.timeRange[0]).format('HH:mm:ss'),
+                endTime: dayjs(values.timeRange[1]).format('HH:mm:ss'),
                 coefficient: values.coefficient,
                 name: values.name,
                 remark: values.remark
@@ -148,8 +148,8 @@ const CapacityCalendarPage: React.FC = () => {
                 return {
                     id: calendar.id?.toString(),
                     title: `${line?.lineName || ''} - ${calendar.name} - 系数: ${calendar.coefficient}`,
-                    start: calendar.startDateTime,
-                    end: calendar.endDateTime,
+                    start: `${calendar.startDate}T${calendar.startTime}`,
+                    end: `${calendar.endDate}T${calendar.endTime}`,
                     extendedProps: {
                         remark: calendar.remark,
                         lineName: line?.lineName,
@@ -168,10 +168,8 @@ const CapacityCalendarPage: React.FC = () => {
             calendars.forEach(calendar => {
                 const line = lines.find(l => l.id === calendar.lineId);
                 const color = getLineColor(calendar.lineId);
-                const startDate = dayjs(calendar.startDateTime);
-                const endDate = dayjs(calendar.endDateTime);
-                const startTime = startDate.format('HH:mm:ss');
-                const endTime = endDate.format('HH:mm:ss');
+                const startDate = dayjs(calendar.startDate);
+                const endDate = dayjs(calendar.endDate);
                 
                 // 计算日期范围内的每一天
                 let currentDate = startDate;
@@ -179,8 +177,8 @@ const CapacityCalendarPage: React.FC = () => {
                     events.push({
                         id: `${calendar.id}-${currentDate.format('YYYY-MM-DD')}`,
                         title: `${line?.lineName || ''} - ${calendar.name} - 系数: ${calendar.coefficient}`,
-                        start: `${currentDate.format('YYYY-MM-DD')} ${startTime}`,
-                        end: `${currentDate.format('YYYY-MM-DD')} ${endTime}`,
+                        start: `${currentDate.format('YYYY-MM-DD')}T${calendar.startTime}`,
+                        end: `${currentDate.format('YYYY-MM-DD')}T${calendar.endTime}`,
                         extendedProps: {
                             remark: calendar.remark,
                             lineName: line?.lineName,
@@ -205,10 +203,8 @@ const CapacityCalendarPage: React.FC = () => {
         form.resetFields();
         form.setFieldsValue({
             lineId: selectedLineId,
-            dateTimeRange: [
-                clickedDateTime.hour(9).minute(0).second(0),
-                clickedDateTime.hour(17).minute(0).second(0)
-            ],
+            dateRange: [clickedDateTime, clickedDateTime],
+            timeRange: [dayjs().hour(9).minute(0), dayjs().hour(17).minute(0)],
             coefficient: 1.0,
             name: '早班'
         });
@@ -222,7 +218,8 @@ const CapacityCalendarPage: React.FC = () => {
         if (calendar) {
             form.setFieldsValue({
                 lineId: calendar.lineId,
-                dateTimeRange: [dayjs(calendar.startDateTime), dayjs(calendar.endDateTime)],
+                dateRange: [dayjs(calendar.startDate), dayjs(calendar.endDate)],
+                timeRange: [dayjs(`2000-01-01T${calendar.startTime}`), dayjs(`2000-01-01T${calendar.endTime}`)],
                 coefficient: calendar.coefficient,
                 name: calendar.name,
                 remark: calendar.remark
@@ -235,25 +232,27 @@ const CapacityCalendarPage: React.FC = () => {
     // 处理日期选择
     const handleDateSelect = (selectInfo: any) => {
         console.log('选择的时间范围:', selectInfo);
-        let startDate, endDate;
+        let startDate, endDate, startTime, endTime;
         
         if (currentView === 'dayGridMonth') {
             // 月视图下的处理
             startDate = dayjs(selectInfo.start);
             endDate = dayjs(selectInfo.end).subtract(1, 'day');
-            // 月视图下设置默认时间为 9:00-17:00
-            startDate = startDate.hour(9).minute(0).second(0);
-            endDate = endDate.hour(17).minute(0).second(0);
+            startTime = dayjs().hour(9).minute(0);
+            endTime = dayjs().hour(17).minute(0);
         } else {
-            // 周视图和日视图下的处理，直接使用选择的时间
+            // 周视图和日视图下的处理，使用选择的具体时间
             startDate = dayjs(selectInfo.start);
             endDate = dayjs(selectInfo.end);
+            startTime = dayjs(selectInfo.start);
+            endTime = dayjs(selectInfo.end);
         }
 
         form.resetFields();
         form.setFieldsValue({
             lineId: selectedLineId,
-            dateTimeRange: [startDate, endDate],
+            dateRange: [startDate, endDate],
+            timeRange: [startTime, endTime],
             coefficient: 1.0,
             name: '早班'
         });
@@ -410,14 +409,22 @@ const CapacityCalendarPage: React.FC = () => {
                             />
                         </Form.Item>
                         <Form.Item
-                            name="dateTimeRange"
+                            name="dateRange"
+                            label="日期范围"
+                            rules={[{required: true, message: '请选择日期范围'}]}
+                        >
+                            <DatePicker.RangePicker 
+                                style={{width: '100%'}}
+                            />
+                        </Form.Item>
+                        <Form.Item
+                            name="timeRange"
                             label="时间范围"
                             rules={[{required: true, message: '请选择时间范围'}]}
                         >
-                            <RangePicker 
-                                style={{width: '100%'}} 
-                                showTime={{ format: 'HH:mm' }}
-                                format="YYYY-MM-DD HH:mm"
+                            <TimePicker.RangePicker 
+                                style={{width: '100%'}}
+                                format="HH:mm"
                             />
                         </Form.Item>
                         <Form.Item

@@ -11,8 +11,10 @@ export interface TimeRange {
 export interface CapacityCalendar {
     id?: number;
     lineId: number;
-    startDateTime: string;
-    endDateTime: string;
+    startDate: string;
+    endDate: string;
+    startTime: string;
+    endTime: string;
     coefficient: number;
     name: string;
     remark?: string;
