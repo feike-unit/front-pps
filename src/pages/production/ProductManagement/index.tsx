@@ -11,6 +11,7 @@ import {
   Select,
   DatePicker,
   Modal,
+  Form,
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { 
@@ -53,6 +54,7 @@ type CapacityRuleCreatorProps = {
 
 const ProductManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
+  const [form] = Form.useForm();
   const [capacityRules, setCapacityRules] = useState<CapacityRule[]>([]);
   const [editingProductId, setEditingProductId] = useState<number>();
   const [lines, setLines] = useState<Line[]>([]);
@@ -420,11 +422,16 @@ const ProductManagement: React.FC = () => {
                       !capacityRules.some(rule => rule.lineId === line.id)
                     );
                     
+                    // 获取最后一个规则的工时产能，如果没有则默认为1.00
+                    const lastCapacity = capacityRules.length > 0 
+                      ? capacityRules[capacityRules.length - 1].worksHourCapacity 
+                      : 1.00;
+                    
                     return {
                       id: Date.now(),
                       lineId: unusedLine?.id || 0,
                       productId: editingProductId || 0,
-                      worksHourCapacity: 1.00,
+                      worksHourCapacity: lastCapacity,
                       status: 1,
                       remark: '',
                     };
@@ -552,6 +559,7 @@ const ProductManagement: React.FC = () => {
         <ModalForm<Product>
           key="create"
           title="新建货品"
+          form={form}
           trigger={
             <Button type="primary" onClick={() => {
               setEditingProductId(undefined);
@@ -777,11 +785,16 @@ const ProductManagement: React.FC = () => {
                     !capacityRules.some(rule => rule.lineId === line.id)
                   );
                   
+                  // 获取最后一个规则的工时产能，如果没有则默认为1.00
+                  const lastCapacity = capacityRules.length > 0 
+                    ? capacityRules[capacityRules.length - 1].worksHourCapacity 
+                    : 1.00;
+                  
                   return {
                     id: Date.now(),
                     lineId: unusedLine?.id || 0,
                     productId: editingProductId || 0,
-                    worksHourCapacity: 1.00,
+                    worksHourCapacity: lastCapacity,
                     status: 1,
                     remark: '',
                   };
