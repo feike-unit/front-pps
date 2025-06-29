@@ -74,11 +74,13 @@ const DemandManagement: React.FC = () => {
   const [treeData, setTreeData] = useState<any[]>([]);
   const [searchParams, setSearchParams] = useState<{
     productId?: number;
-    status?: DemandStatus;
+    status?: number; // -1: 未排产, 0: 未完成, 1: 已完成
     deliveryDateStart?: string;
     deliveryDateEnd?: string;
     keyword?: string;
-  }>({});
+  }>({
+    status: -1, // 默认只显示待排产的需求
+  });
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [form] = Form.useForm();
   
@@ -764,19 +766,6 @@ const DemandManagement: React.FC = () => {
                 actionRef.current?.reload();
               }}
               allowClear
-            />
-            <Select
-              placeholder="状态"
-              style={{ width: 150 }}
-              allowClear
-              options={[
-                { label: '未完成', value: DemandStatus.INCOMPLETE },
-                { label: '已完成', value: DemandStatus.COMPLETED },
-              ]}
-              onChange={(value) => {
-                setSearchParams(prev => ({ ...prev, status: value }));
-                actionRef.current?.reload();
-              }}
             />
             <Input
               placeholder="业务单号/客户订单号/客户编号/名称"
