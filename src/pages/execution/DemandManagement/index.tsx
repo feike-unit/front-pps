@@ -323,17 +323,43 @@ const DemandManagement: React.FC = () => {
   // ProTable 列定义
   const columns: ProColumns<Demand>[] = [
     {
-      title: '货品编号/名称',
+      title: '业务单号',
+      dataIndex: 'businessDocNo',
+      ellipsis: true,
+      width: 150,
+    },
+    {
+      title: '客户订单号',
+      dataIndex: 'customerOrderDocNo',
+      ellipsis: true,
+      width: 150,
+    },
+    {
+      title: '客户简称',
+      dataIndex: 'customerName',
+      ellipsis: true,
+      width: 150,
+    },
+    {
+      title: '交期',
+      dataIndex: 'deliveryDate',
+      valueType: 'date',
+      sorter: true,
+      width: 120,
+    },
+    {
+      title: '货品编码',
       dataIndex: 'productCode',
       copyable: true,
       ellipsis: true,
       sorter: true,
-      width: 250,
-      render: (_, record) => (
-        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {`${record.productCode} - ${record.productName}`}
-        </div>
-      ),
+      width: 150,
+    },
+    {
+      title: '货品名称',
+      dataIndex: 'productName',
+      ellipsis: true,
+      width: 200,
     },
     {
       title: '货品类型',
@@ -358,6 +384,33 @@ const DemandManagement: React.FC = () => {
       sorter: true,
       width: 100,
     },
+    {
+      title: '完工数量',
+      dataIndex: 'completionQuantity',
+      sorter: true,
+      width: 100,
+    },
+    {
+      title: '备注',
+      dataIndex: 'remark',
+      ellipsis: true,
+      search: false,
+      width: 150,
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      filters: true,
+      onFilter: true,
+      valueType: 'select',
+      valueEnum: {
+        [-1]: { text: '未排产', status: 'warning' },
+        [0]: { text: '未完成', status: 'processing' },
+        [1]: { text: '已完成', status: 'success' },
+      },
+      width: 100,
+    },
+    // 隐藏的列
     {
       title: '已计划数量',
       dataIndex: 'planQuantity',
@@ -387,47 +440,29 @@ const DemandManagement: React.FC = () => {
       hideInTable: true,
     },
     {
-      title: '完工数量',
-      dataIndex: 'completionQuantity',
+      title: '创建时间',
+      dataIndex: 'createdAt',
+      valueType: 'dateTime',
       sorter: true,
-      width: 100,
+      hideInSearch: true,
+      width: 160,
     },
+    // 隐藏的列
     {
-      title: '交期',
-      dataIndex: 'deliveryDate',
-      valueType: 'date',
-      sorter: true,
-      defaultSortOrder: 'descend',
-      width: 120,
-    },
-    {
-      title: '开始日期',
+      title: '计划开始时间',
       dataIndex: 'startDate',
       valueType: 'date',
       sorter: true,
-      width: 120,
+      width: 140,
       hideInTable: true,
     },
     {
-      title: '结束日期',
+      title: '计划完工时间',
       dataIndex: 'endDate',
       valueType: 'date',
       sorter: true,
-      width: 120,
+      width: 140,
       hideInTable: true,
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      filters: true,
-      onFilter: true,
-      valueType: 'select',
-      valueEnum: {
-        [-1]: { text: '未排产', status: 'warning' },
-        [0]: { text: '未完成', status: 'processing' },
-        [1]: { text: '已完成', status: 'success' },
-      },
-      width: 100,
     },
     {
       title: '变更状态',
@@ -443,37 +478,6 @@ const DemandManagement: React.FC = () => {
       },
       width: 100,
       hideInTable: true,
-      render: (_, record) => {
-        const changeStatus = record.changeStatus;
-        let color = '#000';
-        let text = '未变更';
-        
-        switch (changeStatus) {
-          case -1:
-            color = '#ff4d4f';
-            text = '已删除';
-            break;
-          case 0:
-            color = '#000';
-            text = '未变更';
-            break;
-          case 1:
-            color = '#faad14';
-            text = '已减少';
-            break;
-          case 2:
-            color = '#1890ff';
-            text = '已增加';
-            break;
-          default:
-            color = '#000';
-            text = '未变更';
-        }
-        
-        return (
-          <Badge color={color} text={text} />
-        );
-      },
     },
     {
       title: '业务标识',
@@ -488,18 +492,6 @@ const DemandManagement: React.FC = () => {
       ellipsis: true,
       width: 120,
       hideInTable: true,
-    },
-    {
-      title: '业务单号',
-      dataIndex: 'businessDocNo',
-      ellipsis: true,
-      width: 150,
-    },
-    {
-      title: '客户订单号',
-      dataIndex: 'customerOrderDocNo',
-      ellipsis: true,
-      width: 150,
     },
     {
       title: 'BOM ID',
@@ -521,27 +513,6 @@ const DemandManagement: React.FC = () => {
       ellipsis: true,
       width: 120,
       hideInTable: true,
-    },
-    {
-      title: '客户名称',
-      dataIndex: 'customerName',
-      ellipsis: true,
-      width: 150,
-    },
-    {
-      title: '备注',
-      dataIndex: 'remark',
-      ellipsis: true,
-      search: false,
-      width: 150,
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'createdAt',
-      valueType: 'dateTime',
-      sorter: true,
-      hideInSearch: true,
-      width: 160,
     },
     {
       title: '操作',
