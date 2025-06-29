@@ -97,9 +97,14 @@ export const updateDemand = async (id: number, data: Partial<Demand>): Promise<D
   return response.data;
 };
 
-// 删除需求
-export const deleteDemand = async (id: number): Promise<void> => {
-  const response = await api.delete(`/execution/demands/${id}`);
+// 根据业务标识批量删除需求
+export const deleteDemandsByBusinessKeys = async (businessKeys: string[]): Promise<void> => {
+  const response = await api.delete('/execution/demands', { 
+    data: businessKeys,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
   return response.data;
 };
 

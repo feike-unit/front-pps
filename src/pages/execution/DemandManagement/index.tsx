@@ -45,7 +45,7 @@ import {
   updateDemand, 
   getDemandPage, 
   DemandPageRequest,
-  deleteDemand,
+  deleteDemandsByBusinessKeys,
   updateDemandStatus,
   syncDemands,
   DateQuantity,
@@ -539,7 +539,7 @@ const DemandManagement: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      width: 90,
+      width: 120,
       fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
@@ -563,6 +563,22 @@ const DemandManagement: React.FC = () => {
               <SwapOutlined style={{ color: '#1890ff' }} />
             </a>
           </Tooltip>
+          {/* 删除按钮 - 只对待排产需求显示 */}
+          {record.status === -1 && (
+            <Popconfirm
+              title="确定要删除该需求吗？"
+              description="删除后将无法恢复，请确认操作"
+              onConfirm={() => handleSingleDelete(record)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Tooltip title="删除">
+                <a>
+                  <DeleteOutlined style={{ color: '#ff4d4f' }} />
+                </a>
+              </Tooltip>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -620,6 +636,48 @@ const DemandManagement: React.FC = () => {
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '排产失败');
+    }
+  };
+
+  // 处理单个删除
+  const handleSingleDelete = async (record: Demand) => {
+    try {
+      if (!record.businessKey) {
+        message.error('该需求缺少业务标识，无法删除');
+        return;
+      }
+      await deleteDemandsByBusinessKeys([record.businessKey]);
+      message.success('删除成功');
+      actionRef.current?.reload();
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '删除失败');
+    }
+  };
+
+  // 处理批量删除
+  const handleBatchDelete = async () => {
+    try {
+      const businessKeys = selectedRows
+        .filter(row => row.businessKey)
+        .map(row => row.businessKey!);
+      
+      if (businessKeys.length === 0) {
+        message.error('选中的需求缺少业务标识，无法删除');
+        return;
+      }
+      
+      if (businessKeys.length !== selectedRows.length) {
+        message.warning('部分需求缺少业务标识，将仅删除有效的需求');
+      }
+      
+      await deleteDemandsByBusinessKeys(businessKeys);
+      message.success(`成功删除 ${businessKeys.length} 个需求`);
+      actionRef.current?.reload();
+      setSelectedRows([]);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '批量删除失败');
     }
   };
 
@@ -844,6 +902,20 @@ const DemandManagement: React.FC = () => {
               >
                 批量排产
               </Button>
+              <Popconfirm
+                title="确定要删除选中的需求吗？"
+                description={`将删除 ${selectedRows.length} 个待排产需求，删除后将无法恢复`}
+                onConfirm={handleBatchDelete}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                >
+                  批量删除
+                </Button>
+              </Popconfirm>
             </Space>
           );
         }}
