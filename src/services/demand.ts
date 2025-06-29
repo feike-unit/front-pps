@@ -32,6 +32,7 @@ export interface Demand {
   bomId?: string;
   parentBomId?: string;
   status: number;
+  changeStatus?: number;
   remark?: string;
   createdAt?: string;
   updatedAt?: string;

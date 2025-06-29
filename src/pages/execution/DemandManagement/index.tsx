@@ -355,24 +355,28 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'planQuantity',
       sorter: true,
       width: 100,
+      hideInTable: true,
     },
     {
       title: '变更前数量',
       dataIndex: 'changePurgeQuantity',
       sorter: true,
       width: 100,
+      hideInTable: true,
     },
     {
       title: '关闭净需数量',
       dataIndex: 'closePurgeQuantity',
       sorter: true,
       width: 100,
+      hideInTable: true,
     },
     {
       title: '报工数量',
       dataIndex: 'registeredQuantity',
       sorter: true,
       width: 100,
+      hideInTable: true,
     },
     {
       title: '完工数量',
@@ -394,6 +398,7 @@ const DemandManagement: React.FC = () => {
       valueType: 'date',
       sorter: true,
       width: 120,
+      hideInTable: true,
     },
     {
       title: '结束日期',
@@ -401,6 +406,7 @@ const DemandManagement: React.FC = () => {
       valueType: 'date',
       sorter: true,
       width: 120,
+      hideInTable: true,
     },
     {
       title: '状态',
@@ -416,6 +422,52 @@ const DemandManagement: React.FC = () => {
       width: 100,
     },
     {
+      title: '变更状态',
+      dataIndex: 'changeStatus',
+      filters: true,
+      onFilter: true,
+      valueType: 'select',
+      valueEnum: {
+        [-1]: { text: '已删除', status: 'error' },
+        [0]: { text: '未变更', status: 'default' },
+        [1]: { text: '已减少', status: 'warning' },
+        [2]: { text: '已增加', status: 'processing' },
+      },
+      width: 100,
+      hideInTable: true,
+      render: (_, record) => {
+        const changeStatus = record.changeStatus;
+        let color = '#000';
+        let text = '未变更';
+        
+        switch (changeStatus) {
+          case -1:
+            color = '#ff4d4f';
+            text = '已删除';
+            break;
+          case 0:
+            color = '#000';
+            text = '未变更';
+            break;
+          case 1:
+            color = '#faad14';
+            text = '已减少';
+            break;
+          case 2:
+            color = '#1890ff';
+            text = '已增加';
+            break;
+          default:
+            color = '#000';
+            text = '未变更';
+        }
+        
+        return (
+          <Badge color={color} text={text} />
+        );
+      },
+    },
+    {
       title: '业务标识',
       dataIndex: 'businessKey',
       ellipsis: true,
@@ -427,6 +479,7 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'businessType',
       ellipsis: true,
       width: 120,
+      hideInTable: true,
     },
     {
       title: '业务单号',
@@ -1082,6 +1135,27 @@ const DemandManagement: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <div className="detail-item">
+                    <div className="label">变更状态</div>
+                    <div className="value">
+                      <Badge 
+                        color={
+                          detailRecord.changeStatus === -1 ? '#ff4d4f' :
+                          detailRecord.changeStatus === 0 ? '#000' :
+                          detailRecord.changeStatus === 1 ? '#faad14' :
+                          detailRecord.changeStatus === 2 ? '#1890ff' : '#000'
+                        } 
+                        text={
+                          detailRecord.changeStatus === -1 ? '已删除' :
+                          detailRecord.changeStatus === 0 ? '未变更' :
+                          detailRecord.changeStatus === 1 ? '已减少' :
+                          detailRecord.changeStatus === 2 ? '已增加' : '未变更'
+                        }
+                      />
+                    </div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div className="detail-item">
                     <div className="label">业务类型</div>
                     <div className="value">{detailRecord.businessType}</div>
                   </div>
@@ -1199,6 +1273,28 @@ const DemandManagement: React.FC = () => {
                             status === -1 ? '未排产' :
                             status === 0 ? '未完成' :
                             status === 1 ? '已完成' : '-'
+                          }
+                        />
+                      ),
+                    },
+                    {
+                      title: '变更状态',
+                      dataIndex: 'changeStatus',
+                      key: 'changeStatus',
+                      width: 100,
+                      render: (changeStatus) => (
+                        <Badge
+                          color={
+                            changeStatus === -1 ? '#ff4d4f' :
+                            changeStatus === 0 ? '#000' :
+                            changeStatus === 1 ? '#faad14' :
+                            changeStatus === 2 ? '#1890ff' : '#000'
+                          }
+                          text={
+                            changeStatus === -1 ? '已删除' :
+                            changeStatus === 0 ? '未变更' :
+                            changeStatus === 1 ? '已减少' :
+                            changeStatus === 2 ? '已增加' : '未变更'
                           }
                         />
                       ),
