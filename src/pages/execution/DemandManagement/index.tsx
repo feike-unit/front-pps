@@ -351,6 +351,24 @@ const DemandManagement: React.FC = () => {
       width: 100,
     },
     {
+      title: '已计划数量',
+      dataIndex: 'planQuantity',
+      sorter: true,
+      width: 100,
+    },
+    {
+      title: '变更前数量',
+      dataIndex: 'changePurgeQuantity',
+      sorter: true,
+      width: 100,
+    },
+    {
+      title: '关闭净需数量',
+      dataIndex: 'closePurgeQuantity',
+      sorter: true,
+      width: 100,
+    },
+    {
       title: '报工数量',
       dataIndex: 'registeredQuantity',
       sorter: true,
@@ -462,7 +480,7 @@ const DemandManagement: React.FC = () => {
       valueType: 'dateTime',
       sorter: true,
       hideInSearch: true,
-      width: 150,
+      width: 160,
     },
     {
       title: '操作',
@@ -997,6 +1015,24 @@ const DemandManagement: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <div className="detail-item">
+                    <div className="label">已计划数量</div>
+                    <div className="value">{detailRecord.planQuantity || 0}</div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div className="detail-item">
+                    <div className="label">变更前数量</div>
+                    <div className="value">{detailRecord.changePurgeQuantity || 0}</div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div className="detail-item">
+                    <div className="label">关闭净需数量</div>
+                    <div className="value">{detailRecord.closePurgeQuantity || 0}</div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div className="detail-item">
                     <div className="label">报工数量</div>
                     <div className="value">{detailRecord.registeredQuantity}</div>
                   </div>
@@ -1121,6 +1157,12 @@ const DemandManagement: React.FC = () => {
                       title: '生产数量',
                       dataIndex: 'purgeQuantity',
                       key: 'purgeQuantity',
+                      width: 100,
+                    },
+                    {
+                      title: '已计划数量',
+                      dataIndex: 'planQuantity',
+                      key: 'planQuantity',
                       width: 100,
                     },
                     {

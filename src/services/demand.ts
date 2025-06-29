@@ -18,6 +18,9 @@ export interface Demand {
   deliveryDate: string;
   demandQuantity: number;
   purgeQuantity?: number;
+  planQuantity?: number;
+  changePurgeQuantity?: number;
+  closePurgeQuantity?: number;
   registeredQuantity?: number;
   completionQuantity?: number;
   businessKey?: string;
