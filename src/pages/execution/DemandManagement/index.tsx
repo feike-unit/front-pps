@@ -36,7 +36,7 @@ import {
   ProFormTreeSelect,
   ProDescriptions,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined, ScheduleOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined, ScheduleOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Demand, 
@@ -101,6 +101,9 @@ const DemandManagement: React.FC = () => {
   const [singlePlanModalVisible, setSinglePlanModalVisible] = useState<boolean>(false);
   const [currentPlanDemand, setCurrentPlanDemand] = useState<Demand | null>(null);
   const [planForm] = Form.useForm();
+  
+  // 批量排产需求排序列表
+  const [sortedPlanList, setSortedPlanList] = useState<Demand[]>([]);
 
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
@@ -602,7 +605,8 @@ const DemandManagement: React.FC = () => {
   const handleBatchPlan = async () => {
     try {
       const values = await batchPlanForm.validateFields();
-      const demandIds = selectedRows.map(row => row.id!);
+      // 使用排序后的列表获取需求ID，保持用户调整的顺序
+      const demandIds = sortedPlanList.map(row => row.id!);
       // 转换日期格式为后端期望的格式
       const schedulerOrderDateTime = dayjs(values.schedulerOrderDateTime).format('YYYY-MM-DD HH:mm:ss');
       await schedulerDemands(demandIds, schedulerOrderDateTime);
@@ -610,6 +614,7 @@ const DemandManagement: React.FC = () => {
       setBatchPlanModalVisible(false);
       actionRef.current?.reload();
       setSelectedRows([]);
+      setSortedPlanList([]); // 清空排序列表
       batchPlanForm.resetFields();
     } catch (error) {
       const apiError = error as ApiError;
@@ -681,6 +686,28 @@ const DemandManagement: React.FC = () => {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '批量删除失败');
     }
+  };
+
+  // 处理需求排序 - 上移
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return; // 已经是第一个，无法上移
+    
+    const newList = [...sortedPlanList];
+    const temp = newList[index];
+    newList[index] = newList[index - 1];
+    newList[index - 1] = temp;
+    setSortedPlanList(newList);
+  };
+
+  // 处理需求排序 - 下移
+  const handleMoveDown = (index: number) => {
+    if (index === sortedPlanList.length - 1) return; // 已经是最后一个，无法下移
+    
+    const newList = [...sortedPlanList];
+    const temp = newList[index];
+    newList[index] = newList[index + 1];
+    newList[index + 1] = temp;
+    setSortedPlanList(newList);
   };
 
   return (
@@ -859,6 +886,7 @@ const DemandManagement: React.FC = () => {
         rowSelection={{
           onChange: (_, selectedRows) => {
             setSelectedRows(selectedRows);
+            setSortedPlanList(selectedRows); // 同时更新排序列表
           },
           getCheckboxProps: (record) => ({
             disabled: record.status !== -1, // 只允许选择未排产的记录
@@ -1390,11 +1418,13 @@ const DemandManagement: React.FC = () => {
         open={batchPlanModalVisible}
         onCancel={() => {
           setBatchPlanModalVisible(false);
+          setSortedPlanList([]); // 清空排序列表
           batchPlanForm.resetFields();
         }}
         footer={[
           <Button key="cancel" onClick={() => {
             setBatchPlanModalVisible(false);
+            setSortedPlanList([]); // 清空排序列表
             batchPlanForm.resetFields();
           }}>
             取消
@@ -1410,7 +1440,7 @@ const DemandManagement: React.FC = () => {
         width={800}
       >
         <Alert
-          message={`已选择 ${selectedRows.length} 个未排产需求进行批量排产`}
+          message={`已选择 ${sortedPlanList.length} 个未排产需求进行批量排产，可拖拽调整排产顺序`}
           type="info"
           showIcon
           style={{ marginBottom: 24 }}
@@ -1439,8 +1469,13 @@ const DemandManagement: React.FC = () => {
 
         {/* 显示选中的需求列表 */}
         <Table
-          dataSource={selectedRows}
+          dataSource={sortedPlanList}
           columns={[
+            {
+              title: '序号',
+              width: 60,
+              render: (_, record, index) => index + 1,
+            },
             {
               title: '货品编号/名称',
               dataIndex: 'productCode',
@@ -1449,10 +1484,38 @@ const DemandManagement: React.FC = () => {
             {
               title: '订单数量',
               dataIndex: 'demandQuantity',
+              width: 100,
             },
             {
               title: '交期',
               dataIndex: 'deliveryDate',
+              width: 120,
+            },
+            {
+              title: '操作',
+              width: 80,
+              render: (_, record, index) => (
+                <Space size="small">
+                  <Tooltip title="上移">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<ArrowUpOutlined />}
+                      disabled={index === 0}
+                      onClick={() => handleMoveUp(index)}
+                    />
+                  </Tooltip>
+                  <Tooltip title="下移">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<ArrowDownOutlined />}
+                      disabled={index === sortedPlanList.length - 1}
+                      onClick={() => handleMoveDown(index)}
+                    />
+                  </Tooltip>
+                </Space>
+              ),
             }
           ]}
           size="small"
