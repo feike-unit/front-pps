@@ -96,6 +96,9 @@ const DemandManagement: React.FC = () => {
   const [selectedRows, setSelectedRows] = useState<Demand[]>([]);
   const [batchPlanModalVisible, setBatchPlanModalVisible] = useState<boolean>(false);
   const [batchPlanForm] = Form.useForm();
+  const [singlePlanModalVisible, setSinglePlanModalVisible] = useState<boolean>(false);
+  const [currentPlanDemand, setCurrentPlanDemand] = useState<Demand | null>(null);
+  const [planForm] = Form.useForm();
 
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
@@ -471,19 +474,11 @@ const DemandManagement: React.FC = () => {
         <Space size="middle">
           {/* 添加排产按钮 */}
           {record.status === -1 && (
-            <Popconfirm
-              title="确认排产"
-              description={`是否确认对货品"${record.productCode} - ${record.productName}"进行排产？`}
-              onConfirm={() => handleSinglePlan(record)}
-              okText="确认"
-              cancelText="取消"
-            >
-              <Tooltip title="排产">
-                <a>
-                  <PlayCircleOutlined style={{ color: '#1890ff' }} />
-                </a>
-              </Tooltip>
-            </Popconfirm>
+            <Tooltip title="排产">
+              <a onClick={() => handleSinglePlan(record)}>
+                <PlayCircleOutlined style={{ color: '#1890ff' }} />
+              </a>
+            </Tooltip>
           )}
           {/* 查看详情按钮 */}
           <Tooltip title="查看详情">
@@ -517,12 +512,16 @@ const DemandManagement: React.FC = () => {
   // 处理批量排产
   const handleBatchPlan = async () => {
     try {
+      const values = await batchPlanForm.validateFields();
       const demandIds = selectedRows.map(row => row.id!);
-      await schedulerDemands(demandIds);
+      // 转换日期格式为后端期望的格式
+      const schedulerOrderDateTime = dayjs(values.schedulerOrderDateTime).format('YYYY-MM-DD HH:mm:ss');
+      await schedulerDemands(demandIds, schedulerOrderDateTime);
       message.success('批量排产成功');
       setBatchPlanModalVisible(false);
       actionRef.current?.reload();
       setSelectedRows([]);
+      batchPlanForm.resetFields();
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '批量排产失败');
@@ -531,10 +530,22 @@ const DemandManagement: React.FC = () => {
 
   // 处理单个排产
   const handleSinglePlan = async (record: Demand) => {
+    setCurrentPlanDemand(record);
+    setSinglePlanModalVisible(true);
+  };
+
+  // 处理单个排产提交
+  const handleSinglePlanSubmit = async () => {
     try {
-      await schedulerDemands([record.id!]);
+      const values = await planForm.validateFields();
+      // 转换日期格式为后端期望的格式
+      const schedulerOrderDateTime = dayjs(values.schedulerOrderDateTime).format('YYYY-MM-DD HH:mm:ss');
+      await schedulerDemands([currentPlanDemand!.id!], schedulerOrderDateTime);
       message.success('排产成功');
+      setSinglePlanModalVisible(false);
       actionRef.current?.reload();
+      planForm.resetFields();
+      setCurrentPlanDemand(null);
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '排产失败');
@@ -1178,9 +1189,15 @@ const DemandManagement: React.FC = () => {
       <Modal
         title="批量排产"
         open={batchPlanModalVisible}
-        onCancel={() => setBatchPlanModalVisible(false)}
+        onCancel={() => {
+          setBatchPlanModalVisible(false);
+          batchPlanForm.resetFields();
+        }}
         footer={[
-          <Button key="cancel" onClick={() => setBatchPlanModalVisible(false)}>
+          <Button key="cancel" onClick={() => {
+            setBatchPlanModalVisible(false);
+            batchPlanForm.resetFields();
+          }}>
             取消
           </Button>,
           <Button 
@@ -1205,6 +1222,21 @@ const DemandManagement: React.FC = () => {
             注意：系统将自动为选中的需求进行排产计划安排。
           </Typography.Text>
         </div>
+
+        <Form form={batchPlanForm} layout="vertical">
+          <Form.Item
+            name="schedulerOrderDateTime"
+            label="排产开始时间"
+            rules={[{ required: true, message: '请选择排产开始时间' }]}
+          >
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              style={{ width: '100%' }}
+              placeholder="请选择排产开始时间"
+            />
+          </Form.Item>
+        </Form>
 
         {/* 显示选中的需求列表 */}
         <Table
@@ -1234,7 +1266,66 @@ const DemandManagement: React.FC = () => {
         />
       </Modal>
 
-      <style jsx>{`
+      {/* 单个排产对话框 */}
+      <Modal
+        title="排产计划"
+        open={singlePlanModalVisible}
+        onCancel={() => {
+          setSinglePlanModalVisible(false);
+          planForm.resetFields();
+          setCurrentPlanDemand(null);
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setSinglePlanModalVisible(false);
+            planForm.resetFields();
+            setCurrentPlanDemand(null);
+          }}>
+            取消
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary" 
+            onClick={handleSinglePlanSubmit}
+          >
+            确认排产
+          </Button>
+        ]}
+      >
+        {currentPlanDemand && (
+          <>
+            <Alert
+              message={`正在为货品"${currentPlanDemand.productCode} - ${currentPlanDemand.productName}"进行排产`}
+              type="info"
+              showIcon
+              style={{ marginBottom: 24 }}
+            />
+
+            <Form form={planForm} layout="vertical">
+              <Form.Item
+                name="schedulerOrderDateTime"
+                label="排产开始时间"
+                rules={[{ required: true, message: '请选择排产开始时间' }]}
+              >
+                <DatePicker
+                  showTime
+                  format="YYYY-MM-DD HH:mm:ss"
+                  style={{ width: '100%' }}
+                  placeholder="请选择排产开始时间"
+                />
+              </Form.Item>
+            </Form>
+
+            <div style={{ marginTop: 16 }}>
+              <Typography.Text type="warning">
+                注意：系统将根据选择的开始时间自动安排排产计划。
+              </Typography.Text>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      <style>{`
         .detail-item {
           .label {
             color: rgba(0, 0, 0, 0.45);

@@ -126,8 +126,12 @@ export const submitInsertOrder = async (data: InsertOrderRequest): Promise<void>
 /**
  * 执行排产计划
  * @param demandIds 需求ID列表
+ * @param schedulerOrderDateTime 排产开始时间
  */
-export const schedulerDemands = async (demandIds: number[]): Promise<void> => {
-  const response = await api.patch<void>('/execution/demands/scheduler', demandIds);
+export const schedulerDemands = async (demandIds: number[], schedulerOrderDateTime: string): Promise<void> => {
+  const response = await api.patch<void>('/execution/demands/scheduler', {
+    demandIds,
+    schedulerOrderDateTime
+  });
   return response.data;
 }; 
