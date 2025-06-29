@@ -346,6 +346,7 @@ const DemandManagement: React.FC = () => {
       valueType: 'date',
       sorter: true,
       width: 120,
+      hideInTable: demandStatus !== 'pending' && demandStatus !== 'completed',
     },
     {
       title: '货品编码',
@@ -389,6 +390,7 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'completionQuantity',
       sorter: true,
       width: 100,
+      hideInTable: demandStatus !== 'pending',
     },
     {
       title: '备注',
@@ -396,6 +398,7 @@ const DemandManagement: React.FC = () => {
       ellipsis: true,
       search: false,
       width: 150,
+      hideInTable: demandStatus !== 'pending',
     },
     {
       title: '状态',
@@ -409,6 +412,30 @@ const DemandManagement: React.FC = () => {
         [1]: { text: '已完成', status: 'success' },
       },
       width: 100,
+    },
+    {
+      title: '计划开始时间',
+      dataIndex: 'startDate',
+      valueType: 'date',
+      sorter: true,
+      width: 140,
+      hideInTable: demandStatus === 'pending',
+    },
+    {
+      title: '计划完工时间',
+      dataIndex: 'endDate',
+      valueType: 'date',
+      sorter: true,
+      width: 140,
+      hideInTable: demandStatus === 'pending',
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createdAt',
+      valueType: 'dateTime',
+      sorter: true,
+      hideInSearch: true,
+      width: 160,
     },
     // 隐藏的列
     {
@@ -437,31 +464,6 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'registeredQuantity',
       sorter: true,
       width: 100,
-      hideInTable: true,
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'createdAt',
-      valueType: 'dateTime',
-      sorter: true,
-      hideInSearch: true,
-      width: 160,
-    },
-    // 隐藏的列
-    {
-      title: '计划开始时间',
-      dataIndex: 'startDate',
-      valueType: 'date',
-      sorter: true,
-      width: 140,
-      hideInTable: true,
-    },
-    {
-      title: '计划完工时间',
-      dataIndex: 'endDate',
-      valueType: 'date',
-      sorter: true,
-      width: 140,
       hideInTable: true,
     },
     {
