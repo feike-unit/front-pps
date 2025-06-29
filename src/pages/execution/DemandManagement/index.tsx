@@ -450,14 +450,14 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'changePurgeQuantity',
       sorter: true,
       width: 100,
-      hideInTable: true,
+      hideInTable: demandStatus === 'pending',
     },
     {
       title: '关闭净需数量',
       dataIndex: 'closePurgeQuantity',
       sorter: true,
       width: 100,
-      hideInTable: true,
+      hideInTable: demandStatus === 'pending',
     },
     {
       title: '报工数量',
@@ -479,7 +479,7 @@ const DemandManagement: React.FC = () => {
         [2]: { text: '已增加', status: 'processing' },
       },
       width: 100,
-      hideInTable: true,
+      hideInTable: demandStatus === 'pending',
     },
     {
       title: '业务标识',
