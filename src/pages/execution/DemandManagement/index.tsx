@@ -168,7 +168,7 @@ const DemandManagement: React.FC = () => {
       // 初始化第一条日期数量记录，数量为生产数量-完工数量
       const initialQuantity = (record.purgeQuantity || 0) - (record.completionQuantity || 0);
       const initialDateQuantity: DateQuantity = {
-        insertOrderDate: dayjs().format('YYYY-MM-DD'),
+        insertOrderDate: dayjs().format('YYYY-MM-DD HH:mm:ss'),
         quantity: initialQuantity,
       };
       setDateQuantityList([initialDateQuantity]);
@@ -208,7 +208,7 @@ const DemandManagement: React.FC = () => {
     }
 
     // 获取最后一个日期并加1天
-    const nextDate = getLastDate().add(1, 'day').format('YYYY-MM-DD');
+    const nextDate = getLastDate().add(1, 'day').format('YYYY-MM-DD HH:mm:ss');
 
     setDateQuantityList([
       ...dateQuantityList,
@@ -777,7 +777,7 @@ const DemandManagement: React.FC = () => {
               onClick={() => handleProductSearch('')}
             />
             <DatePicker.RangePicker
-              placeholder={['开始交期', '结束交期']}
+              placeholder={['开始日期', '结束日期']}
               style={{ width: 250 }}
               onChange={(dates) => {
                 // 只有当两个日期都选择了，才设置日期区间参数
