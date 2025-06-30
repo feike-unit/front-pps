@@ -230,11 +230,11 @@ const DemandManagement: React.FC = () => {
   const handleDateChange = (index: number, date: dayjs.Dayjs | null) => {
     if (!date) return;
     
-    const newDate = date.format('YYYY-MM-DD');
+    const newDate = date.format('YYYY-MM-DD HH:mm:ss');
     
     // 检查日期是否重复
     if (isDateDuplicate(newDate, index)) {
-      message.error('该日期已存在，请选择其他日期');
+      message.error('该时间已存在，请选择其他时间');
       return;
     }
 
@@ -416,18 +416,20 @@ const DemandManagement: React.FC = () => {
     {
       title: '计划开始时间',
       dataIndex: 'startDate',
-      valueType: 'date',
+      valueType: 'dateTime',
       sorter: true,
-      width: 140,
+      width: 130,
       hideInTable: demandStatus === 'pending',
+      render: (_, record) => record.startDate ? record.startDate.substring(0, 16) : '-',
     },
     {
       title: '计划完工时间',
       dataIndex: 'endDate',
-      valueType: 'date',
+      valueType: 'dateTime',
       sorter: true,
-      width: 140,
+      width: 130,
       hideInTable: demandStatus === 'pending',
+      render: (_, record) => record.endDate ? record.endDate.substring(0, 16) : '-',
     },
     {
       title: '创建时间',
@@ -435,7 +437,7 @@ const DemandManagement: React.FC = () => {
       valueType: 'dateTime',
       sorter: true,
       hideInSearch: true,
-      width: 160,
+      width: 150,
     },
     // 隐藏的列
     {
@@ -456,7 +458,7 @@ const DemandManagement: React.FC = () => {
       title: '关闭净需数量',
       dataIndex: 'closePurgeQuantity',
       sorter: true,
-      width: 100,
+      width: 110,
       hideInTable: demandStatus === 'pending',
     },
     {
@@ -1041,13 +1043,13 @@ const DemandManagement: React.FC = () => {
                   icon={<PlusOutlined />}
                   disabled={calculateRemainingQuantity() <= 0}
                 >
-                  添加插单日期
+                  添加插单时间
                 </Button>
               </div>
               
               <div style={{ marginBottom: 8 }}>
                 <div style={{ display: 'flex' }}>
-                  <div style={{ flex: 1, marginRight: 16 }}>插单日期</div>
+                  <div style={{ flex: 1, marginRight: 16 }}>插单时间</div>
                   <div style={{ flex: 1, marginRight: 16 }}>插单数量</div>
                   <div style={{ width: 32 }}></div>
                 </div>
@@ -1060,10 +1062,10 @@ const DemandManagement: React.FC = () => {
                       style={{ width: '100%' }}
                       value={item.insertOrderDate ? dayjs(item.insertOrderDate) : null}
                       onChange={(date) => handleDateChange(index, date)}
-                      format="YYYY-MM-DD"
-                      placeholder="选择插单日期"
+                      placeholder="选择插单时间"
                       allowClear={false}
-                      showToday
+                      showTime
+                      format="YYYY-MM-DD HH:mm:ss"
                     />
                   </div>
                   <div style={{ flex: 1, marginRight: 16 }}>
@@ -1203,13 +1205,13 @@ const DemandManagement: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <div className="detail-item">
-                    <div className="label">开始日期</div>
+                    <div className="label">开始时间</div>
                     <div className="value">{detailRecord.startDate || '-'}</div>
                   </div>
                 </Col>
                 <Col span={8}>
                   <div className="detail-item">
-                    <div className="label">结束日期</div>
+                    <div className="label">结束时间</div>
                     <div className="value">{detailRecord.endDate || '-'}</div>
                   </div>
                 </Col>

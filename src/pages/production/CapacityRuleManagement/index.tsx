@@ -194,19 +194,6 @@ const CapacityRuleManagement: React.FC = () => {
       hideInTable: true,
     },
     {
-      title: '拉线投产日期',
-      dataIndex: 'lineStartDate',
-      valueType: 'date',
-      ellipsis: true,
-      search: false,
-    },
-    {
-      title: '拉线工时',
-      dataIndex: 'lineWorksHour',
-      ellipsis: true,
-      search: false,
-    },
-    {
       title: '货品编号/名称',
       dataIndex: 'productCode',
       copyable: true,
@@ -228,7 +215,7 @@ const CapacityRuleManagement: React.FC = () => {
       },
     },
     {
-      title: '工时产能',
+      title: '工时产能(件/小时)',
       dataIndex: 'worksHourCapacity',
       sorter: true,
       search: false,
@@ -238,18 +225,6 @@ const CapacityRuleManagement: React.FC = () => {
           label="工时产能范围"
         />
       ),
-    },
-    {
-      title: '日产能(件/天)',
-      dataIndex: 'dailyCapacity',
-      search: false,
-      render: (_, record) => {
-        const dailyCapacity = record.lineWorksHour && record.worksHourCapacity
-          ? (record.lineWorksHour * record.worksHourCapacity).toFixed(2)
-          : '-';
-        return dailyCapacity;
-      },
-      tooltip: '日产能 = 拉线工时 × 工时产能',
     },
     {
       title: '状态',
@@ -463,36 +438,6 @@ const CapacityRuleManagement: React.FC = () => {
                 fieldProps={{
                   defaultChecked: record.status === 1,
                 }}
-              />
-            </ProForm.Group>
-            <ProForm.Group>
-            <ProFormDatePicker
-                name="lineStartDate"
-                label="拉线投产日期"
-                width="md"
-                readonly
-                fieldProps={{
-                  style: { backgroundColor: '#f5f5f5' }
-                }}
-              />
-              <ProFormDigit
-                name="lineWorksHour"
-                label="拉线工时(小时/天)"
-                width="md"
-                readonly
-                fieldProps={{
-                  style: { backgroundColor: '#f5f5f5' }
-                }}
-              />
-              <ProFormText
-                name="dailyCapacity"
-                label="日产能(件/天)"
-                width="md"
-                readonly
-                fieldProps={{
-                  style: { backgroundColor: '#f5f5f5' }
-                }}
-                extra={<span style={{ color: '#888' }}>计算公式: 拉线工时 × 工时产能</span>}
               />
             </ProForm.Group>
             <ProFormTextArea
