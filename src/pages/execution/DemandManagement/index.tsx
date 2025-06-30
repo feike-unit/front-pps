@@ -335,18 +335,18 @@ const DemandManagement: React.FC = () => {
       width: 150,
     },
     {
-      title: '客户简称',
+      title: '客户名称',
       dataIndex: 'customerName',
       ellipsis: true,
       width: 150,
     },
     {
-      title: '交期',
+      title: '客户交期',
       dataIndex: 'deliveryDate',
       valueType: 'date',
       sorter: true,
       width: 120,
-      hideInTable: demandStatus !== 'pending' && demandStatus !== 'completed',
+      /*hideInTable: demandStatus !== 'pending' && demandStatus !== 'completed',*/
     },
     {
       title: '货品编码',
@@ -777,7 +777,7 @@ const DemandManagement: React.FC = () => {
               onClick={() => handleProductSearch('')}
             />
             <DatePicker.RangePicker
-              placeholder={['开始日期', '结束日期']}
+              placeholder={['开始交期', '结束交期']}
               style={{ width: 250 }}
               onChange={(dates) => {
                 // 只有当两个日期都选择了，才设置日期区间参数
@@ -1015,7 +1015,7 @@ const DemandManagement: React.FC = () => {
                 </Col>
                 <Col span={12}>
                   <div style={{ marginBottom: 0 }}>
-                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>交期</div>
+                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>客户交期</div>
                     <div>{currentDemand.deliveryDate || '-'}</div>
                   </div>
                 </Col>
