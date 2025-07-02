@@ -350,7 +350,7 @@ const OutsourcingPlanManagement: React.FC = () => {
           </Space>
         }
         pagination={{
-          defaultPageSize: 10,
+          defaultPageSize: 20,
           showQuickJumper: true,
           showSizeChanger: true,
           pageSizeOptions: ['10', '20', '50', '100'],
