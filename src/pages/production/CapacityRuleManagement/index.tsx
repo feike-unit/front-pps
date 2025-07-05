@@ -696,36 +696,6 @@ const CapacityRuleManagement: React.FC = () => {
                 transform={(value) => ({ status: value ? 1 : 0 })}
               />
           </ProForm.Group>
-          <ProForm.Group>
-          <ProFormDatePicker
-              name="lineStartDate"
-              label="拉线投产日期"
-              width="md"
-              readonly
-              fieldProps={{
-                style: { backgroundColor: '#f5f5f5' }
-              }}
-            />
-            <ProFormDigit
-              name="lineWorksHour"
-              label="拉线工时(小时/天)"
-              width="md"
-              readonly
-              fieldProps={{
-                style: { backgroundColor: '#f5f5f5' }
-              }}
-            />
-            <ProFormText
-              name="dailyCapacity"
-              label="日产能(件/天)"
-              width="md"
-              readonly
-              fieldProps={{
-                style: { backgroundColor: '#f5f5f5' }
-              }}
-              extra={<span style={{ color: '#888' }}>计算公式: 拉线工时 × 工时产能</span>}
-            />
-          </ProForm.Group>
           <ProFormTextArea
             name="remark"
             label="备注"

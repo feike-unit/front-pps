@@ -178,6 +178,12 @@ const PurchasePlanManagement: React.FC = () => {
       width: 180,
     },
     {
+      title: '订单数量',
+      dataIndex: 'demandQuantity',
+      sorter: true,
+      width: 100,
+    },
+    {
       title: '任务数量',
       dataIndex: 'taskQuantity',
       sorter: true,
@@ -196,19 +202,11 @@ const PurchasePlanManagement: React.FC = () => {
       width: 100,
     },
     {
-      title: '下单时间',
-      dataIndex: 'startAt',
-      valueType: 'dateTime',
-      sorter: true,
-      width: 120,
-      render: (_, record) => record.startAt ? record.startAt.substring(0, 16) : '-',
-    },
-    {
       title: '到货时间',
       dataIndex: 'endAt',
       valueType: 'date',
       sorter: true,
-      width: 120,
+      width: 130,
       render: (_, record) => record.endAt ? record.endAt.substring(0, 16) : '-',
     },
     {
@@ -398,10 +396,6 @@ const PurchasePlanManagement: React.FC = () => {
                 },
               },
               {
-                title: '业务类型',
-                dataIndex: 'businessType',
-              },
-              {
                 title: '业务单号',
                 dataIndex: 'businessDocNo',
                 copyable: true,
@@ -420,26 +414,25 @@ const PurchasePlanManagement: React.FC = () => {
                 dataIndex: 'customerName',
               },
               {
+                title: '订单数量',
+                dataIndex: 'demandQuantity',
+              },
+              {
                 title: '任务数量',
                 dataIndex: 'taskQuantity',
               },
               {
-                title: '登记数量',
+                title: '点收数量',
                 dataIndex: 'registeredQuantity',
               },
               {
-                title: '完成数量',
+                title: '入库数量',
                 dataIndex: 'completionQuantity',
               },
               {
-                title: '开始日期',
-                dataIndex: 'startAt',
-                render: (_, record) => record.startAt ? record.startAt.substring(0, 10) : '-',
-              },
-              {
-                title: '结束日期',
+                title: '到货时间',
                 dataIndex: 'endAt',
-                render: (_, record) => record.endAt ? record.endAt.substring(0, 10) : '-',
+                render: (_, record) => record.endAt ? record.endAt.substring(0, 16) : '-',
               },
               {
                 title: '创建时间',

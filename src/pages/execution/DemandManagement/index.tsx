@@ -86,7 +86,7 @@ const DemandManagement: React.FC = () => {
   const [demandStatus, setDemandStatus] = useState<'pending' | 'incomplete' | 'completed'>('pending');
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [form] = Form.useForm();
-  
+
   // 插单相关状态
   const [insertOrderModalVisible, setInsertOrderModalVisible] = useState<boolean>(false);
   const [currentDemand, setCurrentDemand] = useState<Demand | null>(null);
@@ -414,20 +414,11 @@ const DemandManagement: React.FC = () => {
       width: 100,
     },
     {
-      title: '计划开始时间',
-      dataIndex: 'startDate',
-      valueType: 'dateTime',
-      sorter: true,
-      width: 130,
-      hideInTable: demandStatus === 'pending',
-      render: (_, record) => record.startDate ? record.startDate.substring(0, 16) : '-',
-    },
-    {
       title: '计划完工时间',
       dataIndex: 'endDate',
       valueType: 'dateTime',
       sorter: true,
-      width: 130,
+      width: 140,
       hideInTable: demandStatus === 'pending',
       render: (_, record) => record.endDate ? record.endDate.substring(0, 16) : '-',
     },
@@ -438,14 +429,6 @@ const DemandManagement: React.FC = () => {
       sorter: true,
       hideInSearch: true,
       width: 150,
-    },
-    // 隐藏的列
-    {
-      title: '已计划数量',
-      dataIndex: 'planQuantity',
-      sorter: true,
-      width: 100,
-      hideInTable: true,
     },
     {
       title: '变更前数量',
@@ -489,13 +472,6 @@ const DemandManagement: React.FC = () => {
       ellipsis: true,
       width: 120,
       hidden: true,
-    },
-    {
-      title: '业务类型',
-      dataIndex: 'businessType',
-      ellipsis: true,
-      width: 120,
-      hideInTable: true,
     },
     {
       title: 'BOM ID',
@@ -1199,19 +1175,7 @@ const DemandManagement: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <div className="detail-item">
-                    <div className="label">交期</div>
-                    <div className="value">{detailRecord.deliveryDate}</div>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div className="detail-item">
-                    <div className="label">开始时间</div>
-                    <div className="value">{detailRecord.startDate || '-'}</div>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div className="detail-item">
-                    <div className="label">结束时间</div>
+                    <div className="label">计划完工时间</div>
                     <div className="value">{detailRecord.endDate || '-'}</div>
                   </div>
                 </Col>
@@ -1253,12 +1217,6 @@ const DemandManagement: React.FC = () => {
                         }
                       />
                     </div>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div className="detail-item">
-                    <div className="label">业务类型</div>
-                    <div className="value">{detailRecord.businessType}</div>
                   </div>
                 </Col>
                 <Col span={8}>
@@ -1335,12 +1293,6 @@ const DemandManagement: React.FC = () => {
                       width: 100,
                     },
                     {
-                      title: '已计划数量',
-                      dataIndex: 'planQuantity',
-                      key: 'planQuantity',
-                      width: 100,
-                    },
-                    {
                       title: '报工数量',
                       dataIndex: 'registeredQuantity',
                       key: 'registeredQuantity',
@@ -1353,7 +1305,7 @@ const DemandManagement: React.FC = () => {
                       width: 100,
                     },
                     {
-                      title: '交期',
+                      title: '客户交期',
                       dataIndex: 'deliveryDate',
                       key: 'deliveryDate',
                       width: 120,
@@ -1499,7 +1451,7 @@ const DemandManagement: React.FC = () => {
               width: 100,
             },
             {
-              title: '交期',
+              title: '客户交期',
               dataIndex: 'deliveryDate',
               width: 120,
             },

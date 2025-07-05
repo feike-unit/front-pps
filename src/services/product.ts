@@ -12,7 +12,7 @@ export interface Product {
   model?: string;
   unit?: string;
   productType: number;
-  deliveryCycle?: number;
+  advanceDay?: number;
   status: number;
   remark?: string;
   createdAt?: string;
@@ -28,7 +28,7 @@ export interface ProductUpdate {
   model?: string;
   unit?: string;
   productType?: number;
-  deliveryCycle?: number;
+  advanceDay?: number;
   status?: number;
   remark?: string;
 }

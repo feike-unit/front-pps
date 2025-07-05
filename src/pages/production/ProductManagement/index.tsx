@@ -91,7 +91,7 @@ const ProductManagement: React.FC = () => {
       sorter: true,
       tip: '支持货品编号或名称模糊搜索',
       render: (_, record) => `${record.productCode} - ${record.productName}`,
-      width: 200,
+      width: 300,
     },
     {
       title: '货品名称',
@@ -125,8 +125,8 @@ const ProductManagement: React.FC = () => {
       },
     },
     {
-      title: '交货周期(天)',
-      dataIndex: 'deliveryCycle',
+      title: '提前期(天)',
+      dataIndex: 'advanceDay',
       ellipsis: true,
       search: false,
     },
@@ -228,7 +228,7 @@ const ProductManagement: React.FC = () => {
                   model: values.model,
                   unit: values.unit,
                   productType: values.productType,
-                  deliveryCycle: values.deliveryCycle,
+                  advanceDay: values.advanceDay,
                   status: values.status ? 1 : 0,
                   remark: values.remark,
                   capacityRules: values.capacityRules?.map(rule => ({
@@ -291,8 +291,8 @@ const ProductManagement: React.FC = () => {
                 width="md"
               />
               <ProFormDigit
-                name="deliveryCycle"
-                label="交货周期(天)"
+                name="advanceDay"
+                label="提前期(天)"
                 min={0}
                 width="md"
               />
@@ -591,7 +591,7 @@ const ProductManagement: React.FC = () => {
                 model: values.model,
                 unit: values.unit,
                 productType: values.productType,
-                deliveryCycle: values.deliveryCycle,
+                advanceDay: values.advanceDay,
                 status: values.status ? 1 : 0,
                 remark: values.remark,
                 capacityRules: values.capacityRules?.map(rule => ({
@@ -654,8 +654,8 @@ const ProductManagement: React.FC = () => {
               width="md"
             />
             <ProFormDigit
-              name="deliveryCycle"
-              label="交货周期(天)"
+              name="advanceDay"
+              label="提前期(天)"
               min={0}
               width="md"
             />
