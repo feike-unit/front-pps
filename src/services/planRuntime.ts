@@ -34,6 +34,18 @@ export interface PlanRuntime {
 }
 
 /**
+ * 月度排产占用情况类型定义
+ */
+export interface MonthlyPlanOccupancy {
+  date: string;
+  hasPlan: number;
+  lineCount: number;
+  demandCount: number;
+  totalQuantity: number;
+  statusDesc: string;
+}
+
+/**
  * 计划任务更新类型定义
  */
 export interface PlanRuntimeUpdate {
@@ -109,5 +121,13 @@ export const getPlanRuntimesByDemandId = async (demandId: number): Promise<PlanR
 // 根据货品类型查询计划任务列表
 export const getPlanRuntimesByProductType = async (productType: number): Promise<PlanRuntime[]> => {
   const response = await api.get<PlanRuntime[]>(`/execution/plan-runtimes/by-product-type/${productType}`);
+  return response.data;
+};
+
+// 查询指定月份的排产占用情况
+export const getMonthlyPlanOccupancy = async (year: number, month: number): Promise<MonthlyPlanOccupancy[]> => {
+  const response = await api.get<MonthlyPlanOccupancy[]>('/execution/plan-runtimes/monthly-occupancy', {
+    params: { year, month }
+  });
   return response.data;
 };

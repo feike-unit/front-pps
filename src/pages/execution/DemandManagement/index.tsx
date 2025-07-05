@@ -20,7 +20,9 @@ import {
   Radio,
   Badge,
   Typography,
-  Alert
+  Alert,
+  Calendar,
+  Tag
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
@@ -55,6 +57,7 @@ import {
   schedulerDemands
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
+import { getMonthlyPlanOccupancy, MonthlyPlanOccupancy } from '../../../services/planRuntime';
 import debounce from 'lodash/debounce';
 import dayjs from 'dayjs';
 import { RadioChangeEvent } from 'antd/lib/radio';
@@ -107,6 +110,11 @@ const DemandManagement: React.FC = () => {
   
   // 批量排产需求排序列表
   const [sortedPlanList, setSortedPlanList] = useState<Demand[]>([]);
+
+  // 月度排产占用情况相关状态
+  const [monthlyOccupancy, setMonthlyOccupancy] = useState<MonthlyPlanOccupancy[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<dayjs.Dayjs>(dayjs());
+  const [occupancyLoading, setOccupancyLoading] = useState<boolean>(false);
 
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
@@ -663,6 +671,35 @@ const DemandManagement: React.FC = () => {
     newList[index + 1] = temp;
     setSortedPlanList(newList);
   };
+
+  // 获取月度排产占用情况
+  const fetchMonthlyOccupancy = async (month: dayjs.Dayjs) => {
+    try {
+      setOccupancyLoading(true);
+      const year = month.year();
+      const monthNum = month.month() + 1; // dayjs的月份从0开始，需要+1
+      const data = await getMonthlyPlanOccupancy(year, monthNum);
+      setMonthlyOccupancy(data);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取月度排产占用情况失败');
+    } finally {
+      setOccupancyLoading(false);
+    }
+  };
+
+  // 处理月份选择变化
+  const handleMonthChange = (month: dayjs.Dayjs) => {
+    setSelectedMonth(month);
+    fetchMonthlyOccupancy(month);
+  };
+
+  // 在批量排产或单个排产对话框打开时获取当前月份的排产占用情况
+  useEffect(() => {
+    if (batchPlanModalVisible || singlePlanModalVisible) {
+      fetchMonthlyOccupancy(selectedMonth);
+    }
+  }, [batchPlanModalVisible, singlePlanModalVisible]);
 
   return (
     <>
@@ -1401,95 +1438,162 @@ const DemandManagement: React.FC = () => {
             确认排产
           </Button>
         ]}
-        width={800}
+        width={1200}
       >
-        <Alert
-          message={`已选择 ${sortedPlanList.length} 个未排产需求进行批量排产，可拖拽调整排产顺序`}
-          type="info"
-          showIcon
-          style={{ marginBottom: 24 }}
-        />
-        
-        <div style={{ marginBottom: 24 }}>
-          <Typography.Text type="warning">
-            注意：系统将自动为选中的需求进行排产计划安排。
-          </Typography.Text>
-        </div>
-
-        <Form form={batchPlanForm} layout="vertical">
-          <Form.Item
-            name="schedulerOrderDateTime"
-            label="排产开始时间"
-            rules={[{ required: true, message: '请选择排产开始时间' }]}
-          >
-            <DatePicker
-              showTime
-              format="YYYY-MM-DD HH:mm:ss"
-              style={{ width: '100%' }}
-              placeholder="请选择排产开始时间"
+        <Row gutter={24}>
+          <Col span={12}>
+            <Alert
+              message={`已选择 ${sortedPlanList.length} 个未排产需求进行批量排产，可拖拽调整排产顺序`}
+              type="info"
+              showIcon
+              style={{ marginBottom: 24 }}
             />
-          </Form.Item>
-        </Form>
+            
+            <div style={{ marginBottom: 24 }}>
+              <Typography.Text type="warning">
+                注意：系统将自动为选中的需求进行排产计划安排。
+              </Typography.Text>
+            </div>
 
-        {/* 显示选中的需求列表 */}
-        <Table
-          dataSource={sortedPlanList}
-          columns={[
-            {
-              title: '序号',
-              width: 60,
-              render: (_, record, index) => index + 1,
-            },
-            {
-              title: '货品编号/名称',
-              dataIndex: 'productCode',
-              render: (_, record) => `${record.productCode} - ${record.productName}`,
-            },
-            {
-              title: '订单数量',
-              dataIndex: 'demandQuantity',
-              width: 100,
-            },
-            {
-              title: '客户交期',
-              dataIndex: 'deliveryDate',
-              width: 120,
-            },
-            {
-              title: '操作',
-              width: 80,
-              render: (_, record, index) => (
-                <Space size="small">
-                  <Tooltip title="上移">
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<ArrowUpOutlined />}
-                      disabled={index === 0}
-                      onClick={() => handleMoveUp(index)}
-                    />
-                  </Tooltip>
-                  <Tooltip title="下移">
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<ArrowDownOutlined />}
-                      disabled={index === sortedPlanList.length - 1}
-                      onClick={() => handleMoveDown(index)}
-                    />
-                  </Tooltip>
-                </Space>
-              ),
-            }
-          ]}
-          size="small"
-          pagination={false}
-          scroll={{ y: 200 }}
-          expandable={{
-            showExpandColumn: false
-          }}
-          rowKey="id"
-        />
+            <Form form={batchPlanForm} layout="vertical">
+              <Form.Item
+                name="schedulerOrderDateTime"
+                label="排产开始时间"
+                rules={[{ required: true, message: '请选择排产开始时间' }]}
+              >
+                <DatePicker
+                  showTime
+                  format="YYYY-MM-DD HH:mm:ss"
+                  style={{ width: '100%' }}
+                  placeholder="请选择排产开始时间"
+                />
+              </Form.Item>
+            </Form>
+
+            {/* 显示选中的需求列表 */}
+            <Table
+              dataSource={sortedPlanList}
+              columns={[
+                {
+                  title: '序号',
+                  width: 60,
+                  render: (_, record, index) => index + 1,
+                },
+                {
+                  title: '货品编号/名称',
+                  dataIndex: 'productCode',
+                  render: (_, record) => `${record.productCode} - ${record.productName}`,
+                },
+                {
+                  title: '订单数量',
+                  dataIndex: 'demandQuantity',
+                  width: 100,
+                },
+                {
+                  title: '客户交期',
+                  dataIndex: 'deliveryDate',
+                  width: 120,
+                },
+                {
+                  title: '操作',
+                  width: 80,
+                  render: (_, record, index) => (
+                    <Space size="small">
+                      <Tooltip title="上移">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<ArrowUpOutlined />}
+                          disabled={index === 0}
+                          onClick={() => handleMoveUp(index)}
+                        />
+                      </Tooltip>
+                      <Tooltip title="下移">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<ArrowDownOutlined />}
+                          disabled={index === sortedPlanList.length - 1}
+                          onClick={() => handleMoveDown(index)}
+                        />
+                      </Tooltip>
+                    </Space>
+                  ),
+                }
+              ]}
+              size="small"
+              pagination={false}
+              scroll={{ y: 200 }}
+              expandable={{
+                showExpandColumn: false
+              }}
+              rowKey="id"
+            />
+          </Col>
+          
+          <Col span={12}>
+            <Card 
+              title="月度排产占用情况" 
+              size="small"
+              extra={
+                <DatePicker
+                  picker="month"
+                  value={selectedMonth}
+                  onChange={handleMonthChange}
+                  format="YYYY-MM"
+                  allowClear={false}
+                />
+              }
+            >
+              <Table
+                dataSource={monthlyOccupancy}
+                loading={occupancyLoading}
+                columns={[
+                  {
+                    title: '日期',
+                    dataIndex: 'date',
+                    width: 100,
+                    render: (date) => dayjs(date).format('MM-DD'),
+                  },
+                  {
+                    title: '星期',
+                    dataIndex: 'date',
+                    width: 60,
+                    render: (date) => {
+                      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                      return weekdays[dayjs(date).day()];
+                    },
+                  },
+                  {
+                    title: '状态',
+                    dataIndex: 'hasPlan',
+                    width: 80,
+                    render: (hasPlan, record) => (
+                      <Tag color={hasPlan === 1 ? 'red' : 'green'}>
+                        {hasPlan === 1 ? '已占用' : '可用'}
+                      </Tag>
+                    ),
+                  },
+                  {
+                    title: '详情',
+                    dataIndex: 'statusDesc',
+                    ellipsis: true,
+                    render: (statusDesc, record) => (
+                      <Tooltip title={statusDesc}>
+                        <span>{statusDesc}</span>
+                      </Tooltip>
+                    ),
+                  },
+                ]}
+                size="small"
+                pagination={false}
+                scroll={{ y: 300 }}
+                rowKey="date"
+                rowClassName={(record) => record.hasPlan === 1 ? 'occupied-row' : 'available-row'}
+              />
+            </Card>
+          </Col>
+        </Row>
       </Modal>
 
       {/* 单个排产对话框 */}
@@ -1517,37 +1621,145 @@ const DemandManagement: React.FC = () => {
             确认排产
           </Button>
         ]}
+        width={1000}
       >
         {currentPlanDemand && (
-          <>
-            <Alert
-              message={`正在为货品"${currentPlanDemand.productCode} - ${currentPlanDemand.productName}"进行排产`}
-              type="info"
-              showIcon
-              style={{ marginBottom: 24 }}
-            />
+          <Row gutter={24}>
+            <Col span={12}>
+              <Alert
+                message={`正在为货品"${currentPlanDemand.productCode} - ${currentPlanDemand.productName}"进行排产`}
+                type="info"
+                showIcon
+                style={{ marginBottom: 24 }}
+              />
 
-            <Form form={planForm} layout="vertical">
-              <Form.Item
-                name="schedulerOrderDateTime"
-                label="排产开始时间"
-                rules={[{ required: true, message: '请选择排产开始时间' }]}
+              <Form form={planForm} layout="vertical">
+                <Form.Item
+                  name="schedulerOrderDateTime"
+                  label="排产开始时间"
+                  rules={[{ required: true, message: '请选择排产开始时间' }]}
+                >
+                  <DatePicker
+                    showTime
+                    format="YYYY-MM-DD HH:mm:ss"
+                    style={{ width: '100%' }}
+                    placeholder="请选择排产开始时间"
+                  />
+                </Form.Item>
+              </Form>
+
+              <div style={{ marginTop: 16 }}>
+                <Typography.Text type="warning">
+                  注意：系统将根据选择的开始时间自动安排排产计划。
+                </Typography.Text>
+              </div>
+
+              {/* 显示当前需求的详细信息 */}
+              <Card title="需求详情" size="small" style={{ marginTop: 16 }}>
+                <Row gutter={[16, 8]}>
+                  <Col span={12}>
+                    <div className="detail-item">
+                      <div className="label">业务单号</div>
+                      <div className="value">{currentPlanDemand.businessDocNo}</div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div className="detail-item">
+                      <div className="label">客户订单号</div>
+                      <div className="value">{currentPlanDemand.customerOrderDocNo}</div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div className="detail-item">
+                      <div className="label">订单数量</div>
+                      <div className="value">{currentPlanDemand.demandQuantity}</div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div className="detail-item">
+                      <div className="label">生产数量</div>
+                      <div className="value">{currentPlanDemand.purgeQuantity}</div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div className="detail-item">
+                      <div className="label">客户交期</div>
+                      <div className="value">{currentPlanDemand.deliveryDate}</div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div className="detail-item">
+                      <div className="label">客户名称</div>
+                      <div className="value">{currentPlanDemand.customerName}</div>
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+            </Col>
+            
+            <Col span={12}>
+              <Card 
+                title="月度排产占用情况" 
+                size="small"
+                extra={
+                  <DatePicker
+                    picker="month"
+                    value={selectedMonth}
+                    onChange={handleMonthChange}
+                    format="YYYY-MM"
+                    allowClear={false}
+                  />
+                }
               >
-                <DatePicker
-                  showTime
-                  format="YYYY-MM-DD HH:mm:ss"
-                  style={{ width: '100%' }}
-                  placeholder="请选择排产开始时间"
+                <Table
+                  dataSource={monthlyOccupancy}
+                  loading={occupancyLoading}
+                  columns={[
+                    {
+                      title: '日期',
+                      dataIndex: 'date',
+                      width: 100,
+                      render: (date) => dayjs(date).format('MM-DD'),
+                    },
+                    {
+                      title: '星期',
+                      dataIndex: 'date',
+                      width: 60,
+                      render: (date) => {
+                        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                        return weekdays[dayjs(date).day()];
+                      },
+                    },
+                    {
+                      title: '状态',
+                      dataIndex: 'hasPlan',
+                      width: 80,
+                      render: (hasPlan, record) => (
+                        <Tag color={hasPlan === 1 ? 'red' : 'green'}>
+                          {hasPlan === 1 ? '已占用' : '可用'}
+                        </Tag>
+                      ),
+                    },
+                    {
+                      title: '详情',
+                      dataIndex: 'statusDesc',
+                      ellipsis: true,
+                      render: (statusDesc, record) => (
+                        <Tooltip title={statusDesc}>
+                          <span>{statusDesc}</span>
+                        </Tooltip>
+                      ),
+                    },
+                  ]}
+                  size="small"
+                  pagination={false}
+                  scroll={{ y: 300 }}
+                  rowKey="date"
+                  rowClassName={(record) => record.hasPlan === 1 ? 'occupied-row' : 'available-row'}
                 />
-              </Form.Item>
-            </Form>
-
-            <div style={{ marginTop: 16 }}>
-              <Typography.Text type="warning">
-                注意：系统将根据选择的开始时间自动安排排产计划。
-              </Typography.Text>
-            </div>
-          </>
+              </Card>
+            </Col>
+          </Row>
         )}
       </Modal>
 
@@ -1562,6 +1774,22 @@ const DemandManagement: React.FC = () => {
             color: rgba(0, 0, 0, 0.85);
             font-size: 14px;
           }
+        }
+        
+        .occupied-row {
+          background-color: #fff2f0;
+        }
+        
+        .available-row {
+          background-color: #f6ffed;
+        }
+        
+        .occupied-row:hover {
+          background-color: #ffa39e !important;
+        }
+        
+        .available-row:hover {
+          background-color: #b7eb8f !important;
         }
       `}</style>
     </>
