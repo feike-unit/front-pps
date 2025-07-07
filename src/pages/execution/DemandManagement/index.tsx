@@ -334,19 +334,22 @@ const DemandManagement: React.FC = () => {
       title: '业务单号',
       dataIndex: 'businessDocNo',
       ellipsis: true,
+      copyable: true,
       width: 150,
     },
     {
       title: '客户订单号',
       dataIndex: 'customerOrderDocNo',
       ellipsis: true,
+      copyable: true,
       width: 150,
     },
     {
-      title: '客户名称',
+      title: '客户',
       dataIndex: 'customerName',
       ellipsis: true,
-      width: 150,
+      copyable: true,
+      width: 180,
     },
     {
       title: '客户交期',
@@ -361,7 +364,6 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'productCode',
       copyable: true,
       ellipsis: true,
-      sorter: true,
       width: 150,
     },
     {
@@ -384,19 +386,16 @@ const DemandManagement: React.FC = () => {
     {
       title: '订单数量',
       dataIndex: 'demandQuantity',
-      sorter: true,
       width: 100,
     },
     {
       title: '生产数量',
       dataIndex: 'purgeQuantity',
-      sorter: true,
       width: 100,
     },
     {
       title: '完工数量',
       dataIndex: 'completionQuantity',
-      sorter: true,
       width: 100,
       hideInTable: demandStatus !== 'pending',
     },
@@ -441,21 +440,18 @@ const DemandManagement: React.FC = () => {
     {
       title: '变更前数量',
       dataIndex: 'changePurgeQuantity',
-      sorter: true,
       width: 100,
       hideInTable: demandStatus === 'pending',
     },
     {
       title: '关闭净需数量',
       dataIndex: 'closePurgeQuantity',
-      sorter: true,
       width: 110,
       hideInTable: demandStatus === 'pending',
     },
     {
       title: '报工数量',
       dataIndex: 'registeredQuantity',
-      sorter: true,
       width: 100,
       hideInTable: true,
     },
@@ -1274,7 +1270,7 @@ const DemandManagement: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <div className="detail-item">
-                    <div className="label">客户名称</div>
+                    <div className="label">客户</div>
                     <div className="value">{detailRecord.customerName}</div>
                   </div>
                 </Col>
@@ -1689,7 +1685,7 @@ const DemandManagement: React.FC = () => {
                   </Col>
                   <Col span={12}>
                     <div className="detail-item">
-                      <div className="label">客户名称</div>
+                      <div className="label">客户</div>
                       <div className="value">{currentPlanDemand.customerName}</div>
                     </div>
                   </Col>

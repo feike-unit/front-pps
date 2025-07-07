@@ -477,7 +477,7 @@ const DemandCalendar: React.FC = () => {
                 dataIndex: 'customerCode',
               },
               {
-                title: '客户名称',
+                title: '客户',
                 dataIndex: 'customerName',
               },
             ]}
