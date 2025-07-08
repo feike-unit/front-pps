@@ -13,8 +13,7 @@ export interface PlanRuntime {
   taskQuantity: number;
   registeredQuantity: number;
   completionQuantity: number;
-  startAt: string;
-  endAt: string;
+  deliveryDateTime: string;
   createdBy: number;
   createdAt: string;
   updatedAt: string;
@@ -53,8 +52,7 @@ export interface PlanRuntimeUpdate {
   taskQuantity?: number;
   registeredQuantity?: number;
   completionQuantity?: number;
-  startAt?: string;
-  endAt?: string;
+  deliveryDateTime?: string;
 }
 
 /**

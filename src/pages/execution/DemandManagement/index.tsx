@@ -421,13 +421,13 @@ const DemandManagement: React.FC = () => {
       width: 100,
     },
     {
-      title: '计划完工时间',
+      title: '上线时间',
       dataIndex: 'endDate',
-      valueType: 'dateTime',
+      valueType: 'deliveryDateTime',
       sorter: true,
       width: 140,
       hideInTable: demandStatus === 'pending',
-      render: (_, record) => record.endDate ? record.endDate.substring(0, 16) : '-',
+      render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
     },
     {
       title: '创建时间',
@@ -1030,14 +1030,8 @@ const DemandManagement: React.FC = () => {
                 </Col>
                 <Col span={12}>
                   <div style={{ marginBottom: 0 }}>
-                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>开始日期</div>
-                    <div>{currentDemand.startDate || '-'}</div>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div style={{ marginBottom: 0 }}>
-                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>结束日期</div>
-                    <div>{currentDemand.endDate || '-'}</div>
+                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>上线时间</div>
+                    <div>{currentDemand.deliveryDateTime || '-'}</div>
                   </div>
                 </Col>
               </Row>
@@ -1208,8 +1202,8 @@ const DemandManagement: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <div className="detail-item">
-                    <div className="label">计划完工时间</div>
-                    <div className="value">{detailRecord.endDate || '-'}</div>
+                    <div className="label">上线时间</div>
+                    <div className="value">{detailRecord.deliveryDateTime || '-'}</div>
                   </div>
                 </Col>
                 <Col span={8}>

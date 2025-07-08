@@ -511,22 +511,13 @@ const ProductionPlanCalendar: React.FC = () => {
                 dataIndex: 'completionQuantity',
               },
               {
-                title: '开始日期',
-                dataIndex: 'startAt',
-                render: (_, record) => record.startAt ? record.startAt.substring(0, 10) : '-',
-              },
-              {
-                title: '结束日期',
-                dataIndex: 'endAt',
-                render: (_, record) => record.endAt ? record.endAt.substring(0, 10) : '-',
+                title: '上线时间',
+                dataIndex: 'deliveryDateTime',
+                render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
               },
               {
                 title: '创建时间',
                 dataIndex: 'createdAt',
-              },
-              {
-                title: '业务类型',
-                dataIndex: 'businessType',
               },
               {
                 title: '业务单号',
@@ -535,10 +526,6 @@ const ProductionPlanCalendar: React.FC = () => {
               {
                 title: '客户订单号',
                 dataIndex: 'customerOrderDocNo',
-              },
-              {
-                title: '客户编号',
-                dataIndex: 'customerCode',
               },
               {
                 title: '客户',

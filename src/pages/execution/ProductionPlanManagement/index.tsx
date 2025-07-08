@@ -202,12 +202,12 @@ const ProductionPlanManagement: React.FC = () => {
       width: 100,
     },
     {
-      title: '计划完工时间',
-      dataIndex: 'endAt',
+      title: '上线时间',
+      dataIndex: 'deliveryDateTime',
       valueType: 'dateTime',
       sorter: true,
       width: 130,
-      render: (_, record) => record.endAt ? record.endAt.substring(0, 16) : '-',
+      render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
     },
 
     {
