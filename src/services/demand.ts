@@ -1,5 +1,6 @@
 import { ApiResponse } from './api';
 import api from './api';
+import dayjs from 'dayjs';
 
 // 需求状态枚举
 export enum DemandStatus {
@@ -131,17 +132,36 @@ export const submitInsertOrder = async (data: InsertOrderRequest): Promise<void>
   return response.data;
 };
 
+// 获取已排产但未完成的需求列表
+export const getScheduledDemands = async (lineId: number, keyword?: string): Promise<Demand[]> => {
+  const response = await api.get<Demand[]>('/execution/demands/scheduled', {
+    params: {
+      lineId,
+      startDate: dayjs().format('YYYY-MM-DD'),
+      keyword
+    }
+  });
+  return response.data;
+};
+
 /**
  * 执行排产计划
  * @param demandIds 需求ID列表
  * @param lineId 生产拉线ID
  * @param coefficient 产能系数
+ * @param afterDemandId 排在指定需求之后
  */
-export const schedulerDemands = async (demandIds: number[], lineId: number, coefficient: number = 1): Promise<void> => {
+export const schedulerDemands = async (
+  demandIds: number[], 
+  lineId: number, 
+  coefficient: number = 1,
+  afterDemandId?: number
+): Promise<void> => {
   const response = await api.patch<void>('/execution/demands/scheduler', {
     demandIds,
     lineId,
-    coefficient
+    coefficient,
+    afterDemandId
   }, {
     timeout: 60000 // 设置排产接口超时时间为1分钟
   });

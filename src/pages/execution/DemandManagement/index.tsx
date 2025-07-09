@@ -23,7 +23,8 @@ import {
   Alert,
   Calendar,
   Tag,
-  Spin
+  Spin,
+  AutoComplete
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
@@ -55,7 +56,8 @@ import {
   InsertOrderRequest,
   submitInsertOrder,
   getDemandById,
-  schedulerDemands
+  schedulerDemands,
+  getScheduledDemands
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
@@ -577,7 +579,12 @@ const DemandManagement: React.FC = () => {
     try {
       setSinglePlanLoading(true);
       const values = await planForm.validateFields();
-      await schedulerDemands([currentPlanDemand!.id!], values.lineId, values.coefficient);
+      await schedulerDemands(
+        [currentPlanDemand!.id!], 
+        values.lineId, 
+        values.coefficient,
+        values.afterDemandId
+      );
       message.success('排产成功');
       setSinglePlanModalVisible(false);
       actionRef.current?.reload();
@@ -601,7 +608,12 @@ const DemandManagement: React.FC = () => {
       setBatchPlanLoading(true);
       const values = await batchPlanForm.validateFields();
       const demandIds = sortedPlanList.map(row => row.id!);
-      await schedulerDemands(demandIds, values.lineId, values.coefficient);
+      await schedulerDemands(
+        demandIds, 
+        values.lineId, 
+        values.coefficient,
+        values.afterDemandId
+      );
     
       setBatchPlanModalVisible(false);
       actionRef.current?.reload();
@@ -690,6 +702,32 @@ const DemandManagement: React.FC = () => {
     newList[index + 1] = temp;
     setSortedPlanList(newList);
   };
+
+  // 获取已排产需求列表
+  const [scheduledDemands, setScheduledDemands] = useState<Demand[]>([]);
+  const [loadingScheduledDemands, setLoadingScheduledDemands] = useState(false);
+
+  // 加载已排产需求列表
+  const loadScheduledDemands = async (lineId: number, keyword?: string) => {
+    try {
+      setLoadingScheduledDemands(true);
+      const demands = await getScheduledDemands(lineId, keyword);
+      setScheduledDemands(demands);
+    } catch (error) {
+      const apiError = error as ApiError;
+      message.error(apiError.response?.data?.message || apiError.message || '获取已排产需求列表失败');
+    } finally {
+      setLoadingScheduledDemands(false);
+    }
+  };
+
+  // 处理排产位置搜索
+  const handleAfterDemandSearch = debounce(async (value: string) => {
+    const lineId = planForm.getFieldValue('lineId') || batchPlanForm.getFieldValue('lineId');
+    if (lineId) {
+      loadScheduledDemands(lineId, value);
+    }
+  }, 500);
 
   return (
     <>
@@ -1352,6 +1390,7 @@ const DemandManagement: React.FC = () => {
             setBatchPlanModalVisible(false);
             setSortedPlanList([]); // 清空排序列表
             batchPlanForm.resetFields();
+            setScheduledDemands([]); // 清空已排产需求列表
           }
         }}
         maskClosable={!batchPlanLoading}
@@ -1364,6 +1403,7 @@ const DemandManagement: React.FC = () => {
               setBatchPlanModalVisible(false);
               setSortedPlanList([]); // 清空排序列表
               batchPlanForm.resetFields();
+              setScheduledDemands([]); // 清空已排产需求列表
             }}
           >
             取消
@@ -1390,7 +1430,7 @@ const DemandManagement: React.FC = () => {
           
           <div style={{ marginBottom: 24 }}>
             <Typography.Text type="warning">
-              注意：系统将自动为选中的需求进行排产计划安排。
+              注意：系统将根据选择的拉线和排产位置自动安排排产计划。
             </Typography.Text>
           </div>
 
@@ -1407,6 +1447,14 @@ const DemandManagement: React.FC = () => {
                   label: `${line.lineName} (${line.lineCode})`,
                   value: line.id
                 }))}
+                onChange={(value) => {
+                  if (value) {
+                    loadScheduledDemands(value);
+                    batchPlanForm.setFieldValue('afterDemandId', undefined);
+                  } else {
+                    setScheduledDemands([]);
+                  }
+                }}
               />
             </Form.Item>
             <Form.Item
@@ -1423,6 +1471,24 @@ const DemandManagement: React.FC = () => {
                 placeholder="请输入产能系数"
                 precision={2}
                 step={0.1}
+              />
+            </Form.Item>
+            <Form.Item
+              name="afterDemandId"
+              label="排产位置"
+              extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
+            >
+              <AutoComplete
+                placeholder="请选择或输入搜索要排在哪个需求之后"
+                style={{ width: '100%' }}
+                options={scheduledDemands.map(demand => ({
+                  label: `${demand.businessDocNo || ''} - ${demand.productName || ''}`,
+                  value: demand.id?.toString() || ''
+                }))}
+                disabled={!batchPlanForm.getFieldValue('lineId') || loadingScheduledDemands}
+                onSearch={handleAfterDemandSearch}
+                notFoundContent={loadingScheduledDemands ? <Spin size="small" /> : null}
+                allowClear
               />
             </Form.Item>
           </Form>
@@ -1498,6 +1564,7 @@ const DemandManagement: React.FC = () => {
             setSinglePlanModalVisible(false);
             planForm.resetFields();
             setCurrentPlanDemand(null);
+            setScheduledDemands([]); // 清空已排产需求列表
           }
         }}
         maskClosable={!singlePlanLoading}
@@ -1510,6 +1577,7 @@ const DemandManagement: React.FC = () => {
               setSinglePlanModalVisible(false);
               planForm.resetFields();
               setCurrentPlanDemand(null);
+              setScheduledDemands([]); // 清空已排产需求列表
             }}
           >
             取消
@@ -1549,6 +1617,14 @@ const DemandManagement: React.FC = () => {
                       label: `${line.lineName} (${line.lineCode})`,
                       value: line.id
                     }))}
+                    onChange={(value) => {
+                      if (value) {
+                        loadScheduledDemands(value);
+                        planForm.setFieldValue('afterDemandId', undefined);
+                      } else {
+                        setScheduledDemands([]);
+                      }
+                    }}
                   />
                 </Form.Item>
                 <Form.Item
@@ -1567,11 +1643,29 @@ const DemandManagement: React.FC = () => {
                     step={0.1}
                   />
                 </Form.Item>
+                <Form.Item
+                  name="afterDemandId"
+                  label="排产位置"
+                  extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
+                >
+                  <AutoComplete
+                    placeholder="请选择或输入搜索要排在哪个需求之后"
+                    style={{ width: '100%' }}
+                    options={scheduledDemands.map(demand => ({
+                      label: `${demand.businessDocNo || ''} - ${demand.productName || ''}`,
+                      value: demand.id?.toString() || ''
+                    }))}
+                    disabled={!planForm.getFieldValue('lineId') || loadingScheduledDemands}
+                    onSearch={handleAfterDemandSearch}
+                    notFoundContent={loadingScheduledDemands ? <Spin size="small" /> : null}
+                    allowClear
+                  />
+                </Form.Item>
               </Form>
 
               <div style={{ marginTop: 16 }}>
                 <Typography.Text type="warning">
-                  注意：系统将根据选择的拉线自动安排排产计划。
+                  注意：系统将根据选择的拉线和排产位置自动安排排产计划。
                 </Typography.Text>
               </div>
             </>
