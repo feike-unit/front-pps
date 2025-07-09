@@ -170,3 +170,30 @@ export const schedulerDemands = async (
   });
   return response.data;
 }; 
+
+/**
+ * 执行插单计划
+ * @param demandIds 需求ID列表
+ * @param lineId 生产拉线ID
+ * @param coefficient 产能系数
+ * @param afterDemandId 排在指定需求之后
+ * @param rePlanScope 影响范围 0: 仅插单不影响其他计划, 1: 重新计算影响的其他计划
+ */
+export const insertOrderDemands = async (
+  demandIds: number[], 
+  lineId: number, 
+  coefficient: number = 1,
+  afterDemandId?: number,
+  rePlanScope: number = 0
+): Promise<void> => {
+  const response = await api.patch<void>('/execution/demands/insert-order', {
+    demandIds,
+    lineId,
+    coefficient,
+    afterDemandId,
+    rePlanScope
+  }, {
+    timeout: 60000 // 设置插单接口超时时间为1分钟
+  });
+  return response.data;
+}; 

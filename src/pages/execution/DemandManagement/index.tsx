@@ -54,7 +54,8 @@ import {
   syncDemands,
   schedulerDemands,
   getScheduledDemands,
-  getDemandById
+  getDemandById,
+  insertOrderDemands
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
@@ -183,7 +184,7 @@ const DemandManagement: React.FC = () => {
     try {
       setInsertOrderLoading(true);
       const values = await insertOrderForm.validateFields();
-      await schedulerDemands(
+      await insertOrderDemands(
         [currentPlanDemand!.id!],
         values.lineId,
         values.coefficient,
