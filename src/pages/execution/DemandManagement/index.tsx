@@ -1080,10 +1080,18 @@ const DemandManagement: React.FC = () => {
                 <Form.Item
                   name="lineId"
                   label="生产拉线"
-                  rules={[{ required: true, message: '请选择生产拉线' }]}
+                  rules={[
+                    {
+                      validator: async (_, value) => {
+                        if (currentPlanDemand?.productType === 2 && !value) { // 2 表示自制件
+                          throw new Error('自制件必须选择生产拉线');
+                        }
+                      },
+                    }
+                  ]}
                 >
                   <Select
-                    placeholder="请选择生产拉线"
+                    placeholder={currentPlanDemand?.productType === 2 ? "自制件必须选择生产拉线" : "请选择生产拉线"}
                     style={{ width: '100%' }}
                     options={lines.map(line => ({
                       label: `${line.lineName} (${line.lineCode})`,
@@ -1454,10 +1462,21 @@ const DemandManagement: React.FC = () => {
             <Form.Item
               name="lineId"
               label="生产拉线"
-              rules={[{ required: true, message: '请选择生产拉线' }]}
+              rules={[
+                {
+                  validator: async (_, value) => {
+                    // 检查选中的需求中是否有自制件
+                    const hasSelfMade = sortedPlanList.some(demand => demand.productType === 2);
+                    if (hasSelfMade && !value) {
+                      throw new Error('包含自制件的需求必须选择生产拉线');
+                    }
+                  },
+                }
+              ]}
             >
               <Select
-                placeholder="请选择生产拉线"
+                placeholder={sortedPlanList.some(demand => demand.productType === 2) ? 
+                  "包含自制件必须选择生产拉线" : "请选择生产拉线"}
                 style={{ width: '100%' }}
                 options={lines.map(line => ({
                   label: `${line.lineName} (${line.lineCode})`,
@@ -1654,10 +1673,18 @@ const DemandManagement: React.FC = () => {
                 <Form.Item
                   name="lineId"
                   label="生产拉线"
-                  rules={[{ required: true, message: '请选择生产拉线' }]}
+                  rules={[
+                    {
+                      validator: async (_, value) => {
+                        if (currentPlanDemand?.productType === 2 && !value) { // 2 表示自制件
+                          throw new Error('自制件必须选择生产拉线');
+                        }
+                      },
+                    }
+                  ]}
                 >
                   <Select
-                    placeholder="请选择生产拉线"
+                    placeholder={currentPlanDemand?.productType === 2 ? "自制件必须选择生产拉线" : "请选择生产拉线"}
                     style={{ width: '100%' }}
                     options={lines.map(line => ({
                       label: `${line.lineName} (${line.lineCode})`,
