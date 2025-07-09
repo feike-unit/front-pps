@@ -539,12 +539,14 @@ const DemandManagement: React.FC = () => {
               <EyeOutlined style={{ color: '#1890ff' }} />
             </a>
           </Tooltip>
-          {/* 插单按钮 */}
-          <Tooltip title="插单">
-            <a onClick={() => handleOpenInsertOrderModal(record)}>
-              <SwapOutlined style={{ color: '#1890ff' }} />
-            </a>
-          </Tooltip>
+          {/* 插单按钮 - 只对未完成的需求显示 */}
+          {record.status === 0 && (
+            <Tooltip title="插单">
+              <a onClick={() => handleOpenInsertOrderModal(record)}>
+                <SwapOutlined style={{ color: '#1890ff' }} />
+              </a>
+            </Tooltip>
+          )}
           {/* 删除按钮 - 只对待排产需求显示 */}
           {record.status === -1 && (
             <Popconfirm
