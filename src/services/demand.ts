@@ -134,12 +134,16 @@ export const submitInsertOrder = async (data: InsertOrderRequest): Promise<void>
 /**
  * 执行排产计划
  * @param demandIds 需求ID列表
- * @param schedulerOrderDateTime 排产开始时间
+ * @param lineId 生产拉线ID
+ * @param coefficient 产能系数
  */
-export const schedulerDemands = async (demandIds: number[], schedulerOrderDateTime: string): Promise<void> => {
+export const schedulerDemands = async (demandIds: number[], lineId: number, coefficient: number = 1): Promise<void> => {
   const response = await api.patch<void>('/execution/demands/scheduler', {
     demandIds,
-    schedulerOrderDateTime
+    lineId,
+    coefficient
+  }, {
+    timeout: 60000 // 设置排产接口超时时间为1分钟
   });
   return response.data;
 }; 
