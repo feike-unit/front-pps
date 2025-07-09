@@ -116,6 +116,10 @@ const DemandManagement: React.FC = () => {
   const [lines, setLines] = useState<Line[]>([]);
   const [singlePlanLoading, setSinglePlanLoading] = useState(false);
   const [batchPlanLoading, setBatchPlanLoading] = useState(false);
+  
+  // 添加表单值监听
+  const afterDemandId = Form.useWatch('afterDemandId', planForm);
+  const batchAfterDemandId = Form.useWatch('afterDemandId', batchPlanForm);
 
   // 获取所有启用的生产线
   const fetchLines = async () => {
@@ -438,7 +442,7 @@ const DemandManagement: React.FC = () => {
     {
       title: '上线时间',
       dataIndex: 'endDate',
-      valueType: 'deliveryDateTime',
+      valueType: 'dateTime',
       sorter: true,
       width: 140,
       hideInTable: demandStatus === 'pending',
@@ -583,7 +587,8 @@ const DemandManagement: React.FC = () => {
         [currentPlanDemand!.id!], 
         values.lineId, 
         values.coefficient,
-        values.afterDemandId
+        values.afterDemandId,
+        values.rePlanScope // 添加影响范围参数
       );
       message.success('排产成功');
       setSinglePlanModalVisible(false);
@@ -612,7 +617,8 @@ const DemandManagement: React.FC = () => {
         demandIds, 
         values.lineId, 
         values.coefficient,
-        values.afterDemandId
+        values.afterDemandId,
+        values.rePlanScope // 添加影响范围参数
       );
     
       setBatchPlanModalVisible(false);
@@ -1460,6 +1466,7 @@ const DemandManagement: React.FC = () => {
                   if (value) {
                     loadScheduledDemands(value);
                     batchPlanForm.setFieldValue('afterDemandId', undefined);
+                    batchPlanForm.setFieldValue('rePlanScope', undefined);
                   } else {
                     setScheduledDemands([]);
                   }
@@ -1501,8 +1508,34 @@ const DemandManagement: React.FC = () => {
                 }
                 loading={loadingScheduledDemands}
                 allowClear
+                onChange={(value) => {
+                  if (!value) {
+                    batchPlanForm.setFieldValue('rePlanScope', undefined);
+                  } else {
+                    batchPlanForm.setFieldValue('rePlanScope', 0);
+                  }
+                }}
               />
             </Form.Item>
+            {batchAfterDemandId && (
+              <Form.Item
+                name="rePlanScope"
+                label="影响范围"
+                initialValue={0}
+                style={{ marginBottom: 0 }}
+              >
+                <Radio.Group>
+                  <Space direction="vertical">
+                    <Tooltip title="仅排产不影响其他计划，保持其他计划不变">
+                      <Radio value={0}>仅排产不影响其他计划</Radio>
+                    </Tooltip>
+                    <Tooltip title="排产后，需要重新计算其排产位置之后的产能而影响到的其他计划">
+                      <Radio value={1}>排产并重新计算影响的其他计划</Radio>
+                    </Tooltip>
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+            )}
           </Form>
 
           {/* 显示选中的需求列表 */}
@@ -1633,6 +1666,7 @@ const DemandManagement: React.FC = () => {
                       if (value) {
                         loadScheduledDemands(value);
                         planForm.setFieldValue('afterDemandId', undefined);
+                        planForm.setFieldValue('rePlanScope', undefined);
                       } else {
                         setScheduledDemands([]);
                       }
@@ -1674,8 +1708,34 @@ const DemandManagement: React.FC = () => {
                     }
                     loading={loadingScheduledDemands}
                     allowClear
+                    onChange={(value) => {
+                      if (!value) {
+                        planForm.setFieldValue('rePlanScope', undefined);
+                      } else {
+                        planForm.setFieldValue('rePlanScope', 0);
+                      }
+                    }}
                   />
                 </Form.Item>
+                {afterDemandId && (
+                  <Form.Item
+                    name="rePlanScope"
+                    label="影响范围"
+                    initialValue={0}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Radio.Group>
+                      <Space direction="vertical">
+                        <Tooltip title="仅排产不影响其他计划，保持其他计划不变">
+                          <Radio value={0}>仅排产不影响其他计划</Radio>
+                        </Tooltip>
+                        <Tooltip title="排产后，需要重新计算其排产位置之后的产能而影响到的其他计划">
+                          <Radio value={1}>排产并重新计算影响的其他计划</Radio>
+                        </Tooltip>
+                      </Space>
+                    </Radio.Group>
+                  </Form.Item>
+                )}
               </Form>
 
               <div style={{ marginTop: 16 }}>

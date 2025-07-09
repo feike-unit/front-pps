@@ -150,18 +150,21 @@ export const getScheduledDemands = async (lineId: number, keyword?: string): Pro
  * @param lineId 生产拉线ID
  * @param coefficient 产能系数
  * @param afterDemandId 排在指定需求之后
+ * @param rePlanScope 影响范围 0: 仅排产不影响其他计划, 1: 重新计算影响的其他计划
  */
 export const schedulerDemands = async (
   demandIds: number[], 
   lineId: number, 
   coefficient: number = 1,
-  afterDemandId?: number
+  afterDemandId?: number,
+  rePlanScope: number = 0
 ): Promise<void> => {
   const response = await api.patch<void>('/execution/demands/scheduler', {
     demandIds,
     lineId,
     coefficient,
-    afterDemandId
+    afterDemandId,
+    rePlanScope
   }, {
     timeout: 60000 // 设置排产接口超时时间为1分钟
   });
