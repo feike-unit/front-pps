@@ -52,12 +52,9 @@ import {
   deleteDemandsByBusinessKeys,
   updateDemandStatus,
   syncDemands,
-  DateQuantity,
-  InsertOrderRequest,
-  submitInsertOrder,
-  getDemandById,
   schedulerDemands,
-  getScheduledDemands
+  getScheduledDemands,
+  getDemandById
 } from '../../../services/demand';
 import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
@@ -93,13 +90,6 @@ const DemandManagement: React.FC = () => {
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [form] = Form.useForm();
 
-  // 插单相关状态
-  const [insertOrderModalVisible, setInsertOrderModalVisible] = useState<boolean>(false);
-  const [currentDemand, setCurrentDemand] = useState<Demand | null>(null);
-  const [dateQuantityList, setDateQuantityList] = useState<DateQuantity[]>([]);
-  const [insertOrderForm] = Form.useForm();
-  const [rePlanScope, setRePlanScope] = useState<number>(0);
-
   const navigate = useNavigate();
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<Demand | null>(null);
@@ -111,15 +101,25 @@ const DemandManagement: React.FC = () => {
   const [currentPlanDemand, setCurrentPlanDemand] = useState<Demand | null>(null);
   const [planForm] = Form.useForm();
   
+  // 插单相关状态
+  const [insertOrderModalVisible, setInsertOrderModalVisible] = useState<boolean>(false);
+  const [insertOrderLoading, setInsertOrderLoading] = useState<boolean>(false);
+  const [insertOrderForm] = Form.useForm();
+
+  // 已排产需求列表
+  const [scheduledDemands, setScheduledDemands] = useState<Demand[]>([]);
+  const [loadingScheduledDemands, setLoadingScheduledDemands] = useState<boolean>(false);
+
   // 批量排产需求排序列表
   const [sortedPlanList, setSortedPlanList] = useState<Demand[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
-  const [singlePlanLoading, setSinglePlanLoading] = useState(false);
-  const [batchPlanLoading, setBatchPlanLoading] = useState(false);
+  const [singlePlanLoading, setSinglePlanLoading] = useState<boolean>(false);
+  const [batchPlanLoading, setBatchPlanLoading] = useState<boolean>(false);
   
   // 添加表单值监听
   const afterDemandId = Form.useWatch('afterDemandId', planForm);
   const batchAfterDemandId = Form.useWatch('afterDemandId', batchPlanForm);
+  const insertAfterDemandId = Form.useWatch('afterDemandId', insertOrderForm);
 
   // 获取所有启用的生产线
   const fetchLines = async () => {
@@ -163,57 +163,48 @@ const DemandManagement: React.FC = () => {
     handleProductSearch('');
   }, []);
 
-  // 计算剩余可插单数量
+  // 计算剩余可排产数量
   const calculateRemainingQuantity = () => {
-    const totalPlannedQuantity = dateQuantityList.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    const remainingQuantity = (currentDemand?.purgeQuantity || 0) - (currentDemand?.completionQuantity || 0) - totalPlannedQuantity;
-    return Math.max(0, remainingQuantity);
-  };
-
-  // 获取最后一个日期
-  const getLastDate = () => {
-    if (dateQuantityList.length === 0) {
-      return dayjs();
-    }
-    const lastDate = dateQuantityList[dateQuantityList.length - 1].insertOrderDate;
-    return dayjs(lastDate);
-  };
-
-  // 检查日期是否重复
-  const isDateDuplicate = (date: string, excludeIndex?: number) => {
-    return dateQuantityList.some((item, index) => 
-      index !== excludeIndex && item.insertOrderDate === date
-    );
+    if (!currentPlanDemand) return 0;
+    const totalQuantity = currentPlanDemand.purgeQuantity || 0;
+    const completionQuantity = currentPlanDemand.completionQuantity || 0;
+    const scheduledQuantity = scheduledDemands.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    return totalQuantity - completionQuantity - scheduledQuantity;
   };
 
   // 处理打开插单对话框
   const handleOpenInsertOrderModal = async (record: Demand) => {
+    setCurrentPlanDemand(record);
+    setInsertOrderModalVisible(true);
+  };
+
+  // 处理插单提交
+  const handleInsertOrderSubmit = async () => {
     try {
-      // 先设置当前选中的需求数据
-      setCurrentDemand(record);
-      
-      // 初始化第一条日期数量记录，数量为生产数量-完工数量
-      const initialQuantity = (record.purgeQuantity || 0) - (record.completionQuantity || 0);
-      const initialDateQuantity: DateQuantity = {
-        insertOrderDate: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-        quantity: initialQuantity,
-      };
-      setDateQuantityList([initialDateQuantity]);
-      
-      // 重置表单
+      setInsertOrderLoading(true);
+      const values = await insertOrderForm.validateFields();
+      await schedulerDemands(
+        [currentPlanDemand!.id!],
+        values.lineId,
+        values.coefficient,
+        values.afterDemandId,
+        values.rePlanScope
+      );
+      message.success('插单成功');
+      setInsertOrderModalVisible(false);
+      actionRef.current?.reload();
       insertOrderForm.resetFields();
-      // 确保重置后设置默认值
-      setTimeout(() => {
-        insertOrderForm.setFieldsValue({
-          rePlanScope: 0
-        });
-      }, 0);
-      
-      // 显示对话框
-      setInsertOrderModalVisible(true);
-    } catch (error) {
+      setCurrentPlanDemand(null);
+      setScheduledDemands([]); // 清空已排产需求列表
+    } catch (error: any) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '获取需求详情失败');
+      if (error.code === 'ECONNABORTED') {
+        message.error('插单请求超时，请稍后重试');
+      } else {
+        message.error(apiError.response?.data?.message || apiError.message || '插单失败');
+      }
+    } finally {
+      setInsertOrderLoading(false);
     }
   };
 
@@ -711,16 +702,12 @@ const DemandManagement: React.FC = () => {
     setSortedPlanList(newList);
   };
 
-  // 获取已排产需求列表
-  const [scheduledDemands, setScheduledDemands] = useState<Demand[]>([]);
-  const [loadingScheduledDemands, setLoadingScheduledDemands] = useState(false);
-
   // 加载已排产需求列表
-  const loadScheduledDemands = async (lineId: number, keyword?: string) => {
+  const loadScheduledDemands = async (lineId: number) => {
     try {
       setLoadingScheduledDemands(true);
-      const demands = await getScheduledDemands(lineId, keyword);
-      setScheduledDemands(demands);
+      const data = await getScheduledDemands(lineId);
+      setScheduledDemands(data);
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取已排产需求列表失败');
@@ -733,7 +720,7 @@ const DemandManagement: React.FC = () => {
   const handleAfterDemandSearch = debounce(async (value: string) => {
     const lineId = planForm.getFieldValue('lineId') || batchPlanForm.getFieldValue('lineId');
     if (lineId) {
-      loadScheduledDemands(lineId, value);
+      loadScheduledDemands(lineId);
     }
   }, 500);
 
@@ -1042,132 +1029,143 @@ const DemandManagement: React.FC = () => {
       />
       <Modal
         title="插单计划"
-        width={800}
         open={insertOrderModalVisible}
-        onCancel={handleCloseInsertOrderModal}
-        footer={null}
-        destroyOnClose
-        maskClosable={false}
+        onCancel={() => {
+          if (!insertOrderLoading) {
+            setInsertOrderModalVisible(false);
+            insertOrderForm.resetFields();
+            setCurrentPlanDemand(null);
+            setScheduledDemands([]); // 清空已排产需求列表
+          }
+        }}
+        maskClosable={!insertOrderLoading}
+        closable={!insertOrderLoading}
+        footer={[
+          <Button 
+            key="cancel" 
+            disabled={insertOrderLoading}
+            onClick={() => {
+              setInsertOrderModalVisible(false);
+              insertOrderForm.resetFields();
+              setCurrentPlanDemand(null);
+              setScheduledDemands([]); // 清空已排产需求列表
+            }}
+          >
+            取消
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary"
+            loading={insertOrderLoading}
+            disabled={insertOrderLoading}
+            onClick={handleInsertOrderSubmit}
+          >
+            确认插单
+          </Button>
+        ]}
+        width={600}
       >
-        {currentDemand && (
-          <Form form={insertOrderForm} onFinish={handleSubmitInsertOrder} layout="vertical">
-            <Card bordered={false} style={{ marginBottom: 0 }}>
-              <Row gutter={[16, 8]}>
-                <Col span={12}>
-                  <div style={{ marginBottom: 0 }}>
-                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>货品编号/名称</div>
-                    <div>{`${currentDemand.productCode || ''} ${currentDemand.productName ? '- ' + currentDemand.productName : ''}`}</div>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div style={{ marginBottom: 0 }}>
-                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>生产数量</div>
-                    <div>{currentDemand.purgeQuantity || 0}</div>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div style={{ marginBottom: 0 }}>
-                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>完工数量</div>
-                    <div>{currentDemand.completionQuantity || 0}</div>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div style={{ marginBottom: 0 }}>
-                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>客户交期</div>
-                    <div>{currentDemand.deliveryDate || '-'}</div>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div style={{ marginBottom: 0 }}>
-                    <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginBottom: 4 }}>上线时间</div>
-                    <div>{currentDemand.deliveryDateTime || '-'}</div>
-                  </div>
-                </Col>
-              </Row>
-            </Card>
-            
-            <Card bordered={false} style={{ marginTop: 12 }}>
-              <div style={{ marginBottom: 6 }}>
-                <Button 
-                  type="dashed" 
-                  onClick={handleAddDateQuantity} 
-                  block 
-                  icon={<PlusOutlined />}
-                  disabled={calculateRemainingQuantity() <= 0}
+        <Spin spinning={insertOrderLoading} tip="正在插单中...">
+          {currentPlanDemand && (
+            <>
+              <Alert
+                message={`正在为货品"${currentPlanDemand.productCode} - ${currentPlanDemand.productName}"进行插单`}
+                type="info"
+                showIcon
+                style={{ marginBottom: 24 }}
+              />
+
+              <Form form={insertOrderForm} layout="vertical">
+                <Form.Item
+                  name="lineId"
+                  label="生产拉线"
+                  rules={[{ required: true, message: '请选择生产拉线' }]}
                 >
-                  添加插单时间
-                </Button>
-              </div>
-              
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ display: 'flex' }}>
-                  <div style={{ flex: 1, marginRight: 16 }}>插单时间</div>
-                  <div style={{ flex: 1, marginRight: 16 }}>插单数量</div>
-                  <div style={{ width: 32 }}></div>
-                </div>
-              </div>
-              
-              {dateQuantityList.map((item, index) => (
-                <div key={index} style={{ marginBottom: 16, display: 'flex', alignItems: 'center' }}>
-                  <div style={{ flex: 1, marginRight: 16 }}>
-                    <DatePicker
-                      style={{ width: '100%' }}
-                      value={item.insertOrderDate ? dayjs(item.insertOrderDate) : null}
-                      onChange={(date) => handleDateChange(index, date)}
-                      placeholder="选择插单时间"
-                      allowClear={false}
-                      showTime
-                      format="YYYY-MM-DD HH:mm:ss"
-                    />
-                  </div>
-                  <div style={{ flex: 1, marginRight: 16 }}>
-                    <InputNumber
-                      style={{ width: '100%' }}
-                      min={1}
-                      max={currentDemand!.demandQuantity}
-                      value={item.quantity}
-                      onChange={(value) => handleQuantityChange(index, value as number)}
-                    />
-                  </div>
-                  <div>
-                    {dateQuantityList.length > 1 && (
-                      <Button
-                        type="text"
-                        danger
-                        icon={<MinusCircleOutlined />}
-                        onClick={() => handleRemoveDateQuantity(index)}
-                      />
-                    )}
-                  </div>
-                </div>
-              ))}
-              
-              <Divider style={{ margin: '24px 0 16px' }} />
-              
-              <Form.Item name="rePlanScope" label="影响范围" initialValue={0}>
-                <Radio.Group defaultValue={0} onChange={handleRePlanScopeChange}>
-                  <Space direction="vertical">
-                    <Tooltip title="仅插单不影响其他计划，保持其他计划不变">
-                      <Radio value={0}>仅插单不影响其他计划</Radio>
-                    </Tooltip>
-                    <Tooltip title="插单后，需要重新计算其插入日期之后的产能而影响到的其他计划">
-                      <Radio value={1}>插单并重新计算影响的其他计划</Radio>
-                    </Tooltip>
-                  </Space>
-                </Radio.Group>
-              </Form.Item>
-              
-              <div style={{ textAlign: 'right', marginTop: 24 }}>
-                <Button onClick={handleCloseInsertOrderModal} style={{ marginRight: 8 }}>
-                  取消
-                </Button>
-                <Button type="primary" htmlType="submit">
-                  提交插单计划
-                </Button>
-              </div>
-            </Card>
-          </Form>
-        )}
+                  <Select
+                    placeholder="请选择生产拉线"
+                    style={{ width: '100%' }}
+                    options={lines.map(line => ({
+                      label: `${line.lineName} (${line.lineCode})`,
+                      value: line.id
+                    }))}
+                    onChange={(value) => {
+                      if (value) {
+                        loadScheduledDemands(value);
+                        insertOrderForm.setFieldValue('afterDemandId', undefined);
+                        insertOrderForm.setFieldValue('rePlanScope', undefined);
+                      } else {
+                        setScheduledDemands([]);
+                      }
+                    }}
+                  />
+                </Form.Item>
+                <Form.Item
+                  name="coefficient"
+                  label="产能系数"
+                  initialValue={1}
+                  rules={[
+                    { required: true, message: '请输入产能系数' },
+                    { type: 'number', min: 0, message: '产能系数必须大于0' }
+                  ]}
+                >
+                  <InputNumber
+                    style={{ width: '100%' }}
+                    placeholder="请输入产能系数"
+                    precision={2}
+                    step={0.1}
+                  />
+                </Form.Item>
+                <Form.Item
+                  name="afterDemandId"
+                  label="插单位置"
+                  extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
+                >
+                  <Select
+                    placeholder="请选择或输入搜索要排在哪个需求之后"
+                    style={{ width: '100%' }}
+                    showSearch
+                    options={scheduledDemands.map(demand => ({
+                      label: `${demand.businessDocNo} ${demand.productName}`,
+                      value: demand.id
+                    }))}
+                    disabled={!insertOrderForm.getFieldValue('lineId') || loadingScheduledDemands}
+                    filterOption={(input, option) => 
+                      (option?.label || '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    loading={loadingScheduledDemands}
+                    allowClear
+                    onChange={(value) => {
+                      if (!value) {
+                        insertOrderForm.setFieldValue('rePlanScope', undefined);
+                      } else {
+                        insertOrderForm.setFieldValue('rePlanScope', 0);
+                      }
+                    }}
+                  />
+                </Form.Item>
+                {insertAfterDemandId && (
+                  <Form.Item
+                    name="rePlanScope"
+                    label="影响范围"
+                    initialValue={0}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Radio.Group>
+                      <Space direction="vertical">
+                        <Tooltip title="仅插单不影响其他计划，保持其他计划不变">
+                          <Radio value={0}>仅插单不影响其他计划</Radio>
+                        </Tooltip>
+                        <Tooltip title="插单后，需要重新计算其插入位置之后的产能而影响到的其他计划">
+                          <Radio value={1}>插单并重新计算影响的其他计划</Radio>
+                        </Tooltip>
+                      </Space>
+                    </Radio.Group>
+                  </Form.Item>
+                )}
+              </Form>
+            </>
+          )}
+        </Spin>
       </Modal>
 
       {/* 需求详情对话框 */}
