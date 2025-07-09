@@ -729,6 +729,15 @@ const DemandManagement: React.FC = () => {
     }
   }, 500);
 
+  // 格式化需求显示文本
+  const formatDemandText = (demand: Demand) => `${demand.businessDocNo || ''} ${demand.productName || ''}`;
+
+  // 根据需求ID获取显示文本
+  const getDisplayTextById = (demandId: string) => {
+    const demand = scheduledDemands.find(d => d.id?.toString() === demandId);
+    return demand ? formatDemandText(demand) : '';
+  };
+
   return (
     <>
       <ProTable<Demand>
@@ -1478,16 +1487,19 @@ const DemandManagement: React.FC = () => {
               label="排产位置"
               extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
             >
-              <AutoComplete
+              <Select
                 placeholder="请选择或输入搜索要排在哪个需求之后"
                 style={{ width: '100%' }}
+                showSearch
                 options={scheduledDemands.map(demand => ({
-                  label: `${demand.businessDocNo || ''} - ${demand.productName || ''}`,
-                  value: demand.id?.toString() || ''
+                  label: `${demand.businessDocNo} ${demand.productName}`,
+                  value: demand.id
                 }))}
                 disabled={!batchPlanForm.getFieldValue('lineId') || loadingScheduledDemands}
-                onSearch={handleAfterDemandSearch}
-                notFoundContent={loadingScheduledDemands ? <Spin size="small" /> : null}
+                filterOption={(input, option) => 
+                  (option?.label || '').toLowerCase().includes(input.toLowerCase())
+                }
+                loading={loadingScheduledDemands}
                 allowClear
               />
             </Form.Item>
@@ -1648,16 +1660,19 @@ const DemandManagement: React.FC = () => {
                   label="排产位置"
                   extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
                 >
-                  <AutoComplete
+                  <Select
                     placeholder="请选择或输入搜索要排在哪个需求之后"
                     style={{ width: '100%' }}
+                    showSearch
                     options={scheduledDemands.map(demand => ({
-                      label: `${demand.businessDocNo || ''} - ${demand.productName || ''}`,
-                      value: demand.id?.toString() || ''
+                      label: `${demand.businessDocNo} ${demand.productName}`,
+                      value: demand.id
                     }))}
                     disabled={!planForm.getFieldValue('lineId') || loadingScheduledDemands}
-                    onSearch={handleAfterDemandSearch}
-                    notFoundContent={loadingScheduledDemands ? <Spin size="small" /> : null}
+                    filterOption={(input, option) => 
+                      (option?.label || '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    loading={loadingScheduledDemands}
                     allowClear
                   />
                 </Form.Item>
