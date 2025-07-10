@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
 import {
   Button,
   Space,
@@ -14,43 +13,27 @@ import {
   Card,
   Row,
   Col,
-  Divider,
   InputNumber,
   Modal,
   Radio,
   Badge,
   Typography,
   Alert,
-  Calendar,
-  Tag,
   Spin,
-  AutoComplete
 } from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
 import { 
-  ProTable,
-  ModalForm,
-  ProForm,
-  ProFormText,
-  ProFormTextArea,
-  ProFormDigit,
-  ProFormSelect,
-  ProFormDatePicker,
-  ProFormTreeSelect,
-  ProDescriptions,
+  ProTable
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined, CaretDownOutlined, CheckOutlined, StopOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined, ScheduleOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { DeleteOutlined, CaretRightOutlined, CaretDownOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined, ScheduleOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import { 
   Demand, 
   DemandStatus, 
-  createDemand, 
-  updateDemand, 
   getDemandPage, 
   DemandPageRequest,
   deleteDemandsByBusinessKeys,
-  updateDemandStatus,
   syncDemands,
   schedulerDemands,
   getScheduledDemands,
@@ -75,7 +58,6 @@ const statusColorMap: Record<number, string> = {
 const DemandManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [expandedKeys, setExpandedKeys] = useState<number[]>([]);
-  const [treeData, setTreeData] = useState<any[]>([]);
   const [searchParams, setSearchParams] = useState<{
     productId?: number;
     status?: number; // -1: 未排产, 0: 未完成, 1: 已完成
@@ -89,7 +71,6 @@ const DemandManagement: React.FC = () => {
   // 状态切换
   const [demandStatus, setDemandStatus] = useState<'pending' | 'incomplete' | 'completed'>('pending');
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
-  const [form] = Form.useForm();
 
   const navigate = useNavigate();
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
@@ -346,28 +327,28 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'businessDocNo',
       ellipsis: true,
       copyable: true,
-      width: 150,
+      width: 160,
     },
     {
       title: '客户订单号',
       dataIndex: 'customerOrderDocNo',
       ellipsis: true,
       copyable: true,
-      width: 150,
+      width: 120,
     },
     {
       title: '客户',
       dataIndex: 'customerName',
       ellipsis: true,
       copyable: true,
-      width: 180,
+      width: 100,
     },
     {
       title: '客户交期',
       dataIndex: 'deliveryDate',
       valueType: 'date',
       sorter: true,
-      width: 120,
+      width: 100,
       /*hideInTable: demandStatus !== 'pending' && demandStatus !== 'completed',*/
     },
     {
@@ -375,16 +356,16 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'productCode',
       copyable: true,
       ellipsis: true,
-      width: 150,
+      width: 100,
     },
     {
       title: '货品名称',
       dataIndex: 'productName',
       ellipsis: true,
-      width: 200,
+      width: 240,
     },
     {
-      title: '货品类型',
+      title: '属性',
       dataIndex: 'productType',
       valueType: 'select',
       valueEnum: {
@@ -392,22 +373,22 @@ const DemandManagement: React.FC = () => {
         2: { text: '自制件' },
         3: { text: '委外件' },
       },
-      width: 100,
+      width: 60,
     },
     {
-      title: '订单数量',
+      title: '订单数',
       dataIndex: 'demandQuantity',
-      width: 100,
+      width: 60,
     },
     {
-      title: '生产数量',
+      title: '生产数',
       dataIndex: 'purgeQuantity',
-      width: 100,
+      width: 60,
     },
     {
-      title: '完工数量',
+      title: '完工数',
       dataIndex: 'completionQuantity',
-      width: 100,
+      width: 60,
       hideInTable: demandStatus !== 'pending',
     },
     {
@@ -513,7 +494,7 @@ const DemandManagement: React.FC = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      width: 120,
+      width: 90,
       fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
