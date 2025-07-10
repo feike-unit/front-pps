@@ -261,7 +261,7 @@ const Dashboard: React.FC = () => {
                         {demand.businessDocNo} - {demand.productName}
                       </div>
                       <div className="progress-sub">
-                        客户: {demand.customerName} | 交付日期: {demand.deliveryDate}
+                        客户: {demand.customerCode} | 交付日期: {demand.deliveryDate}
                       </div>
                     </div>
                     <div className="progress-status">

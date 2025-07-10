@@ -28,7 +28,6 @@ export interface Demand {
     businessDocNo?: string;
     customerOrderDocNo?: string;
     customerCode?: string;
-    customerName?: string;
     bomId?: string;
     parentBomId?: string;
     status: number;

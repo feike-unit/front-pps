@@ -29,7 +29,6 @@ export interface PlanRuntime {
   businessDocNo?: string;
   customerOrderDocNo?: string;
   customerCode?: string;
-  customerName?: string;
 }
 
 /**

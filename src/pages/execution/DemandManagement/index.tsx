@@ -357,7 +357,7 @@ const DemandManagement: React.FC = () => {
     },
     {
       title: '客户',
-      dataIndex: 'customerName',
+      dataIndex: 'customerCode',
       ellipsis: true,
       copyable: true,
       width: 180,
@@ -1321,7 +1321,7 @@ const DemandManagement: React.FC = () => {
                 <Col span={8}>
                   <div className="detail-item">
                     <div className="label">客户</div>
-                    <div className="value">{detailRecord.customerName}</div>
+                    <div className="value">{detailRecord.customerCode}</div>
                   </div>
                 </Col>
                 <Col span={8}>
