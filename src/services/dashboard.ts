@@ -25,7 +25,7 @@ export interface PullLineStats {
 export interface TodayDemand {
   id: number;
   businessDocNo: string;
-  customerName: string;
+  customerCode: string;
   productName: string;
   demandQuantity: number;
   completionQuantity: number;

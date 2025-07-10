@@ -137,7 +137,7 @@ const OutsourcingPlanManagement: React.FC = () => {
     },
     {
       title: '客户',
-      dataIndex: 'customerName',
+      dataIndex: 'customerCode',
       ellipsis: true,
       copyable: true,
       width: 180,
@@ -165,10 +165,10 @@ const OutsourcingPlanManagement: React.FC = () => {
     {
       title: '到货时间',
       dataIndex: 'deliveryDateTime',
-      valueType: 'date',
+      valueType: 'dateTime',
       sorter: true,
       width: 130,
-      render: (_, record) => record.endAt ? record.endAt.substring(0, 16) : '-',
+      render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
     },
     {
       title: '创建时间',
@@ -373,7 +373,7 @@ const OutsourcingPlanManagement: React.FC = () => {
               },
               {
                 title: '客户',
-                dataIndex: 'customerName',
+                dataIndex: 'customerCode',
               },
               {
                 title: '订单数量',

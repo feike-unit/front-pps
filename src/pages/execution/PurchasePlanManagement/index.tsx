@@ -138,7 +138,7 @@ const PurchasePlanManagement: React.FC = () => {
     },
     {
       title: '客户',
-      dataIndex: 'customerName',
+      dataIndex: 'customerCode',
       ellipsis: true,
       copyable: true,
       width: 180,
@@ -373,7 +373,7 @@ const PurchasePlanManagement: React.FC = () => {
               },
               {
                 title: '客户',
-                dataIndex: 'customerName',
+                dataIndex: 'customerCode',
               },
               {
                 title: '订单数量',
