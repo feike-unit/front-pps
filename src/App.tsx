@@ -26,7 +26,7 @@ const App: React.FC = () => {
       locale={zhCN}
       theme={{
         token: {
-          fontSize: 13, // 设置全局字体大小为 13px
+          fontSize: 12, // 设置全局字体大小为 13px
           fontSizeSM: 12, // 小号字体
           fontSizeLG: 14, // 大号字体
           fontSizeXL: 16, // 特大号字体

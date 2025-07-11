@@ -52,71 +52,13 @@ const MainLayoutContent: React.FC<{ userInfo: UserInfo }> = ({ userInfo }) => {
     });
   };
 
-  // 生成面包屑路由数据
-  const getBreadcrumbRoutes = () => {
-    // 对于二级及以上菜单，分割路径并生成面包屑
-    const pathSnippets = pathname.split('/').filter(i => i);
-    const breadcrumbRoutes = [];
-    
-    // 添加首页
-    breadcrumbRoutes.push({
-      path: '/',
-      title: '首页',
-    });
-    
-    // 仪表盘页面特殊处理
-    if (pathname === '/dashboard') {
-      breadcrumbRoutes.push({
-        path: '/dashboard',
-        title: '仪表盘',
-      });
-      return breadcrumbRoutes;
-    }
-    
-    // 个人信息页面特殊处理
-    if (pathname === '/profile') {
-      breadcrumbRoutes.push({
-        path: '/profile',
-        title: '个人信息',
-      });
-      return breadcrumbRoutes;
-    }
-    
-    // 逐级构建路径
-    let url = '';
-    for (let i = 0; i < pathSnippets.length; i++) {
-      const snippet = pathSnippets[i];
-      url += `/${snippet}`;
-      
-      // 如果是系统管理等子菜单
-      if (i === 0 && routeMetadata[url] && !routeMetadata[url].hideInMenu) {
-        breadcrumbRoutes.push({
-          path: url,
-          title: routeMetadata[url].label || snippet,
-        });
-      } 
-      // 如果是最后一级，或者是二级菜单项
-      else if (i === pathSnippets.length - 1 || (routeMetadata[url] && !routeMetadata[url].hideInMenu)) {
-        const currentTab = tabs.find(tab => tab.key === url);
-        const label = routeMetadata[url]?.label || currentTab?.label || snippet;
-        
-        breadcrumbRoutes.push({
-          path: url,
-          title: label,
-        });
-      }
-    }
-    
-    return breadcrumbRoutes;
-  };
-
   // 监听路由变化，更新 pathname
   useEffect(() => {
     setPathname(location.pathname);
-    // 确保面包屑正确显示
-    if (location.pathname === '/') {
-      navigate('/dashboard');
-    }
+    // // 确保面包屑正确显示
+    // if (location.pathname === '/') {
+    //   navigate('/dashboard');
+    // }
   }, [location.pathname, navigate]);
 
   const handleLogout = async () => {
@@ -130,149 +72,144 @@ const MainLayoutContent: React.FC<{ userInfo: UserInfo }> = ({ userInfo }) => {
   };
 
   return (
-    <div
-      style={{
-        height: '100vh',
-      }}
-    >
-      <ProLayout
-        siderWidth={220}
-        token={{
-          sider: {
-            colorMenuItemDivider: '#dfdfdf',
-            colorTextMenu: '#595959',
-            colorTextMenuSelected: 'rgba(42,122,251,1)',
-            colorBgMenuItemSelected: 'rgba(230,243,254,1)',
-          },
-        }}
-        bgLayoutImgList={[
-          {
-            src: 'https://img.alicdn.com/imgextra/i2/O1CN01O4etvp1DvpFLKfuWq_!!6000000000279-2-tps-609-606.png',
-            left: 85,
-            bottom: 100,
-            height: '303px',
-          },
-          {
-            src: 'https://img.alicdn.com/imgextra/i2/O1CN01O4etvp1DvpFLKfuWq_!!6000000000279-2-tps-609-606.png',
-            bottom: -68,
-            right: -45,
-            height: '303px',
-          },
-          {
-            src: 'https://img.alicdn.com/imgextra/i3/O1CN018NxReL1shX85Yz6Cx_!!6000000005798-2-tps-884-496.png',
-            bottom: 0,
-            left: 0,
-            width: '331px',
-          },
-        ]}
-        {...menuProps}
-        location={{
-          pathname,
-        }}
-        avatarProps={{
-          src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
-          size: 'small',
-          title: userInfo?.name || userInfo?.username,
-          onClick: handleAvatarClick,
-          render: (props, dom) => (
-            <Tooltip title="个人信息">
-              <div className={styles.userInfo} onClick={handleAvatarClick}>
-                {dom}
-              </div>
-            </Tooltip>
-          ),
-        }}
-        actionsRender={(props) => {
-          if (props.isMobile) return [];
-          return [
-            <Tooltip key="logout" title="退出登录">
-              <LogoutOutlined 
-                className={styles.actionIcon}
-                onClick={handleLogout}
-              />
-            </Tooltip>,
-          ];
-        }}
-        menuFooterRender={(props) => {
-          if (props?.collapsed) return undefined;
-          return (
-            <div
-              style={{
-                textAlign: 'center',
-                paddingBlockStart: 12,
-              }}
-            >
-              <div>&copy; 2025 Copyright Feike</div>
-            </div>
-          );
-        }}
-        menuItemRender={(item, dom) => (
-          <div
-            onClick={() => {
-              const path = item.path || '/dashboard';
-              setPathname(path);
-              // 从路由元数据中获取标签信息
-              if (item.name) {
-                addTab({
-                  key: path,
-                  label: item.name,
-                  icon: item.icon,
-                  closable: true,
-                });
-              }
-              navigate(path);
-            }}
-          >
-            {item.pro_layout_parentKeys?.length ? (
-              <Space>
-                {item.icon}{dom}
-              </Space>
-            ) : (
-              dom
-            )}
-          </div>
-        )}
+      <div
+          style={{
+            height: '100vh',
+          }}
       >
-        <PageContainer
-          title={false}
-          breadcrumb={{
-            items: getBreadcrumbRoutes().map(route => ({
-              title: route.title,
-            })),
-            itemRender: (item) => <span>{item.title}</span>
-          }}
-          tabList={tabs.map(tab => ({
-            key: tab.key,
-            tab: (
-              <Space>
-                {tab.icon}
-                {tab.label}
-              </Space>
-            ),
-            closable: tab.closable,
-          }))}
-          tabProps={{
-            activeKey: activeTab,
-            onChange: (key) => {
-              setPathname(key); // 更新 pathname 以同步菜单选中状态
-              navigate(key);
-            },
-            onEdit: (targetKey, action) => {
-              if (action === 'remove' && typeof targetKey === 'string') {
-                removeTab(targetKey);
-              }
-            },
-            type: 'editable-card',
-            hideAdd: true,
-            className: styles.customTabs,
-          }}
+        <ProLayout
+            siderWidth={210}
+            token={{
+              sider: {
+                colorMenuItemDivider: '#dfdfdf',
+                colorTextMenu: '#595959',
+                colorTextMenuSelected: 'rgba(42,122,251,1)',
+                colorBgMenuItemSelected: 'rgba(230,243,254,1)',
+              },
+            }}
+            bgLayoutImgList={[
+              {
+                src: 'https://img.alicdn.com/imgextra/i2/O1CN01O4etvp1DvpFLKfuWq_!!6000000000279-2-tps-609-606.png',
+                left: 85,
+                bottom: 100,
+                height: '303px',
+              },
+              {
+                src: 'https://img.alicdn.com/imgextra/i2/O1CN01O4etvp1DvpFLKfuWq_!!6000000000279-2-tps-609-606.png',
+                bottom: -68,
+                right: -45,
+                height: '303px',
+              },
+              {
+                src: 'https://img.alicdn.com/imgextra/i3/O1CN018NxReL1shX85Yz6Cx_!!6000000005798-2-tps-884-496.png',
+                bottom: 0,
+                left: 0,
+                width: '331px',
+              },
+            ]}
+            {...menuProps}
+            location={{
+              pathname,
+            }}
+            avatarProps={{
+              src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
+              size: 'small',
+              title: userInfo?.name || userInfo?.username,
+              onClick: handleAvatarClick,
+              render: (props, dom) => (
+                  <Tooltip title="个人信息">
+                    <div className={styles.userInfo} onClick={handleAvatarClick}>
+                      {dom}
+                    </div>
+                  </Tooltip>
+              ),
+            }}
+            actionsRender={(props) => {
+              if (props.isMobile) return [];
+              return [
+                <Tooltip key="logout" title="退出登录">
+                  <LogoutOutlined
+                      className={styles.actionIcon}
+                      onClick={handleLogout}
+                  />
+                </Tooltip>,
+              ];
+            }}
+            menuFooterRender={(props) => {
+              if (props?.collapsed) return undefined;
+              return (
+                  <div
+                      style={{
+                        textAlign: 'center',
+                        paddingBlockStart: 12,
+                      }}
+                  >
+                    <div>&copy; 2025 Copyright Feike</div>
+                  </div>
+              );
+            }}
+            menuItemRender={(item, dom) => (
+                <div
+                    onClick={() => {
+                      const path = item.path || '/dashboard';
+                      setPathname(path);
+                      // 从路由元数据中获取标签信息
+                      if (item.name) {
+                        addTab({
+                          key: path,
+                          label: item.name,
+                          icon: item.icon,
+                          closable: true,
+                        });
+                      }
+                      navigate(path);
+                    }}
+                >
+                  {item.pro_layout_parentKeys?.length ? (
+                      <Space>
+                        {item.icon}{dom}
+                      </Space>
+                  ) : (
+                      dom
+                  )}
+                </div>
+            )}
         >
-          <ProCard>
-            <Outlet />
-          </ProCard>
-        </PageContainer>
-      </ProLayout>
-    </div>
+          <PageContainer
+              title={false}
+              breadcrumb={false}
+              tabList={tabs.map(tab => ({
+                key: tab.key,
+                tab: (
+                    <Space>
+                      {tab.icon}
+                      {tab.label}
+                    </Space>
+                ),
+                closable: tab.closable,
+              }))}
+              tabProps={{
+                activeKey: activeTab,
+                onChange: (key) => {
+                  setPathname(key); // 更新 pathname 以同步菜单选中状态
+                  navigate(key);
+                },
+                onEdit: (targetKey, action) => {
+                  if (action === 'remove' && typeof targetKey === 'string') {
+                    removeTab(targetKey);
+                  }
+                },
+                type: 'editable-card',
+                hideAdd: true,
+                className: styles.customTabs,
+              }}
+          >
+            <ProCard>
+              <Outlet />
+            </ProCard>
+          </PageContainer>
+        </ProLayout>
+      </div>
   );
 };
 
@@ -299,14 +236,14 @@ const MainLayout: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ 
-        height: '100vh', 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center' 
-      }}>
-        <Spin size="large" tip="加载中..." />
-      </div>
+        <div style={{
+          height: '100vh',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <Spin size="large" tip="加载中..." />
+        </div>
     );
   }
 
@@ -315,9 +252,9 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <TabsProvider userInfo={userInfo}>
-      <MainLayoutContent userInfo={userInfo} />
-    </TabsProvider>
+      <TabsProvider userInfo={userInfo}>
+        <MainLayoutContent userInfo={userInfo} />
+      </TabsProvider>
   );
 };
 

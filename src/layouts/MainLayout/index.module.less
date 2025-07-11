@@ -79,7 +79,17 @@
 /* ProLayout 样式覆盖 */
 :global {
   .ant-pro-page-container {
-    margin: -24px -24px 0 !important;
+    //margin: -24px -24px 0 !important;
+    .ant-pro-page-container-warp-page-header {
+      padding-block-start: 0;
+      padding-block-end: 0;
+      padding-inline-start: 0;
+      padding-inline-end: 40px
+    }
+
+    .ant-pro-page-container-children-container {
+      padding-inline : 0px;
+    }
 
     .ant-tabs-nav {
       margin: 0 !important;
@@ -87,7 +97,7 @@
     }
 
     .ant-tabs-tab {
-      padding: 12px 24px !important;
+      // padding: 12px 24px !important;
       transition: all 0.3s;
       position: relative;
 
@@ -138,4 +148,4 @@
   .userName {
     color: rgba(255, 255, 255, 0.85);
   }
-} 
+}
