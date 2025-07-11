@@ -52,64 +52,6 @@ const MainLayoutContent: React.FC<{ userInfo: UserInfo }> = ({ userInfo }) => {
     });
   };
 
-  // 生成面包屑路由数据
-  const getBreadcrumbRoutes = () => {
-    // 对于二级及以上菜单，分割路径并生成面包屑
-    const pathSnippets = pathname.split('/').filter(i => i);
-    const breadcrumbRoutes = [];
-
-    // 添加首页
-    breadcrumbRoutes.push({
-      path: '/',
-      title: '首页',
-    });
-
-    // 仪表盘页面特殊处理
-    if (pathname === '/dashboard') {
-      breadcrumbRoutes.push({
-        path: '/dashboard',
-        title: '仪表盘',
-      });
-      return breadcrumbRoutes;
-    }
-
-    // 个人信息页面特殊处理
-    if (pathname === '/profile') {
-      breadcrumbRoutes.push({
-        path: '/profile',
-        title: '个人信息',
-      });
-      return breadcrumbRoutes;
-    }
-
-    // 逐级构建路径
-    let url = '';
-    for (let i = 0; i < pathSnippets.length; i++) {
-      const snippet = pathSnippets[i];
-      url += `/${snippet}`;
-
-      // 如果是系统管理等子菜单
-      if (i === 0 && routeMetadata[url] && !routeMetadata[url].hideInMenu) {
-        breadcrumbRoutes.push({
-          path: url,
-          title: routeMetadata[url].label || snippet,
-        });
-      }
-      // 如果是最后一级，或者是二级菜单项
-      else if (i === pathSnippets.length - 1 || (routeMetadata[url] && !routeMetadata[url].hideInMenu)) {
-        const currentTab = tabs.find(tab => tab.key === url);
-        const label = routeMetadata[url]?.label || currentTab?.label || snippet;
-
-        breadcrumbRoutes.push({
-          path: url,
-          title: label,
-        });
-      }
-    }
-
-    return breadcrumbRoutes;
-  };
-
   // 监听路由变化，更新 pathname
   useEffect(() => {
     setPathname(location.pathname);
