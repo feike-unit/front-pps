@@ -754,40 +754,6 @@ const DemandManagement: React.FC = () => {
         }}
         headerTitle={
           <Space wrap>
-            <Radio.Group
-              value={demandStatus}
-              onChange={(e) => {
-                const newStatus = e.target.value;
-                setDemandStatus(newStatus);
-                
-                // 根据选择的状态更新 searchParams
-                let statusValue: number;
-                switch (newStatus) {
-                  case 'pending':
-                    statusValue = -1; // 未排产
-                    break;
-                  case 'incomplete':
-                    statusValue = 0; // 未完成
-                    break;
-                  case 'completed':
-                    statusValue = 1; // 已完成
-                    break;
-                  default:
-                    statusValue = -1;
-                }
-                
-                setSearchParams(prev => ({ ...prev, status: statusValue }));
-                // 清空选中的记录
-                setSelectedRows([]);
-                setSortedPlanList([]);
-                actionRef.current?.reloadAndRest?.();
-              }}
-              buttonStyle="solid"
-            >
-              <Radio.Button value="pending">待排产</Radio.Button>
-              <Radio.Button value="incomplete">未完成</Radio.Button>
-              <Radio.Button value="completed">已完成</Radio.Button>
-            </Radio.Group>
             <Select
               placeholder="货品编号/名称"
               style={{ width: 200 }}

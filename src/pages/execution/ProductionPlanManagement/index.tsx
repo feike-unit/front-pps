@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { Space, message, Tooltip, Select, DatePicker, Modal, Button } from 'antd';
+import {Space, message, Tooltip, Select, DatePicker, Modal, Button, Radio} from 'antd';
 import { useNavigate } from 'react-router-dom';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
@@ -48,6 +48,7 @@ const ProductionPlanManagement: React.FC = () => {
     productType: ProductType.SELF_MADE,
   });
   const [searchLineOptions, setSearchLineOptions] = useState<{ label: string; value: number }[]>([]);
+  const [searchCompleteOptions, setSearchCompleteOptions] = useState<{ label: string; value: number }[]>([]);
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<PlanRuntime | null>(null);
@@ -134,26 +135,26 @@ const ProductionPlanManagement: React.FC = () => {
       dataIndex: 'productCode',
       ellipsis: true,
       copyable: true,
-      width: 120,
+      width: 100,
     },
     {
-      title: '名称',
+      title: '货品名称',
       dataIndex: 'productName',
       ellipsis: true,
-      width: 200
+      width: 240
     },
     {
       title: '拉线编号/名称',
       dataIndex: 'lineName',
       ellipsis: true,
-      width: 200,
+      width: 100,
       render: (_, record) => record.lineCode ? `${record.lineCode} - ${record.lineName}` : record.lineName,
     },
     {
-      title: '货品类型',
+      title: '属性',
       dataIndex: 'productType',
       valueType: 'select',
-      width: 100,
+      width: 60,
       valueEnum: {
         1: { text: '采购件' },
         2: { text: '自制件' },
@@ -165,48 +166,48 @@ const ProductionPlanManagement: React.FC = () => {
       dataIndex: 'businessDocNo',
       ellipsis: true,
       copyable: true,
-      width: 150,
+      width: 160,
     },
     {
       title: '客户订单号',
       dataIndex: 'customerOrderDocNo',
       ellipsis: true,
       copyable: true,
-      width: 150,
+      width: 120,
     },
     {
       title: '客户',
       dataIndex: 'customerCode',
       ellipsis: true,
       copyable: true,
-      width: 180,
+      width: 80,
     },
     {
-      title: '订单数量',
+      title: '订单数',
       dataIndex: 'demandQuantity',
-      width: 100,
+      width: 60,
     },
     {
-      title: '任务数量',
+      title: '任务数',
       dataIndex: 'taskQuantity',
-      width: 100,
+      width: 60,
     },
     {
-      title: '报工数量',
+      title: '报工数',
       dataIndex: 'registeredQuantity',
-      width: 100,
+      width: 60,
     },
     {
-      title: '完工数量',
+      title: '完工数',
       dataIndex: 'completionQuantity',
-      width: 100,
+      width: 60,
     },
     {
       title: '上线时间',
       dataIndex: 'deliveryDateTime',
       valueType: 'dateTime',
       sorter: true,
-      width: 130,
+      width: 140,
       render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
     },
 
@@ -327,6 +328,58 @@ const ProductionPlanManagement: React.FC = () => {
         ]}
         headerTitle={
           <Space>
+            <Radio.Group
+                value= 'all'
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  // setDemandStatus(newStatus);
+
+                  // 根据选择的状态更新 searchParams
+                  let statusValue: number;
+                  switch (newStatus) {
+                    case 'all':
+                      statusValue = -1; // 未排产
+                      break;
+                    case 'incomplete':
+                      statusValue = 0; // 未完成
+                      break;
+                    case 'completed':
+                      statusValue = 1; // 已完成
+                      break;
+                    default:
+                      statusValue = -1;
+                  }
+
+                  if (statusValue !== -1)
+                    setSearchParams(prev => ({ ...prev, status: statusValue  }));
+                  // 清空选中的记录
+                  // setSelectedRows([]);
+                  // setSortedPlanList([]);
+                  actionRef.current?.reloadAndRest?.();
+                }}
+                buttonStyle="solid"
+            >
+              <Radio.Button value="all">全部</Radio.Button>
+              <Radio.Button value="incomplete">未完成</Radio.Button>
+              <Radio.Button value="completed">已完成</Radio.Button>
+            </Radio.Group>
+
+            <Select
+                placeholder="完成状态"
+                style={{ width: 200 }}
+                showSearch
+                allowClear
+                defaultActiveFirstOption={false}
+                filterOption={false}
+                onSearch={handleLineSearch}
+                onChange={(value: number) => {
+                  setSearchParams(prev => ({ ...prev, lineId: value }));
+                  actionRef.current?.reload();
+                }}
+                options={searchCompleteOptions}
+                onClick={() => handleLineSearch('')}
+            />
+
             <Select
               placeholder="拉线"
               style={{ width: 200 }}

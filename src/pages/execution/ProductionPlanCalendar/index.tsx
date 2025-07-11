@@ -177,6 +177,8 @@ const ProductionPlanCalendar: React.FC = () => {
       setLoading(false);
     }
   };
+
+
   
   // 根据筛选条件重新加载事件数据，但保持当前视图
   const refreshEvents = (params?: { lineId?: number, productId?: number }) => {
