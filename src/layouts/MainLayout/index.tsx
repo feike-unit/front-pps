@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Avatar, Space, message, Tooltip, Spin } from 'antd';
-import type { MenuProps } from 'antd';
 import { PageContainer, ProLayout, ProCard } from '@ant-design/pro-components';
 import type { ProLayoutProps } from '@ant-design/pro-components';
 import {
@@ -13,7 +12,6 @@ import { getProfile, logout } from '../../services/auth';
 import { TabsProvider, useTabs } from './TabsContext';
 import type { UserInfo } from '../../services/user';
 import defaultProps, { getDefaultProps } from '../_defaultProps';
-import { routeMetadata } from '../../routes';
 
 const MainLayoutContent: React.FC<{ userInfo: UserInfo }> = ({ userInfo }) => {
   const [menuProps, setMenuProps] = useState<ProLayoutProps>(defaultProps);
@@ -72,144 +70,144 @@ const MainLayoutContent: React.FC<{ userInfo: UserInfo }> = ({ userInfo }) => {
   };
 
   return (
-    <div
-      style={{
-        height: '100vh',
-      }}
-    >
-      <ProLayout
-        siderWidth={210}
-        token={{
-          sider: {
-            colorMenuItemDivider: '#dfdfdf',
-            colorTextMenu: '#595959',
-            colorTextMenuSelected: 'rgba(42,122,251,1)',
-            colorBgMenuItemSelected: 'rgba(230,243,254,1)',
-          },
-        }}
-        bgLayoutImgList={[
-          {
-            src: 'https://img.alicdn.com/imgextra/i2/O1CN01O4etvp1DvpFLKfuWq_!!6000000000279-2-tps-609-606.png',
-            left: 85,
-            bottom: 100,
-            height: '303px',
-          },
-          {
-            src: 'https://img.alicdn.com/imgextra/i2/O1CN01O4etvp1DvpFLKfuWq_!!6000000000279-2-tps-609-606.png',
-            bottom: -68,
-            right: -45,
-            height: '303px',
-          },
-          {
-            src: 'https://img.alicdn.com/imgextra/i3/O1CN018NxReL1shX85Yz6Cx_!!6000000005798-2-tps-884-496.png',
-            bottom: 0,
-            left: 0,
-            width: '331px',
-          },
-        ]}
-        {...menuProps}
-        location={{
-          pathname,
-        }}
-        avatarProps={{
-          src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
-          size: 'small',
-          title: userInfo?.name || userInfo?.username,
-          onClick: handleAvatarClick,
-          render: (props, dom) => (
-            <Tooltip title="个人信息">
-              <div className={styles.userInfo} onClick={handleAvatarClick}>
-                {dom}
-              </div>
-            </Tooltip>
-          ),
-        }}
-        actionsRender={(props) => {
-          if (props.isMobile) return [];
-          return [
-            <Tooltip key="logout" title="退出登录">
-              <LogoutOutlined
-                className={styles.actionIcon}
-                onClick={handleLogout}
-              />
-            </Tooltip>,
-          ];
-        }}
-        menuFooterRender={(props) => {
-          if (props?.collapsed) return undefined;
-          return (
-            <div
-              style={{
-                textAlign: 'center',
-                paddingBlockStart: 12,
-              }}
-            >
-              <div>&copy; 2025 Copyright Feike</div>
-            </div>
-          );
-        }}
-        menuItemRender={(item, dom) => (
-          <div
-            onClick={() => {
-              const path = item.path || '/dashboard';
-              setPathname(path);
-              // 从路由元数据中获取标签信息
-              if (item.name) {
-                addTab({
-                  key: path,
-                  label: item.name,
-                  icon: item.icon,
-                  closable: true,
-                });
-              }
-              navigate(path);
-            }}
-          >
-            {item.pro_layout_parentKeys?.length ? (
-              <Space>
-                {item.icon}{dom}
-              </Space>
-            ) : (
-              dom
-            )}
-          </div>
-        )}
-      >
-        <PageContainer
-          title={false}
-          breadcrumb={false}
-          tabList={tabs.map(tab => ({
-            key: tab.key,
-            tab: (
-              <Space>
-                {tab.icon}
-                {tab.label}
-              </Space>
-            ),
-            closable: tab.closable,
-          }))}
-          tabProps={{
-            activeKey: activeTab,
-            onChange: (key) => {
-              setPathname(key); // 更新 pathname 以同步菜单选中状态
-              navigate(key);
-            },
-            onEdit: (targetKey, action) => {
-              if (action === 'remove' && typeof targetKey === 'string') {
-                removeTab(targetKey);
-              }
-            },
-            type: 'editable-card',
-            hideAdd: true,
-            className: styles.customTabs,
+      <div
+          style={{
+            height: '100vh',
           }}
+      >
+        <ProLayout
+            siderWidth={210}
+            token={{
+              sider: {
+                colorMenuItemDivider: '#dfdfdf',
+                colorTextMenu: '#595959',
+                colorTextMenuSelected: 'rgba(42,122,251,1)',
+                colorBgMenuItemSelected: 'rgba(230,243,254,1)',
+              },
+            }}
+            bgLayoutImgList={[
+              {
+                src: 'https://img.alicdn.com/imgextra/i2/O1CN01O4etvp1DvpFLKfuWq_!!6000000000279-2-tps-609-606.png',
+                left: 85,
+                bottom: 100,
+                height: '303px',
+              },
+              {
+                src: 'https://img.alicdn.com/imgextra/i2/O1CN01O4etvp1DvpFLKfuWq_!!6000000000279-2-tps-609-606.png',
+                bottom: -68,
+                right: -45,
+                height: '303px',
+              },
+              {
+                src: 'https://img.alicdn.com/imgextra/i3/O1CN018NxReL1shX85Yz6Cx_!!6000000005798-2-tps-884-496.png',
+                bottom: 0,
+                left: 0,
+                width: '331px',
+              },
+            ]}
+            {...menuProps}
+            location={{
+              pathname,
+            }}
+            avatarProps={{
+              src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
+              size: 'small',
+              title: userInfo?.name || userInfo?.username,
+              onClick: handleAvatarClick,
+              render: (props, dom) => (
+                  <Tooltip title="个人信息">
+                    <div className={styles.userInfo} onClick={handleAvatarClick}>
+                      {dom}
+                    </div>
+                  </Tooltip>
+              ),
+            }}
+            actionsRender={(props) => {
+              if (props.isMobile) return [];
+              return [
+                <Tooltip key="logout" title="退出登录">
+                  <LogoutOutlined
+                      className={styles.actionIcon}
+                      onClick={handleLogout}
+                  />
+                </Tooltip>,
+              ];
+            }}
+            menuFooterRender={(props) => {
+              if (props?.collapsed) return undefined;
+              return (
+                  <div
+                      style={{
+                        textAlign: 'center',
+                        paddingBlockStart: 12,
+                      }}
+                  >
+                    <div>&copy; 2025 Copyright Feike</div>
+                  </div>
+              );
+            }}
+            menuItemRender={(item, dom) => (
+                <div
+                    onClick={() => {
+                      const path = item.path || '/dashboard';
+                      setPathname(path);
+                      // 从路由元数据中获取标签信息
+                      if (item.name) {
+                        addTab({
+                          key: path,
+                          label: item.name,
+                          icon: item.icon,
+                          closable: true,
+                        });
+                      }
+                      navigate(path);
+                    }}
+                >
+                  {item.pro_layout_parentKeys?.length ? (
+                      <Space>
+                        {item.icon}{dom}
+                      </Space>
+                  ) : (
+                      dom
+                  )}
+                </div>
+            )}
         >
-          <ProCard>
-            <Outlet />
-          </ProCard>
-        </PageContainer>
-      </ProLayout>
-    </div>
+          <PageContainer
+              title={false}
+              breadcrumb={false}
+              tabList={tabs.map(tab => ({
+                key: tab.key,
+                tab: (
+                    <Space>
+                      {tab.icon}
+                      {tab.label}
+                    </Space>
+                ),
+                closable: tab.closable,
+              }))}
+              tabProps={{
+                activeKey: activeTab,
+                onChange: (key) => {
+                  setPathname(key); // 更新 pathname 以同步菜单选中状态
+                  navigate(key);
+                },
+                onEdit: (targetKey, action) => {
+                  if (action === 'remove' && typeof targetKey === 'string') {
+                    removeTab(targetKey);
+                  }
+                },
+                type: 'editable-card',
+                hideAdd: true,
+                className: styles.customTabs,
+              }}
+          >
+            <ProCard>
+              <Outlet />
+            </ProCard>
+          </PageContainer>
+        </ProLayout>
+      </div>
   );
 };
 
@@ -258,4 +256,4 @@ const MainLayout: React.FC = () => {
   );
 };
 
-export default MainLayout; 
+export default MainLayout;
