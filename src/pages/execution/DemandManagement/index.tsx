@@ -39,9 +39,9 @@ import {
   schedulerDemands,
   getScheduledDemands,
   getDemandById,
-  insertOrderDemands
+  insertOrderDemands, initDemands, callbackDeliveryTime
 } from '../../../services/demand';
-import { searchProducts } from '../../../services/product';
+import {searchProducts, syncProducts} from '../../../services/product';
 import debounce from 'lodash/debounce';
 import dayjs from 'dayjs';
 import { RadioChangeEvent } from 'antd/lib/radio';
@@ -988,26 +988,103 @@ const DemandManagement: React.FC = () => {
               </Button>,
               <Popconfirm
                   key="syncConfirm"
-                  title="确定要同步需求数据吗？"
+                  title="确定要初始化需求数据吗？"
                   onConfirm={async () => {
                     try {
-                      await syncDemands();
-                      message.success('需求同步成功');
+                      await initDemands();
+                      message.success('初始化成功');
                       actionRef.current?.reload();
                     } catch (error) {
                       const apiError = error as ApiError;
-                      message.error(apiError.response?.data?.message || apiError.message || '需求同步失败');
+                      message.error(apiError.response?.data?.message || apiError.message || '初始化失败');
                     }
                   }}
               >
                 <Button
-                    key="sync"
-                    type="primary"
+                    key="initDemands"
                     icon={<SyncOutlined />}
                 >
-                  同步需求
+                  初始化需求
                 </Button>
-              </Popconfirm>
+              </Popconfirm>,
+              <Button
+                  key="syncDemands"
+                  onClick={() => {
+                    // 创建日期选择器弹窗
+                    let syncDate: string | undefined;
+                    Modal.confirm({
+                      title: '同步需求',
+                      content: (
+                          <div style={{ marginTop: 16 }}>
+                            <span style={{ color: '#ff4d4f' }}>* </span>
+                            <span>选择同步日期：</span>
+                            <DatePicker
+                                onChange={(date) => {
+                                  syncDate = date ? date.format('YYYY-MM-DD') : undefined;
+                                }}
+                            />
+                          </div>
+                      ),
+                      onOk: async () => {
+                        if (!syncDate) {
+                          message.error('请选择同步日期');
+                          return Promise.reject('请选择同步日期');
+                        }
+
+                        try {
+                          await syncDemands(syncDate);
+                          message.success('同步需求成功');
+                          actionRef.current?.reload();
+                        } catch (error) {
+                          const apiError = error as ApiError;
+                          message.error(apiError.response?.data?.message || apiError.message || '同步需求失败');
+                        }
+                      }
+                    });
+                  }}
+              >
+                <SyncOutlined />
+                同步需求
+              </Button>,,
+              <Button
+                  key="callbackDeliveryTime"
+                  onClick={() => {
+                    // 创建日期选择器弹窗
+                    let syncDate: string | undefined;
+                    Modal.confirm({
+                      title: '同步交期给ERP',
+                      content: (
+                          <div style={{ marginTop: 16 }}>
+                            <span style={{ color: '#ff4d4f' }}>* </span>
+                            <span>选择同步日期：</span>
+                            <DatePicker
+                                onChange={(date) => {
+                                  syncDate = date ? date.format('YYYY-MM-DD') : undefined;
+                                }}
+                            />
+                          </div>
+                      ),
+                      onOk: async () => {
+                        if (!syncDate) {
+                          message.error('请选择同步日期');
+                          return Promise.reject('请选择同步日期');
+                        }
+
+                        try {
+                          await callbackDeliveryTime(syncDate);
+                          message.success('同步交期成功');
+                          actionRef.current?.reload();
+                        } catch (error) {
+                          const apiError = error as ApiError;
+                          message.error(apiError.response?.data?.message || apiError.message || '同步交期失败');
+                        }
+                      }
+                    });
+                  }}
+              >
+                <SyncOutlined />
+                同步交期
+              </Button>,
             ]}
         />
         <Modal

@@ -118,10 +118,26 @@ export const updateDemandStatus = async (id: number, status: DemandStatus): Prom
     return response.data;
 };
 
+// 初始化需求
+export const initDemands = async (): Promise<void> => {
+    const response = await api.post('/execution/demands/init-demand', null, {
+        timeout: 60000 * 5 // 设置排产接口超时时间为5分钟
+    });
+    return response.data;
+};
+
 // 同步需求
-export const syncDemands = async (): Promise<void> => {
-    const response = await api.post('/execution/demands/sync', {
-        timeout: 60000 * 10 // 设置重新初始化需求时间为10分钟
+export const syncDemands = async (syncDate: string): Promise<void> => {
+    const response = await api.post('/execution/demands/sync-change-demand', null, {
+        params: {syncDate}
+    });
+    return response.data;
+};
+
+// 同步需求
+export const callbackDeliveryTime = async (syncDate: string): Promise<void> => {
+    const response = await api.post('/execution/demands/sync-change-demand', null, {
+        params: {syncDate}
     });
     return response.data;
 };
