@@ -134,6 +134,14 @@ export const syncDemands = async (syncDate: string): Promise<void> => {
     return response.data;
 };
 
+// 同步数量
+export const syncCallbackQty = async (syncDate: string): Promise<void> => {
+    const response = await api.post('/execution/demands/sync-callback-qty', null, {
+        params: {syncDate}
+    });
+    return response.data;
+};
+
 // 同步需求
 export const callbackDeliveryTime = async (syncDate: string): Promise<void> => {
     const response = await api.post('/execution/demands/sync-change-demand', null, {
