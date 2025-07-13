@@ -84,34 +84,32 @@ const ProductManagement: React.FC = () => {
   // ProTable 列定义
   const columns: ProColumns<Product>[] = [
     {
-      title: '货品编号/名称',
+      title: '货品编码',
       dataIndex: 'productCode',
       copyable: true,
       ellipsis: true,
-      sorter: true,
-      tip: '支持货品编号或名称模糊搜索',
-      render: (_, record) => `${record.productCode} - ${record.productName}`,
-      width: 300,
+      width: 100,
     },
     {
       title: '货品名称',
       dataIndex: 'productName',
       copyable: true,
       ellipsis: true,
-      sorter: true,
-      hideInTable: true,
+      width: 240,
     },
     {
       title: '规格型号',
       dataIndex: 'model',
       ellipsis: true,
       search: false,
+      width: 150,
     },
     {
       title: '单位',
       dataIndex: 'unit',
       ellipsis: true,
       search: false,
+      width: 80,
     },
     {
       title: '货品类型',
@@ -123,25 +121,27 @@ const ProductManagement: React.FC = () => {
         [ProductType.SELF_MADE]: { text: '自制件' },
         [ProductType.OUTSOURCED]: { text: '委外件' },
       },
+      width: 100,
     },
     {
       title: '提前期(天)',
       dataIndex: 'advanceDay',
       ellipsis: true,
       search: false,
+      width: 100,
     },
     {
       title: '备注',
       dataIndex: 'remark',
       ellipsis: true,
       search: false,
+      width: 160,
     },
     {
       title: '状态',
       dataIndex: 'status',
-      filters: true,
-      onFilter: true,
       valueType: 'select',
+      width: 120,
       valueEnum: {
         [ProductStatus.ENABLED]: { text: '启用', status: 'Success' },
         [ProductStatus.DISABLED]: { text: '禁用', status: 'Error' },
@@ -169,12 +169,14 @@ const ProductManagement: React.FC = () => {
       dataIndex: 'createdAt',
       valueType: 'dateTime',
       sorter: true,
+      width: 140,
       hideInSearch: true,
     },
     {
       title: '操作',
       valueType: 'option',
       key: 'option',
+      width: 140,
       render: (_, record) => (
         <Space size="middle">
           <ModalForm<Product>
