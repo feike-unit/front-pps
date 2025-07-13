@@ -62,9 +62,11 @@ const DemandManagement: React.FC = () => {
     status?: number; // 0: 未排产 1已排产
     deliveryDateStart?: string;
     deliveryDateEnd?: string;
+    productType?: number;
     keyword?: string;
   }>({
     status: 1, // 默认只显示待排产的需求
+    productType: 2
   });
 
   // 状态切换
