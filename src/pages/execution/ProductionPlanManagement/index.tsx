@@ -26,16 +26,14 @@ import type { TableComponents } from 'rc-table/lib/interface';
 import {
   ProTable
 } from '@ant-design/pro-components';
-import { DeleteOutlined, CaretRightOutlined, CaretDownOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, RollbackOutlined, ScheduleOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { CaretRightOutlined, CaretDownOutlined, SyncOutlined, SwapOutlined, RollbackOutlined, ScheduleOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ApiError } from '../../../services/api';
 import {
   Demand,
   DemandStatus,
   getDemandPage,
   DemandPageRequest,
-  deleteDemandsByBusinessKeys,
   syncDemands,
-  schedulerDemands,
   getScheduledDemands,
   getDemandById,
   insertOrderDemands, initDemands, callbackDeliveryTime, syncCallbackQty, revokeDemandsByBusinessKeys
@@ -77,10 +75,6 @@ const DemandManagement: React.FC = () => {
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<Demand | null>(null);
 
-  const [selectedRows, setSelectedRows] = useState<Demand[]>([]);
-  const [batchPlanModalVisible, setBatchPlanModalVisible] = useState<boolean>(false);
-  const [batchPlanForm] = Form.useForm();
-  const [singlePlanModalVisible, setSinglePlanModalVisible] = useState<boolean>(false);
   const [currentPlanDemand, setCurrentPlanDemand] = useState<Demand | null>(null);
   const [planForm] = Form.useForm();
 
@@ -94,14 +88,9 @@ const DemandManagement: React.FC = () => {
   const [loadingScheduledDemands, setLoadingScheduledDemands] = useState<boolean>(false);
 
   // 批量排产需求排序列表
-  const [sortedPlanList, setSortedPlanList] = useState<Demand[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
-  const [singlePlanLoading, setSinglePlanLoading] = useState<boolean>(false);
-  const [batchPlanLoading, setBatchPlanLoading] = useState<boolean>(false);
 
   // 添加表单值监听
-  const afterDemandId = Form.useWatch('afterDemandId', planForm);
-  const batchAfterDemandId = Form.useWatch('afterDemandId', batchPlanForm);
   const insertAfterDemandId = Form.useWatch('afterDemandId', insertOrderForm);
 
   // 获取所有启用的生产线
@@ -385,14 +374,6 @@ const DemandManagement: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
           <Space size="middle">
-            {/* 添加排产按钮 */}
-            {record.status === 0 && (
-                <Tooltip title="排产">
-                  <a onClick={() => handleSinglePlan(record)}>
-                    <PlayCircleOutlined style={{ color: '#1890ff' }} />
-                  </a>
-                </Tooltip>
-            )}
             {/* 查看详情按钮 */}
             <Tooltip title="查看详情">
               <a onClick={() => handleViewDetails(record)}>
@@ -437,35 +418,6 @@ const DemandManagement: React.FC = () => {
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取需求详情失败');
-    }
-  };
-
-  // 处理单个排产提交
-  const handleSinglePlanSubmit = async () => {
-    try {
-      setSinglePlanLoading(true);
-      const values = await planForm.validateFields();
-      await schedulerDemands(
-          [currentPlanDemand!.id!],
-          values.lineId,
-          values.coefficient,
-          values.afterDemandId,
-          values.rePlanScope // 添加影响范围参数
-      );
-      message.success('排产成功');
-      setSinglePlanModalVisible(false);
-      actionRef.current?.reload();
-      planForm.resetFields();
-      setCurrentPlanDemand(null);
-    } catch (error: any) {
-      const apiError = error as ApiError;
-      if (error.code === 'ECONNABORTED') {
-        message.error('排产请求超时，请稍后重试');
-      } else {
-        message.error(apiError.response?.data?.message || apiError.message || '排产失败');
-      }
-    } finally {
-      setSinglePlanLoading(false);
     }
   };
 
@@ -1062,14 +1014,12 @@ const DemandManagement: React.FC = () => {
                         <div className="value">
                           <Badge
                               color={
-                                detailRecord.status === -1 ? '#faad14' :
-                                    detailRecord.status === 0 ? '#1890ff' :
-                                        detailRecord.status === 1 ? '#52c41a' : '#000'
+                                    detailRecord.completionStatus === 0 ? '#1890ff' :
+                                        detailRecord.completionStatus === 1 ? '#52c41a' : '#000'
                               }
                               text={
-                                detailRecord.status === -1 ? '未排产' :
-                                    detailRecord.status === 0 ? '未完成' :
-                                        detailRecord.status === 1 ? '已完成' : '-'
+                                    detailRecord.completionStatus === 0 ? '未完工' :
+                                        detailRecord.completionStatus === 1 ? '已完工' : '-'
                               }
                           />
                         </div>
@@ -1198,380 +1148,6 @@ const DemandManagement: React.FC = () => {
               </div>
           )}
         </Modal>
-
-        {/* 批量排产对话框 */}
-        <Modal
-            title="批量排产"
-            open={batchPlanModalVisible}
-            onCancel={() => {
-              if (!batchPlanLoading) {
-                setBatchPlanModalVisible(false);
-                setSortedPlanList([]); // 清空排序列表
-                batchPlanForm.resetFields();
-                setScheduledDemands([]); // 清空已排产需求列表
-                actionRef.current?.clearSelected();
-              }
-            }}
-            maskClosable={!batchPlanLoading}
-            closable={!batchPlanLoading}
-            footer={[
-              <Button
-                  key="cancel"
-                  disabled={batchPlanLoading}
-                  onClick={() => {
-                    setBatchPlanModalVisible(false);
-                    setSortedPlanList([]); // 清空排序列表
-                    batchPlanForm.resetFields();
-                    setScheduledDemands([]); // 清空已排产需求列表
-                    actionRef.current?.clearSelected();
-                  }}
-              >
-                取消
-              </Button>,
-              <Button
-                  key="submit"
-                  type="primary"
-                  loading={batchPlanLoading}
-                  disabled={batchPlanLoading}
-                  onClick={handleBatchPlan}
-              >
-                确认排产
-              </Button>
-            ]}
-            width={800}
-        >
-          <Spin spinning={batchPlanLoading} tip="正在批量排产中...">
-            <Alert
-                message={`已选择 ${sortedPlanList.length} 个未排产需求进行批量排产，可拖拽调整排产顺序`}
-                type="info"
-                showIcon
-                style={{ marginBottom: 24 }}
-            />
-
-            <div style={{ marginBottom: 24 }}>
-              <Typography.Text type="warning">
-                注意：系统将根据选择的拉线和排产位置自动安排排产计划。
-              </Typography.Text>
-            </div>
-
-            <Form form={batchPlanForm} layout="vertical">
-              <Form.Item
-                  name="lineId"
-                  label="生产拉线"
-                  rules={[
-                    {
-                      validator: async (_, value) => {
-                        // 检查选中的需求中是否有自制件
-                        const hasSelfMade = sortedPlanList.some(demand => demand.productType === 2);
-                        if (hasSelfMade && !value) {
-                          throw new Error('包含自制件的需求必须选择生产拉线');
-                        }
-                      },
-                    }
-                  ]}
-              >
-                <Select
-                    placeholder={sortedPlanList.some(demand => demand.productType === 2) ?
-                        "包含自制件必须选择生产拉线" : "请选择生产拉线"}
-                    style={{ width: '100%' }}
-                    options={lines.map(line => ({
-                      label: `${line.lineName} (${line.lineCode})`,
-                      value: line.id
-                    }))}
-                    onChange={(value) => {
-                      if (value) {
-                        loadScheduledDemands(value);
-                        batchPlanForm.setFieldValue('afterDemandId', undefined);
-                        batchPlanForm.setFieldValue('rePlanScope', undefined);
-                      } else {
-                        setScheduledDemands([]);
-                      }
-                    }}
-                />
-              </Form.Item>
-              <Form.Item
-                  name="coefficient"
-                  label="产能系数"
-                  initialValue={1}
-                  rules={[
-                    { required: true, message: '请输入产能系数' },
-                    { type: 'number', min: 0, message: '产能系数必须大于0' }
-                  ]}
-              >
-                <InputNumber
-                    style={{ width: '100%' }}
-                    placeholder="请输入产能系数"
-                    precision={2}
-                    step={0.1}
-                />
-              </Form.Item>
-              <Form.Item
-                  name="afterDemandId"
-                  label="排产位置"
-                  extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
-              >
-                <Select
-                    placeholder="请选择或输入搜索要排在哪个需求之后"
-                    style={{ width: '100%' }}
-                    showSearch
-                    options={scheduledDemands.map(demand => ({
-                      label: `${demand.businessDocNo} ${demand.productName}`,
-                      value: demand.id
-                    }))}
-                    disabled={!batchPlanForm.getFieldValue('lineId') || loadingScheduledDemands}
-                    filterOption={(input, option) =>
-                        (option?.label || '').toLowerCase().includes(input.toLowerCase())
-                    }
-                    loading={loadingScheduledDemands}
-                    allowClear
-                    onChange={(value) => {
-                      if (!value) {
-                        batchPlanForm.setFieldValue('rePlanScope', undefined);
-                      } else {
-                        batchPlanForm.setFieldValue('rePlanScope', 0);
-                      }
-                    }}
-                />
-              </Form.Item>
-              {batchAfterDemandId && (
-                  <Form.Item
-                      name="rePlanScope"
-                      label="影响范围"
-                      initialValue={0}
-                      style={{ marginBottom: 0 }}
-                  >
-                    <Radio.Group>
-                      <Space direction="vertical">
-                        <Tooltip title="仅排产不影响其他计划，保持其他计划不变">
-                          <Radio value={0}>仅排产不影响其他计划</Radio>
-                        </Tooltip>
-                        <Tooltip title="排产后，需要重新计算其排产位置之后的产能而影响到的其他计划">
-                          <Radio value={1}>排产并重新计算影响的其他计划</Radio>
-                        </Tooltip>
-                      </Space>
-                    </Radio.Group>
-                  </Form.Item>
-              )}
-            </Form>
-
-            {/* 显示选中的需求列表 */}
-            <Table
-                dataSource={sortedPlanList}
-                columns={[
-                  {
-                    title: '序号',
-                    width: 60,
-                    render: (_, record, index) => index + 1,
-                  },
-                  {
-                    title: '货品编号/名称',
-                    dataIndex: 'productCode',
-                    render: (_, record) => `${record.productCode} - ${record.productName}`,
-                  },
-                  {
-                    title: '订单数量',
-                    dataIndex: 'demandQuantity',
-                    width: 100,
-                  },
-                  {
-                    title: '客户交期',
-                    dataIndex: 'deliveryDate',
-                    width: 120,
-                  },
-                  {
-                    title: '操作',
-                    width: 80,
-                    render: (_, record, index) => (
-                        <Space size="small">
-                          <Tooltip title="上移">
-                            <Button
-                                type="text"
-                                size="small"
-                                icon={<ArrowUpOutlined />}
-                                disabled={index === 0}
-                                onClick={() => handleMoveUp(index)}
-                            />
-                          </Tooltip>
-                          <Tooltip title="下移">
-                            <Button
-                                type="text"
-                                size="small"
-                                icon={<ArrowDownOutlined />}
-                                disabled={index === sortedPlanList.length - 1}
-                                onClick={() => handleMoveDown(index)}
-                            />
-                          </Tooltip>
-                        </Space>
-                    ),
-                  }
-                ]}
-                size="small"
-                pagination={false}
-                scroll={{ y: 300 }}
-                expandable={{
-                  showExpandColumn: false
-                }}
-                rowKey="id"
-            />
-          </Spin>
-        </Modal>
-
-        {/* 单个排产对话框 */}
-        <Modal
-            title="排产计划"
-            open={singlePlanModalVisible}
-            onCancel={() => {
-              if (!singlePlanLoading) {
-                setSinglePlanModalVisible(false);
-                planForm.resetFields();
-                setCurrentPlanDemand(null);
-                setScheduledDemands([]); // 清空已排产需求列表
-              }
-            }}
-            maskClosable={!singlePlanLoading}
-            closable={!singlePlanLoading}
-            footer={[
-              <Button
-                  key="cancel"
-                  disabled={singlePlanLoading}
-                  onClick={() => {
-                    setSinglePlanModalVisible(false);
-                    planForm.resetFields();
-                    setCurrentPlanDemand(null);
-                    setScheduledDemands([]); // 清空已排产需求列表
-                  }}
-              >
-                取消
-              </Button>,
-              <Button
-                  key="submit"
-                  type="primary"
-                  loading={singlePlanLoading}
-                  disabled={singlePlanLoading}
-                  onClick={handleSinglePlanSubmit}
-              >
-                确认排产
-              </Button>
-            ]}
-            width={600}
-        >
-          <Spin spinning={singlePlanLoading} tip="正在排产中...">
-            {currentPlanDemand && (
-                <>
-                  <Alert
-                      message={`正在为货品"${currentPlanDemand.productCode} - ${currentPlanDemand.productName}"进行排产`}
-                      type="info"
-                      showIcon
-                      style={{ marginBottom: 24 }}
-                  />
-
-                  <Form form={planForm} layout="vertical">
-                    <Form.Item
-                        name="lineId"
-                        label="生产拉线"
-                        rules={[
-                          {
-                            validator: async (_, value) => {
-                              if (currentPlanDemand?.productType === 2 && !value) { // 2 表示自制件
-                                throw new Error('自制件必须选择生产拉线');
-                              }
-                            },
-                          }
-                        ]}
-                    >
-                      <Select
-                          placeholder={currentPlanDemand?.productType === 2 ? "自制件必须选择生产拉线" : "请选择生产拉线"}
-                          style={{ width: '100%' }}
-                          options={lines.map(line => ({
-                            label: `${line.lineName} (${line.lineCode})`,
-                            value: line.id
-                          }))}
-                          onChange={(value) => {
-                            if (value) {
-                              loadScheduledDemands(value);
-                              planForm.setFieldValue('afterDemandId', undefined);
-                              planForm.setFieldValue('rePlanScope', undefined);
-                            } else {
-                              setScheduledDemands([]);
-                            }
-                          }}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                        name="coefficient"
-                        label="产能系数"
-                        initialValue={1}
-                        rules={[
-                          { required: true, message: '请输入产能系数' },
-                          { type: 'number', min: 0, message: '产能系数必须大于0' }
-                        ]}
-                    >
-                      <InputNumber
-                          style={{ width: '100%' }}
-                          placeholder="请输入产能系数"
-                          precision={2}
-                          step={0.1}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                        name="afterDemandId"
-                        label="排产位置"
-                        extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
-                    >
-                      <Select
-                          placeholder="请选择或输入搜索要排在哪个需求之后"
-                          style={{ width: '100%' }}
-                          showSearch
-                          options={scheduledDemands.map(demand => ({
-                            label: `${demand.businessDocNo} ${demand.productName}`,
-                            value: demand.id
-                          }))}
-                          disabled={!planForm.getFieldValue('lineId') || loadingScheduledDemands}
-                          filterOption={(input, option) =>
-                              (option?.label || '').toLowerCase().includes(input.toLowerCase())
-                          }
-                          loading={loadingScheduledDemands}
-                          allowClear
-                          onChange={(value) => {
-                            if (!value) {
-                              planForm.setFieldValue('rePlanScope', undefined);
-                            } else {
-                              planForm.setFieldValue('rePlanScope', 0);
-                            }
-                          }}
-                      />
-                    </Form.Item>
-                    {afterDemandId && (
-                        <Form.Item
-                            name="rePlanScope"
-                            label="影响范围"
-                            initialValue={0}
-                            style={{ marginBottom: 0 }}
-                        >
-                          <Radio.Group>
-                            <Space direction="vertical">
-                              <Tooltip title="仅排产不影响其他计划，保持其他计划不变">
-                                <Radio value={0}>仅排产不影响其他计划</Radio>
-                              </Tooltip>
-                              <Tooltip title="排产后，需要重新计算其排产位置之后的产能而影响到的其他计划">
-                                <Radio value={1}>排产并重新计算影响的其他计划</Radio>
-                              </Tooltip>
-                            </Space>
-                          </Radio.Group>
-                        </Form.Item>
-                    )}
-                  </Form>
-
-                  <div style={{ marginTop: 16 }}>
-                    <Typography.Text type="warning">
-                      注意：系统将根据选择的拉线和排产位置自动安排排产计划。
-                    </Typography.Text>
-                  </div>
-                </>
-            )}
-          </Spin>
-        </Modal>
-
         <style>{`
         .detail-item {
           .label {

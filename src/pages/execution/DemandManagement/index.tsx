@@ -1203,14 +1203,12 @@ const DemandManagement: React.FC = () => {
                         <div className="value">
                           <Badge
                               color={
-                                detailRecord.status === -1 ? '#faad14' :
-                                    detailRecord.status === 0 ? '#1890ff' :
-                                        detailRecord.status === 1 ? '#52c41a' : '#000'
+                                    detailRecord.completionStatus === 0 ? '#1890ff' :
+                                        detailRecord.completionStatus === 1 ? '#52c41a' : '#000'
                               }
                               text={
-                                detailRecord.status === -1 ? '未排产' :
-                                    detailRecord.status === 0 ? '未完成' :
-                                        detailRecord.status === 1 ? '已完成' : '-'
+                                    detailRecord.completionStatus === 0 ? '未完成' :
+                                        detailRecord.completionStatus === 1 ? '已完成' : '-'
                               }
                           />
                         </div>
