@@ -229,7 +229,7 @@ const DemandManagement: React.FC = () => {
     },
     {
       title: '客户',
-      dataIndex: 'customerName',
+      dataIndex: 'customerCode',
       ellipsis: true,
       copyable: true,
       width: 100,
