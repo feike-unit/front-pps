@@ -290,14 +290,14 @@ const DemandManagement: React.FC = () => {
       width: 150,
     },
     {
-      title: '排产状态',
-      dataIndex: 'status',
-      filters: true,
-      onFilter: true,
+      title: '完工状态',
+      dataIndex: 'completionStatus',
+      filters: false,
+      onFilter: false,
       valueType: 'select',
       valueEnum: {
-        [0]: { text: '未排产', status: 'warning' },
-        [1]: { text: '已排产', status: 'processing' }
+        [0]: { text: '未完工', status: 'warning' },
+        [1]: { text: '已完工', status: 'processing' }
       },
       width: 100,
     },

@@ -211,7 +211,7 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'sortNo',
       ellipsis: true,
       sorter: true,
-      width: 70
+      width: 60
     },
     {
       title: '业务单号',
@@ -290,8 +290,8 @@ const DemandManagement: React.FC = () => {
     {
       title: '完工状态',
       dataIndex: 'completionStatus',
-      filters: true,
-      onFilter: true,
+      filters: false,
+      onFilter: false,
       valueType: 'select',
       valueEnum: {
         [0]: { text: '未完工', status: 'warning' },
@@ -469,45 +469,7 @@ const DemandManagement: React.FC = () => {
     }
   };
 
-  // 处理批量排产
-  const handleBatchPlan = async () => {
-    try {
-      setBatchPlanLoading(true);
-      const values = await batchPlanForm.validateFields();
-      const demandIds = sortedPlanList.map(row => row.id!);
-      await schedulerDemands(
-          demandIds,
-          values.lineId,
-          values.coefficient,
-          values.afterDemandId,
-          values.rePlanScope // 添加影响范围参数
-      );
-
-      setBatchPlanModalVisible(false);
-      setSelectedRows([]);
-      setSortedPlanList([]);
-      setScheduledDemands([]);
-      message.success('批量排产成功');
-      actionRef.current?.clearSelected();
-    } catch (error: any) {
-      const apiError = error as ApiError;
-      if (error.code === 'ECONNABORTED') {
-        message.error('批量排产请求超时，请稍后重试');
-      } else {
-        message.error(apiError.response?.data?.message || apiError.message || '批量排产失败');
-      }
-    } finally {
-      setBatchPlanLoading(false);
-    }
-  };
-
-  // 处理单个排产
-  const handleSinglePlan = async (record: Demand) => {
-    setCurrentPlanDemand(record);
-    setSinglePlanModalVisible(true);
-  };
-
-  // 处理单个删除
+  // 处理单个撤回
   const handleSingleRevoke = async (record: Demand) => {
     try {
       if (!record.businessKey) {
@@ -521,28 +483,6 @@ const DemandManagement: React.FC = () => {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '撤回失败');
     }
-  };
-
-  // 处理需求排序 - 上移
-  const handleMoveUp = (index: number) => {
-    if (index === 0) return; // 已经是第一个，无法上移
-
-    const newList = [...sortedPlanList];
-    const temp = newList[index];
-    newList[index] = newList[index - 1];
-    newList[index - 1] = temp;
-    setSortedPlanList(newList);
-  };
-
-  // 处理需求排序 - 下移
-  const handleMoveDown = (index: number) => {
-    if (index === sortedPlanList.length - 1) return; // 已经是最后一个，无法下移
-
-    const newList = [...sortedPlanList];
-    const temp = newList[index];
-    newList[index] = newList[index + 1];
-    newList[index + 1] = temp;
-    setSortedPlanList(newList);
   };
 
   // 加载已排产需求列表
