@@ -9,6 +9,8 @@ export enum DemandStatus {
 
 // 需求实体类型
 export interface Demand {
+    completionStatus: number;
+    sortNo: number;
     id?: number;
     parentId?: number;
     productId: number;
@@ -210,7 +212,7 @@ export const insertOrderDemands = async (
     afterDemandId?: number,
     rePlanScope: number = 0
 ): Promise<void> => {
-    const response = await api.patch<void>('/execution/demands/insert-order', {
+    const response = await api.post<void>('/execution/demands/insert-order', {
         demandIds,
         lineId,
         coefficient,

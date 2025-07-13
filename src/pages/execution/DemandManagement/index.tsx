@@ -61,16 +61,17 @@ const DemandManagement: React.FC = () => {
   const [expandedKeys, setExpandedKeys] = useState<number[]>([]);
   const [searchParams, setSearchParams] = useState<{
     productId?: number;
-    status?: number; // -1: 未排产, 0: 未完成, 1: 已完成
+    // completionStatus?: number;  // 0: 未完成, 1: 已完成
+    status?: number; // 0: 未排产 1已排产
     deliveryDateStart?: string;
     deliveryDateEnd?: string;
     keyword?: string;
   }>({
-    status: -1, // 默认只显示待排产的需求
+    status: 0, // 默认只显示待排产的需求
   });
 
   // 状态切换
-  const [demandStatus, setDemandStatus] = useState<'pending' | 'incomplete' | 'completed'>('pending');
+  const [status, setStatus] = useState<0 | 1>(0);
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
 
   const navigate = useNavigate();
@@ -146,15 +147,6 @@ const DemandManagement: React.FC = () => {
     handleProductSearch('');
   }, []);
 
-  // 计算剩余可排产数量
-  const calculateRemainingQuantity = () => {
-    if (!currentPlanDemand) return 0;
-    const totalQuantity = currentPlanDemand.purgeQuantity || 0;
-    const completionQuantity = currentPlanDemand.completionQuantity || 0;
-    const scheduledQuantity = scheduledDemands.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    return totalQuantity - completionQuantity - scheduledQuantity;
-  };
-
   // 处理打开插单对话框
   const handleOpenInsertOrderModal = async (record: Demand) => {
     setCurrentPlanDemand(record);
@@ -191,114 +183,6 @@ const DemandManagement: React.FC = () => {
     }
   };
 
-  // 处理关闭插单对话框
-  const handleCloseInsertOrderModal = () => {
-    // 清空表单和状态
-    insertOrderForm.resetFields();
-    setDateQuantityList([]);
-    setCurrentDemand(null);
-    setInsertOrderModalVisible(false);
-  };
-
-  // 处理添加日期数量
-  const handleAddDateQuantity = () => {
-    const remainingQuantity = calculateRemainingQuantity();
-    if (remainingQuantity <= 0) {
-      message.warning('已无剩余可插单数量');
-      return;
-    }
-
-    // 获取最后一个日期并加1天
-    const nextDate = getLastDate().add(1, 'day').format('YYYY-MM-DD HH:mm:ss');
-
-    setDateQuantityList([
-      ...dateQuantityList,
-      {
-        insertOrderDate: nextDate,
-        quantity: remainingQuantity,
-      },
-    ]);
-  };
-
-  // 处理移除日期数量
-  const handleRemoveDateQuantity = (index: number) => {
-    const newList = [...dateQuantityList];
-    newList.splice(index, 1);
-    setDateQuantityList(newList);
-  };
-
-  // 处理日期变更
-  const handleDateChange = (index: number, date: dayjs.Dayjs | null) => {
-    if (!date) return;
-
-    const newDate = date.format('YYYY-MM-DD HH:mm:ss');
-
-    // 检查日期是否重复
-    if (isDateDuplicate(newDate, index)) {
-      message.error('该时间已存在，请选择其他时间');
-      return;
-    }
-
-    const newList = [...dateQuantityList];
-    newList[index].insertOrderDate = newDate;
-    setDateQuantityList(newList);
-  };
-
-  // 处理数量变更
-  const handleQuantityChange = (index: number, value: number | null) => {
-    if (value === null) return;
-
-    const newList = [...dateQuantityList];
-    const oldQuantity = newList[index].quantity || 0;
-    const remainingQuantity = calculateRemainingQuantity() + oldQuantity; // 加回当前行的旧数量
-
-    // 确保新数量不超过剩余可用数量
-    const newQuantity = Math.min(value, remainingQuantity);
-    if (value > remainingQuantity) {
-      message.warning('输入数量超过剩余可插单数量');
-    }
-
-    newList[index].quantity = newQuantity;
-    setDateQuantityList(newList);
-  };
-
-  // 处理影响范围变更
-  const handleRePlanScopeChange = (e: RadioChangeEvent) => {
-    const value = e.target.value;
-    setRePlanScope(value);
-  };
-
-  // 处理提交插单计划
-  const handleSubmitInsertOrder = async (values: any) => {
-    try {
-      if (!currentDemand?.id) {
-        message.error('未选择需求');
-        return false;
-      }
-
-      // 构建插单请求数据
-      const insertOrderData: InsertOrderRequest = {
-        demandId: currentDemand.id,
-        dateQuantityList: dateQuantityList,
-        rePlanScope: values.rePlanScope || 0,
-      };
-
-      // 提交插单请求
-      await submitInsertOrder(insertOrderData);
-
-      // 关闭对话框并刷新表格
-      message.success('插单计划提交成功');
-      handleCloseInsertOrderModal();
-      actionRef.current?.reload();
-
-      return true;
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '插单计划提交失败');
-      return false;
-    }
-  };
-
   // 切换到日历视图
   const handleSwitchToCalendar = () => {
     console.log('跳转到日历视图:', '/execution/demands/calendar');
@@ -323,6 +207,14 @@ const DemandManagement: React.FC = () => {
 
   // ProTable 列定义
   const columns: ProColumns<Demand>[] = [
+    {
+      title: '排产顺序',
+      dataIndex: 'sortNo',
+      ellipsis: true,
+      copyable: true,
+      width: 60,
+      hideInTable: status === 0,
+    },
     {
       title: '业务单号',
       dataIndex: 'businessDocNo',
@@ -350,7 +242,6 @@ const DemandManagement: React.FC = () => {
       valueType: 'date',
       sorter: true,
       width: 100,
-      /*hideInTable: demandStatus !== 'pending' && demandStatus !== 'completed',*/
     },
     {
       title: '货品编码',
@@ -390,7 +281,6 @@ const DemandManagement: React.FC = () => {
       title: '完工数',
       dataIndex: 'completionQuantity',
       width: 60,
-      hideInTable: demandStatus !== 'pending',
     },
     {
       title: '备注',
@@ -398,18 +288,16 @@ const DemandManagement: React.FC = () => {
       ellipsis: true,
       search: false,
       width: 150,
-      hideInTable: demandStatus !== 'pending',
     },
     {
-      title: '状态',
+      title: '排产状态',
       dataIndex: 'status',
       filters: true,
       onFilter: true,
       valueType: 'select',
       valueEnum: {
-        [-1]: { text: '未排产', status: 'warning' },
-        [0]: { text: '未完成', status: 'processing' },
-        [1]: { text: '已完成', status: 'success' },
+        [0]: { text: '未排产', status: 'warning' },
+        [1]: { text: '已排产', status: 'processing' }
       },
       width: 100,
     },
@@ -419,7 +307,7 @@ const DemandManagement: React.FC = () => {
       valueType: 'dateTime',
       sorter: true,
       width: 140,
-      hideInTable: demandStatus === 'pending',
+      hideInTable: status === 0,
       render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
     },
     {
@@ -434,13 +322,13 @@ const DemandManagement: React.FC = () => {
       title: '变更前数量',
       dataIndex: 'changePurgeQuantity',
       width: 100,
-      hideInTable: demandStatus === 'pending',
+      hideInTable: status === 0,
     },
     {
       title: '关闭净需数量',
       dataIndex: 'closePurgeQuantity',
       width: 110,
-      hideInTable: demandStatus === 'pending',
+      hideInTable: status === 0,
     },
     {
       title: '报工数量',
@@ -461,7 +349,7 @@ const DemandManagement: React.FC = () => {
         [2]: { text: '已增加', status: 'processing' },
       },
       width: 100,
-      hideInTable: demandStatus === 'pending',
+      hideInTable: status === 0,
     },
     {
       title: '业务标识',
@@ -500,7 +388,7 @@ const DemandManagement: React.FC = () => {
       render: (_, record) => (
           <Space size="middle">
             {/* 添加排产按钮 */}
-            {record.status === -1 && (
+            {record.status === 0 && (
                 <Tooltip title="排产">
                   <a onClick={() => handleSinglePlan(record)}>
                     <PlayCircleOutlined style={{ color: '#1890ff' }} />
@@ -514,7 +402,7 @@ const DemandManagement: React.FC = () => {
               </a>
             </Tooltip>
             {/* 插单按钮 - 只对未完成的需求显示 */}
-            {record.status === 0 && (
+            {record.completionStatus === 0 && (
                 <Tooltip title="插单">
                   <a onClick={() => handleOpenInsertOrderModal(record)}>
                     <SwapOutlined style={{ color: '#1890ff' }} />
@@ -522,7 +410,7 @@ const DemandManagement: React.FC = () => {
                 </Tooltip>
             )}
             {/* 删除按钮 - 只对待排产需求显示 */}
-            {record.status === -1 && (
+            {record.status === 0 && (
                 <Popconfirm
                     title="确定要删除该需求吗？"
                     description="删除后将无法恢复，请确认操作"
@@ -598,11 +486,11 @@ const DemandManagement: React.FC = () => {
       );
 
       setBatchPlanModalVisible(false);
-      actionRef.current?.reload();
       setSelectedRows([]);
       setSortedPlanList([]);
-      batchPlanForm.resetFields();
+      setScheduledDemands([]);
       message.success('批量排产成功');
+      actionRef.current?.clearSelected();
     } catch (error: any) {
       const apiError = error as ApiError;
       if (error.code === 'ECONNABORTED') {
@@ -699,23 +587,6 @@ const DemandManagement: React.FC = () => {
     }
   };
 
-  // 处理排产位置搜索
-  const handleAfterDemandSearch = debounce(async (value: string) => {
-    const lineId = planForm.getFieldValue('lineId') || batchPlanForm.getFieldValue('lineId');
-    if (lineId) {
-      loadScheduledDemands(lineId);
-    }
-  }, 500);
-
-  // 格式化需求显示文本
-  const formatDemandText = (demand: Demand) => `${demand.businessDocNo || ''} ${demand.productName || ''}`;
-
-  // 根据需求ID获取显示文本
-  const getDisplayTextById = (demandId: string) => {
-    const demand = scheduledDemands.find(d => d.id?.toString() === demandId);
-    return demand ? formatDemandText(demand) : '';
-  };
-
   return (
       <>
         <ProTable<Demand>
@@ -724,7 +595,7 @@ const DemandManagement: React.FC = () => {
             cardBordered
             bordered
             defaultSize="small"
-            scroll={{ x: 1500 }}
+            scroll={{ x: 'max-content' }}
             components={components}
             onRow={(record) => {
               const completionQuantity = record.completionQuantity || 0;
@@ -755,40 +626,6 @@ const DemandManagement: React.FC = () => {
             }}
             headerTitle={
               <Space wrap>
-                <Radio.Group
-                    value={demandStatus}
-                    onChange={(e) => {
-                      const newStatus = e.target.value;
-                      setDemandStatus(newStatus);
-
-                      // 根据选择的状态更新 searchParams
-                      let statusValue: number;
-                      switch (newStatus) {
-                        case 'pending':
-                          statusValue = -1; // 未排产
-                          break;
-                        case 'incomplete':
-                          statusValue = 0; // 未完成
-                          break;
-                        case 'completed':
-                          statusValue = 1; // 已完成
-                          break;
-                        default:
-                          statusValue = -1;
-                      }
-
-                      setSearchParams(prev => ({ ...prev, status: statusValue }));
-                      // 清空选中的记录
-                      setSelectedRows([]);
-                      setSortedPlanList([]);
-                      actionRef.current?.reloadAndRest?.();
-                    }}
-                    buttonStyle="solid"
-                >
-                  <Radio.Button value="pending">待排产</Radio.Button>
-                  <Radio.Button value="incomplete">未完成</Radio.Button>
-                  <Radio.Button value="completed">已完成</Radio.Button>
-                </Radio.Group>
                 <Select
                     placeholder="货品编号/名称"
                     style={{ width: 200 }}
@@ -929,7 +766,7 @@ const DemandManagement: React.FC = () => {
                 setSortedPlanList(selectedRows); // 同时更新排序列表
               },
               getCheckboxProps: (record) => ({
-                disabled: record.status !== -1, // 只允许选择未排产的记录
+                disabled: record.status !== 0, // 只允许选择未排产的记录
               }),
             }}
             tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
@@ -1232,7 +1069,7 @@ const DemandManagement: React.FC = () => {
                           style={{ width: '100%' }}
                           showSearch
                           options={scheduledDemands.map(demand => ({
-                            label: `${demand.businessDocNo} ${demand.productName}`,
+                            label: `${demand.sortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
                             value: demand.id
                           }))}
                           disabled={!insertOrderForm.getFieldValue('lineId') || loadingScheduledDemands}
@@ -1419,7 +1256,7 @@ const DemandManagement: React.FC = () => {
                     <Col span={8}>
                       <div className="detail-item">
                         <div className="label">客户</div>
-                        <div className="value">{detailRecord.customerName}</div>
+                        <div className="value">{detailRecord.customerCode}</div>
                       </div>
                     </Col>
                     <Col span={8}>
@@ -1513,6 +1350,7 @@ const DemandManagement: React.FC = () => {
             setSortedPlanList([]); // 清空排序列表
             batchPlanForm.resetFields();
             setScheduledDemands([]); // 清空已排产需求列表
+            actionRef.current?.clearSelected();
           }
         }}
         maskClosable={!batchPlanLoading}
@@ -1526,6 +1364,7 @@ const DemandManagement: React.FC = () => {
               setSortedPlanList([]); // 清空排序列表
               batchPlanForm.resetFields();
               setScheduledDemands([]); // 清空已排产需求列表
+              actionRef.current?.clearSelected();
             }}
           >
             取消
