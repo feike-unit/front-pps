@@ -108,6 +108,17 @@ export const deleteDemandsByBusinessKeys = async (businessKeys: string[]): Promi
     return response.data;
 };
 
+// 根据业务标识批量撤回排产需求
+export const revokeDemandsByBusinessKeys = async (businessKeys: string[]): Promise<void> => {
+    const response = await api.delete('/execution/demands/revoke', {
+        data: businessKeys,
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    return response.data;
+};
+
 // 获取需求详情
 export const getDemandById = async (id: number): Promise<Demand> => {
     const response = await api.get(`/execution/demands/${id}`);

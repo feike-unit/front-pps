@@ -38,7 +38,7 @@ import {
   schedulerDemands,
   getScheduledDemands,
   getDemandById,
-  insertOrderDemands, initDemands, callbackDeliveryTime, syncCallbackQty
+  insertOrderDemands, initDemands, callbackDeliveryTime, syncCallbackQty, revokeDemandsByBusinessKeys
 } from '../../../services/demand';
 import {searchProducts, syncProducts} from '../../../services/product';
 import debounce from 'lodash/debounce';
@@ -208,8 +208,8 @@ const DemandManagement: React.FC = () => {
       title: '排产顺序',
       dataIndex: 'sortNo',
       ellipsis: true,
-      copyable: true,
-      width: 60
+      sorter: true,
+      width: 70
     },
     {
       title: '业务单号',
@@ -410,7 +410,7 @@ const DemandManagement: React.FC = () => {
                 <Popconfirm
                     title="确定要撤回该订单吗？"
                     description="将该订单撤回到待排产下，请确认操作"
-                    onConfirm={() => handleSingleDelete(record)}
+                    onConfirm={() => handleSingleRevoke(record)}
                     okText="确定"
                     cancelText="取消"
                 >
@@ -506,44 +506,18 @@ const DemandManagement: React.FC = () => {
   };
 
   // 处理单个删除
-  const handleSingleDelete = async (record: Demand) => {
+  const handleSingleRevoke = async (record: Demand) => {
     try {
       if (!record.businessKey) {
-        message.error('该需求缺少业务标识，无法删除');
+        message.error('该需求缺少业务标识，无法撤回');
         return;
       }
-      await deleteDemandsByBusinessKeys([record.businessKey]);
-      message.success('删除成功');
+      await revokeDemandsByBusinessKeys([record.businessKey]);
+      message.success('撤回成功');
       actionRef.current?.reload();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '删除失败');
-    }
-  };
-
-  // 处理批量删除
-  const handleBatchDelete = async () => {
-    try {
-      const businessKeys = selectedRows
-          .filter(row => row.businessKey)
-          .map(row => row.businessKey!);
-
-      if (businessKeys.length === 0) {
-        message.error('选中的需求缺少业务标识，无法删除');
-        return;
-      }
-
-      if (businessKeys.length !== selectedRows.length) {
-        message.warning('部分需求缺少业务标识，将仅删除有效的需求');
-      }
-
-      await deleteDemandsByBusinessKeys(businessKeys);
-      message.success(`成功删除 ${businessKeys.length} 个需求`);
-      actionRef.current?.reload();
-      setSelectedRows([]);
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '批量删除失败');
+      message.error(apiError.response?.data?.message || apiError.message || '撤回失败');
     }
   };
 
@@ -688,8 +662,8 @@ const DemandManagement: React.FC = () => {
                       sortOrder: Object.values(sort)[0] === 'ascend' ? 'asc' : 'desc'
                     }
                     : {
-                      sortField: 'deliveryDate',
-                      sortOrder: 'desc'
+                      sortField: 'sortNo',
+                      sortOrder: 'asc'
                     };
 
                 const pageParams: DemandPageRequest = {

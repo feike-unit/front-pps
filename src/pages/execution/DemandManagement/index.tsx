@@ -693,7 +693,7 @@ const DemandManagement: React.FC = () => {
                     }
                     : {
                       sortField: 'deliveryDate',
-                      sortOrder: 'desc'
+                      sortOrder: 'asc'
                     };
 
                 const pageParams: DemandPageRequest = {
