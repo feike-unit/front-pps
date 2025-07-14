@@ -921,46 +921,7 @@ const DemandManagement: React.FC = () => {
               >
                 <SyncOutlined />
                 同步完工数
-              </Button>,
-              <Button
-                  key="callbackDeliveryTime"
-                  onClick={() => {
-                    // 创建日期选择器弹窗
-                    let syncDate: string | undefined;
-                    Modal.confirm({
-                      title: '同步交期给ERP',
-                      content: (
-                          <div style={{ marginTop: 16 }}>
-                            <span style={{ color: '#ff4d4f' }}>* </span>
-                            <span>选择同步日期：</span>
-                            <DatePicker
-                                onChange={(date) => {
-                                  syncDate = date ? date.format('YYYY-MM-DD') : undefined;
-                                }}
-                            />
-                          </div>
-                      ),
-                      onOk: async () => {
-                        if (!syncDate) {
-                          message.error('请选择同步日期');
-                          return Promise.reject('请选择同步日期');
-                        }
-
-                        try {
-                          await callbackDeliveryTime(syncDate);
-                          message.success('同步交期成功');
-                          actionRef.current?.reload();
-                        } catch (error) {
-                          const apiError = error as ApiError;
-                          message.error(apiError.response?.data?.message || apiError.message || '同步交期失败');
-                        }
-                      }
-                    });
-                  }}
-              >
-                <SyncOutlined />
-                同步交期
-              </Button>,
+              </Button>
             ]}
         />
         <Modal
