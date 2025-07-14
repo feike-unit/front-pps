@@ -56,6 +56,7 @@ const DemandManagement: React.FC = () => {
   const [expandedKeys, setExpandedKeys] = useState<number[]>([]);
   const [searchParams, setSearchParams] = useState<{
     productId?: number;
+    lineId?: number;
     completionStatus?: number;  // 0: 未完成, 1: 已完成
     status?: number; // 0: 未排产 1已排产
     deliveryDateStart?: string;
@@ -88,7 +89,7 @@ const DemandManagement: React.FC = () => {
   const [loadingScheduledDemands, setLoadingScheduledDemands] = useState<boolean>(false);
 
   // 批量排产需求排序列表
-  const [lines, setLines] = useState<Line[]>([]);
+  const [lines, setLines] =  useState<{ label: string; value: number }[]>([]);
 
   // 添加表单值监听
   const insertAfterDemandId = Form.useWatch('afterDemandId', insertOrderForm);
@@ -96,8 +97,12 @@ const DemandManagement: React.FC = () => {
   // 获取所有启用的生产线
   const fetchLines = async () => {
     try {
-      const data = await getAllEnabledLines();
-      setLines(data);
+      const lines = await getAllEnabledLines();
+      const options = lines.map(line => ({
+        label: `${line.lineName}(${line.lineCode})`,
+        value: line.id!
+      }));
+      setLines(options);
     } catch (error) {
       message.error('获取生产线列表失败');
     }
@@ -492,7 +497,7 @@ const DemandManagement: React.FC = () => {
               <Space wrap>
                 <Select
                     placeholder="货品编号/名称"
-                    style={{ width: 200 }}
+                    style={{ width: 140 }}
                     showSearch
                     allowClear
                     defaultActiveFirstOption={false}
@@ -505,9 +510,22 @@ const DemandManagement: React.FC = () => {
                     options={searchProductOptions}
                     onClick={() => handleProductSearch('')}
                 />
+                <Select
+                    placeholder="选择拉线"
+                    style={{ width: 140 }}
+                    showSearch
+                    allowClear
+                    defaultActiveFirstOption={false}
+                    filterOption={true}
+                    onChange={(value: number) => {
+                      setSearchParams(prev => ({ ...prev, lineId: value }));
+                      actionRef.current?.reload();
+                    }}
+                    options={lines}
+                />
                 <DatePicker.RangePicker
                     placeholder={['开始交期', '结束交期']}
-                    style={{ width: 250 }}
+                    style={{ width: 200 }}
                     onChange={(dates) => {
                       // 只有当两个日期都选择了，才设置日期区间参数
                       if (dates && dates[0] && dates[1]) {
@@ -537,7 +555,7 @@ const DemandManagement: React.FC = () => {
                 />
                 <Input
                     placeholder="业务单号/客户订单号/客户编号/名称"
-                    style={{ width: 300 }}
+                    style={{ width: 200 }}
                     onChange={(e) => handleKeywordSearch(e.target.value)}
                     allowClear
                     onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
@@ -779,10 +797,7 @@ const DemandManagement: React.FC = () => {
                       <Select
                           placeholder={currentPlanDemand?.productType === 2 ? "自制件必须选择生产拉线" : "请选择生产拉线"}
                           style={{ width: '100%' }}
-                          options={lines.map(line => ({
-                            label: `${line.lineName} (${line.lineCode})`,
-                            value: line.id
-                          }))}
+                          options={lines}
                           onChange={(value) => {
                             if (value) {
                               loadScheduledDemands(value);

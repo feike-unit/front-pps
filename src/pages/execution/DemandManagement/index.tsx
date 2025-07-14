@@ -821,27 +821,6 @@ const DemandManagement: React.FC = () => {
               >
                 日历视图
               </Button>,
-              <Popconfirm
-                  key="syncConfirm"
-                  title="确定要初始化需求数据吗？"
-                  onConfirm={async () => {
-                    try {
-                      await initDemands();
-                      message.success('初始化成功');
-                      actionRef.current?.reload();
-                    } catch (error) {
-                      const apiError = error as ApiError;
-                      message.error(apiError.response?.data?.message || apiError.message || '初始化失败');
-                    }
-                  }}
-              >
-                <Button
-                    key="initDemands"
-                    icon={<SyncOutlined />}
-                >
-                  初始化需求
-                </Button>
-              </Popconfirm>,
               <Button
                   key="syncDemands"
                   onClick={() => {

@@ -7,27 +7,19 @@ import {
   Popconfirm,
   Switch,
   Tooltip,
-  InputNumber,
   Select,
-  Form,
-  Input,
-  DatePicker,
 } from 'antd';
 import type { ActionType, ProColumns, ProFormInstance } from '@ant-design/pro-components';
 import { 
   ProTable,
   ModalForm,
   ProForm,
-  ProFormText,
   ProFormTextArea,
   ProFormDigit,
   ProFormSelect,
-  ProFormDateTimeRangePicker,
   ProFormSwitch,
-  ProFormDatePicker,
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { ApiError } from '../../../services/api';
 import {
   CapacityRule,
   createCapacityRule,
