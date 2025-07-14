@@ -175,15 +175,15 @@ const LineManagement: React.FC = () => {
       onFilter: true,
       valueType: 'select',
       valueEnum: {
-        [LineStatus.ENABLED]: { text: '启用', status: 'Success' },
-        [LineStatus.DISABLED]: { text: '禁用', status: 'Error' },
+        [LineStatus.Enabled]: { text: '启用', status: 'Success' },
+        [LineStatus.Disabled]: { text: '禁用', status: 'Error' },
       },
       render: (_, record) => (
         <Switch
-          checked={record.status === LineStatus.ENABLED}
+          checked={record.status === LineStatus.Enabled}
           onChange={async (checked) => {
             try {
-              await updateLineStatus(record.id!, checked ? LineStatus.ENABLED : LineStatus.DISABLED);
+              await updateLineStatus(record.id!, checked ? LineStatus.Enabled : LineStatus.Disabled);
               message.success('状态更新成功');
               actionRef.current?.reload();
             } catch (error) {
@@ -229,7 +229,7 @@ const LineManagement: React.FC = () => {
                   lineCode: values.lineCode,
                   lineName: values.lineName,
                   deptId: values.deptId,
-                  status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
+                  status: values.status ? LineStatus.Enabled : LineStatus.Disabled,
                   remark: values.remark,
                 };
                 await updateLine(record.id!, params);
@@ -419,7 +419,7 @@ const LineManagement: React.FC = () => {
                   lineCode: values.lineCode,
                   lineName: values.lineName,
                   deptId: values.deptId,
-                  status: values.status ? LineStatus.ENABLED : LineStatus.DISABLED,
+                  status: values.status ? LineStatus.Enabled : LineStatus.Disabled,
                   remark: values.remark,
                 };
                 await createLine(params);
