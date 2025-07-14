@@ -43,8 +43,6 @@ import {
 } from '../../../services/demand';
 import {searchProducts, syncProducts} from '../../../services/product';
 import debounce from 'lodash/debounce';
-import dayjs from 'dayjs';
-import { RadioChangeEvent } from 'antd/lib/radio';
 import { useNavigate } from 'react-router-dom';
 import './index.less';
 import { getAllEnabledLines, Line } from '../../../services/line';
@@ -643,7 +641,7 @@ const DemandManagement: React.FC = () => {
                 />
                 <DatePicker.RangePicker
                     placeholder={['开始交期', '结束交期']}
-                    style={{ width: 250 }}
+                    style={{ width: 200 }}
                     onChange={(dates) => {
                       // 只有当两个日期都选择了，才设置日期区间参数
                       if (dates && dates[0] && dates[1]) {
