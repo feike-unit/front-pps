@@ -87,9 +87,10 @@ const DemandCalendar: React.FC = () => {
       const result = await getDemandPage({
         pageNum: 1,
         pageSize: 1000,
-        planDateStart: startStr,
-        planDateEnd: endStr,
+        deliveryDateStart: startStr,
+        deliveryDateEnd: endStr,
         productId: queryParams.productId,
+        status: 0
       });
       
       console.log('数据获取成功，数量:', result.list.length);

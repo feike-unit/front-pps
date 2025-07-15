@@ -112,6 +112,7 @@ const ProductionPlanCalendar: React.FC = () => {
         endAtEnd: endStr,
         lineId: queryParams.lineId, // 使用可能更新的lineId
         productId: queryParams.productId, // 使用可能更新的productId
+        status: 1
       });
       
       console.log('数据获取成功，数量:', result.list.length);
