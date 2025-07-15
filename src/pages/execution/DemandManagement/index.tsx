@@ -1392,7 +1392,7 @@ const DemandManagement: React.FC = () => {
                 style={{ width: '100%' }}
                 showSearch
                 options={scheduledDemands.map(demand => ({
-                  label: `${demand.businessDocNo} ${demand.productName}`,
+                  label: `${demand.sortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
                   value: demand.id
                 }))}
                 disabled={!batchPlanForm.getFieldValue('lineId') || loadingScheduledDemands}
@@ -1600,7 +1600,7 @@ const DemandManagement: React.FC = () => {
                     style={{ width: '100%' }}
                     showSearch
                     options={scheduledDemands.map(demand => ({
-                      label: `${demand.businessDocNo} ${demand.productName}`,
+                      label: `${demand.sortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
                       value: demand.id
                     }))}
                     disabled={!planForm.getFieldValue('lineId') || loadingScheduledDemands}
