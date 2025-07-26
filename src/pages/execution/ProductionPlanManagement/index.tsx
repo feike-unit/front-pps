@@ -212,6 +212,13 @@ const DemandManagement: React.FC = () => {
   // ProTable 列定义
   const columns: ProColumns<Demand>[] = [
     {
+      title: '拉线',
+      dataIndex: 'lineCode',
+      render: (_, record) => `${record.lineCode} - ${record.lineName}`,
+      ellipsis: true,
+      width: 120
+    },
+    {
       title: '排产顺序',
       dataIndex: 'sortNo',
       ellipsis: true,
