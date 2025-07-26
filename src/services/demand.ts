@@ -119,6 +119,11 @@ export const revokeDemandsByBusinessKeys = async (businessKeys: string[]): Promi
     return response.data;
 };
 
+export const revokeDemandsByBusinessKeyAndRePlanScope = async (businessKey: string, rePlanScope:Number): Promise<void> => {
+    const response = await api.delete(`/execution/demands/revoke/${businessKey}/${rePlanScope}`);
+    return response.data;
+};
+
 // 获取需求详情
 export const getDemandById = async (id: number): Promise<Demand> => {
     const response = await api.get(`/execution/demands/${id}`);

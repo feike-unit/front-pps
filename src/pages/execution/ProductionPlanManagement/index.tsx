@@ -36,7 +36,12 @@ import {
   syncDemands,
   getScheduledDemands,
   getDemandById,
-  insertOrderDemands, initDemands, callbackDeliveryTime, syncCallbackQty, revokeDemandsByBusinessKeys
+  insertOrderDemands,
+  initDemands,
+  callbackDeliveryTime,
+  syncCallbackQty,
+  revokeDemandsByBusinessKeys,
+  revokeDemandsByBusinessKeyAndRePlanScope
 } from '../../../services/demand';
 import {searchProducts, syncProducts} from '../../../services/product';
 import debounce from 'lodash/debounce';
@@ -83,6 +88,12 @@ const DemandManagement: React.FC = () => {
   const [insertOrderModalVisible, setInsertOrderModalVisible] = useState<boolean>(false);
   const [insertOrderLoading, setInsertOrderLoading] = useState<boolean>(false);
   const [insertOrderForm] = Form.useForm();
+
+  //撤回
+  const [revertOrderModalVisible, setRevertOrderModalVisible] = useState<boolean>(false);
+  const [revertOrderLoading, setRevertOrderLoading] = useState<boolean>(false);
+  const [rePlanScope, setRePlanScope] = useState<Number | null>(null);
+
 
   // 已排产需求列表
   const [scheduledDemands, setScheduledDemands] = useState<Demand[]>([]);
@@ -395,19 +406,11 @@ const DemandManagement: React.FC = () => {
             )}
             {/* 删除按钮 - 只对待排产需求显示 */}
             {record.status === 1 && (
-                <Popconfirm
-                    title="确定要撤回该订单吗？"
-                    description="将该订单撤回到待排产下，请确认操作"
-                    onConfirm={() => handleSingleRevoke(record)}
-                    okText="确定"
-                    cancelText="取消"
-                >
-                  <Tooltip title="撤回">
-                    <a>
-                      <RollbackOutlined style={{ color: '#ff4d4f' }} />
-                    </a>
-                  </Tooltip>
-                </Popconfirm>
+                <Tooltip title="撤回">
+                  <a onClick={() => handleOpenRevertOrderModal(record)}>
+                    <RollbackOutlined style={{ color: '#ff4d4f' }} />
+                  </a>
+                </Tooltip>
             )}
           </Space>
       ),
@@ -426,14 +429,25 @@ const DemandManagement: React.FC = () => {
     }
   };
 
+  const handleOpenRevertOrderModal = async (record: Demand) => {
+    setCurrentPlanDemand(record);
+    setRevertOrderModalVisible(true);
+    setRePlanScope(null);
+  }
+
   // 处理单个撤回
-  const handleSingleRevoke = async (record: Demand) => {
+  const handleSingleRevoke = async () => {
     try {
-      if (!record.businessKey) {
+      if (!currentPlanDemand?.businessKey) {
         message.error('该需求缺少业务标识，无法撤回');
         return;
       }
-      await revokeDemandsByBusinessKeys([record.businessKey]);
+
+      if (rePlanScope == null) {
+        message.error('请选择是否影响计划');
+        return;
+      }
+      await revokeDemandsByBusinessKeyAndRePlanScope(currentPlanDemand?.businessKey, rePlanScope);
       message.success('撤回成功');
       actionRef.current?.reload();
     } catch (error) {
@@ -732,6 +746,51 @@ const DemandManagement: React.FC = () => {
               </Button>,
             ]}
         />
+
+
+        <Modal
+            title="撤回"
+            open={revertOrderModalVisible}
+            onCancel={() => {
+              if (!revertOrderLoading) {
+                setRevertOrderModalVisible(false);
+              }
+            }}
+            maskClosable={!revertOrderLoading}
+            closable={!revertOrderLoading}
+            footer={[
+              <Button
+                  key="cancel"
+                  disabled={revertOrderLoading}
+                  onClick={() => {
+                    setRevertOrderModalVisible(false);
+                  }}
+              >
+                取消
+              </Button>,
+              <Button
+                  key="submit"
+                  type="primary"
+                  loading={revertOrderLoading}
+                  disabled={revertOrderLoading}
+                  onClick={handleSingleRevoke}
+              >
+                确认撤回
+              </Button>
+            ]}
+            width={600}
+        >
+          <>
+            <Radio.Group value={rePlanScope} onChange={(e) => setRePlanScope(e.target.value)}>
+              <Space direction="vertical">
+                <Radio value={0}>仅撤回不影响其他计划</Radio>
+                <Radio value={1}>撤回并重新计算影响的其他计划</Radio>
+              </Space>
+            </Radio.Group>
+          </>
+        </Modal>
+
+
         <Modal
             title="插单计划"
             open={insertOrderModalVisible}
