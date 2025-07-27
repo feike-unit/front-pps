@@ -119,7 +119,7 @@ export const revokeDemandsByBusinessKeys = async (businessKeys: string[]): Promi
     return response.data;
 };
 
-export const revokeDemandsByBusinessKeyAndRePlanScope = async (businessKey: string, rePlanScope:Number): Promise<void> => {
+export const revokeDemandsByBusinessKeyAndRePlanScope = async (businessKey: string, rePlanScope: Number): Promise<void> => {
     const response = await api.delete(`/execution/demands/revoke/${businessKey}/${rePlanScope}`);
     return response.data;
 };
@@ -139,7 +139,7 @@ export const updateDemandStatus = async (id: number, status: DemandStatus): Prom
 // 初始化需求
 export const initDemands = async (): Promise<void> => {
     const response = await api.post('/execution/demands/init-demand', null, {
-        timeout: 60000 * 5 // 设置排产接口超时时间为5分钟
+        timeout: 60000 * 5 // 设置超时时间为5分钟
     });
     return response.data;
 };
@@ -147,7 +147,8 @@ export const initDemands = async (): Promise<void> => {
 // 同步需求
 export const syncDemands = async (syncDate: string): Promise<void> => {
     const response = await api.post('/execution/demands/sync-change-demand', null, {
-        params: {syncDate}
+        params: {syncDate},
+        timeout: 60000 * 5 // 设置超时时间为5分钟
     });
     return response.data;
 };
@@ -155,22 +156,18 @@ export const syncDemands = async (syncDate: string): Promise<void> => {
 // 同步数量
 export const syncCallbackQty = async (syncDate: string): Promise<void> => {
     const response = await api.post('/execution/demands/sync-callback-qty', null, {
-        params: {syncDate}
+        params: {syncDate},
+        timeout: 60000 * 5 // 设置超时时间为5分钟
     });
     return response.data;
 };
 
-// 同步需求
+// 会写交期
 export const callbackDeliveryTime = async (syncDate: string): Promise<void> => {
     const response = await api.post('/execution/demands/sync-change-demand', null, {
-        params: {syncDate}
+        params: {syncDate},
+        timeout: 60000 * 5 // 设置超时时间为5分钟
     });
-    return response.data;
-};
-
-// 提交插单计划
-export const submitInsertOrder = async (data: InsertOrderRequest): Promise<void> => {
-    const response = await api.post('/execution/demands/insert-order', data);
     return response.data;
 };
 

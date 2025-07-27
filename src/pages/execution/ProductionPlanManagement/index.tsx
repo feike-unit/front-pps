@@ -141,7 +141,8 @@ const DemandManagement: React.FC = () => {
       // 通过 axios 的方式直接调用 API，以便获取 headers
       const response = await api.get('/execution/demands/export/excel', {
         params: exportParams,
-        responseType: 'blob'
+        responseType: 'blob',
+        timeout: 60000 * 5 // 设置超时时间为5分钟
       });
 
       // 从响应头中获取文件名
