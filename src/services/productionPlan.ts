@@ -62,6 +62,30 @@ export enum ProductionPlanStatus {
   COMPLETED = 4,  // 已完成
   CANCELLED = 5,  // 已取消
 }
+// 在 productionPlan.ts 中添加以下代码
+export interface ProductionPlanPageRequest {
+  pageNum: number;
+  pageSize: number;
+  productId?: number;
+  lineId?: number;
+  completionStatus?: number;
+  status?: number;
+  deliveryDateStart?: string;
+  deliveryDateEnd?: string;
+  productType?: number;
+  keyword?: string;
+  sortField?: string;
+  sortOrder?: string;
+}
+
+// 导出生产计划Excel
+export const exportProductionPlanExcel = async (params: ProductionPlanPageRequest): Promise<Blob> => {
+  const response = await api.get('/execution/production-plans/export/excel', {
+    params,
+    responseType: 'blob'
+  });
+  return response.data;
+};
 
 // 分页查询生产计划列表
 export const getProductionPlanPage = async (params: ProductionPlanPageRequest): Promise<PageResponse<ProductionPlan>> => {

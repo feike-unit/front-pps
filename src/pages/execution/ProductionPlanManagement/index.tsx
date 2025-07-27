@@ -48,6 +48,8 @@ import debounce from 'lodash/debounce';
 import { useNavigate } from 'react-router-dom';
 import './index.less';
 import { getAllEnabledLines, Line } from '../../../services/line';
+import {exportProductionPlanExcel, ProductionPlanPageRequest} from "../../../services/productionPlan";
+import api from "../../../services/api";
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
@@ -122,6 +124,55 @@ const DemandManagement: React.FC = () => {
   useEffect(() => {
     fetchLines();
   }, []);
+
+  const handleExportScheduledData = async () => {
+    const EXPORT_PAGE_SIZE = 10000; // 导出最大条数
+
+    try {
+      message.loading('正在导出数据...', 60); // 设置最长加载时间 60s
+
+      // 构建导出参数
+      const exportParams: ProductionPlanPageRequest = {
+        pageNum: 1,
+        pageSize: EXPORT_PAGE_SIZE,
+        ...searchParams
+      };
+
+      // 通过 axios 的方式直接调用 API，以便获取 headers
+      const response = await api.get('/execution/demands/export/excel', {
+        params: exportParams,
+        responseType: 'blob'
+      });
+
+      // 从响应头中获取文件名
+      let filename = generateExportFilename();
+
+      // 创建下载链接
+      const url = window.URL.createObjectURL(response);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+
+      // 清理
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      message.destroy();
+      message.success('导出成功');
+    } catch (error) {
+      message.destroy();
+      console.error('导出失败:', error);
+      message.error('导出失败，请重试');
+    }
+  };
+
+  // 生成导出文件名
+  function generateExportFilename(): string {
+    const dateStr = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+    return `已排产订单_${dateStr}.xlsx`;
+  }
+
 
   // 处理货品搜索
   const handleProductSearch = debounce(async (value: string) => {
@@ -750,6 +801,12 @@ const DemandManagement: React.FC = () => {
               >
                 <SyncOutlined />
                 同步交期
+              </Button>,
+              <Button
+                  key="export"
+                  onClick={handleExportScheduledData}
+              >
+                导出
               </Button>,
             ]}
         />
