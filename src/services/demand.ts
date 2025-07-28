@@ -38,7 +38,9 @@ export interface Demand {
     createdAt?: string;
     updatedAt?: string;
     children?: Demand[];
-    deliveryDateTime?: string;
+    materialStatus?: string;
+    totalProductCount?: number;
+    totalCompletionCount?: number;
 }
 
 // 分页响应类型

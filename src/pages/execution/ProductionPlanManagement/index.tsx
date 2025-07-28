@@ -71,6 +71,7 @@ const DemandManagement: React.FC = () => {
     productType?: number;
     keyword?: string;
     deliveryStatus?: string;
+    materialStatus?: string;
   }>({
     status: 1, // 默认只显示待排产的需求
     productType: 2
@@ -374,6 +375,13 @@ const DemandManagement: React.FC = () => {
       render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
     },
     {
+      title: '物料状态',
+      dataIndex: 'materialStatus',
+      width: 120,
+      hideInTable: status === 0,
+      render: (_, record) => `${record.materialStatus} (${record.totalCompletionCount} / ${record.totalProductCount})`,
+    },
+    {
       title: '创建时间',
       dataIndex: 'createdAt',
       valueType: 'dateTime',
@@ -645,6 +653,19 @@ const DemandManagement: React.FC = () => {
                     ]}
                     onChange={(value) => {
                       setSearchParams(prev => ({ ...prev, deliveryStatus: value }));
+                      actionRef.current?.reload();
+                    }}
+                />
+                <Select
+                    placeholder="物料齐套状态"
+                    style={{ width: 160 }}
+                    allowClear
+                    options={[
+                      { label: '未齐套', value: 'overdue' },
+                      { label: '已齐套', value: 'normal' }
+                    ]}
+                    onChange={(value) => {
+                      setSearchParams(prev => ({ ...prev, materialStatus: value }));
                       actionRef.current?.reload();
                     }}
                 />
