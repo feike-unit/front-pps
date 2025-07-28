@@ -70,6 +70,7 @@ const DemandManagement: React.FC = () => {
     deliveryDateEnd?: string;
     productType?: number;
     keyword?: string;
+    deliveryStatus?: string;
   }>({
     status: 1, // 默认只显示待排产的需求
     productType: 2
@@ -633,6 +634,19 @@ const DemandManagement: React.FC = () => {
                     allowClear
                     onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
                     onClear={() => handleKeywordSearch('')}
+                />
+                <Select
+                    placeholder="排产交期状态"
+                    style={{ width: 160 }}
+                    allowClear
+                    options={[
+                      { label: '超客户交期订单', value: 'overdue' },
+                      { label: '正常排产订单', value: 'normal' }
+                    ]}
+                    onChange={(value) => {
+                      setSearchParams(prev => ({ ...prev, deliveryStatus: value }));
+                      actionRef.current?.reload();
+                    }}
                 />
               </Space>
             }
