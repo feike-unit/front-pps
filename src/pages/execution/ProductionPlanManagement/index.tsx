@@ -107,7 +107,7 @@ const DemandManagement: React.FC = () => {
   const [lines, setLines] =  useState<{ label: string; value: number }[]>([]);
 
   // 添加表单值监听
-  const insertAfterDemandId = Form.useWatch('afterDemandId', insertOrderForm);
+  const insertBeforeDemandId = Form.useWatch('beforeDemandId', insertOrderForm);
 
   // 获取所有启用的生产线
   const fetchLines = async () => {
@@ -220,7 +220,7 @@ const DemandManagement: React.FC = () => {
           [currentPlanDemand!.id!],
           values.lineId,
           values.coefficient,
-          values.afterDemandId,
+          values.beforeDemandId,
           values.rePlanScope
       );
       message.success('插单成功');
@@ -970,7 +970,7 @@ const DemandManagement: React.FC = () => {
                           onChange={(value) => {
                             if (value) {
                               loadScheduledDemands(value);
-                              insertOrderForm.setFieldValue('afterDemandId', undefined);
+                              insertOrderForm.setFieldValue('beforeDemandId', undefined);
                               insertOrderForm.setFieldValue('rePlanScope', undefined);
                             } else {
                               setScheduledDemands([]);
@@ -995,7 +995,7 @@ const DemandManagement: React.FC = () => {
                       />
                     </Form.Item>
                     <Form.Item
-                        name="afterDemandId"
+                        name="beforeDemandId"
                         label="插单位置"
                         extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
                     >
@@ -1022,7 +1022,7 @@ const DemandManagement: React.FC = () => {
                           }}
                       />
                     </Form.Item>
-                    {insertAfterDemandId && (
+                    {insertBeforeDemandId && (
                         <Form.Item
                             name="rePlanScope"
                             label="影响范围"

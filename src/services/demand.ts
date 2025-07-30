@@ -193,21 +193,21 @@ export const getScheduledDemands = async (lineId: number, keyword?: string): Pro
  * @param demandIds 需求ID列表
  * @param lineId 生产拉线ID
  * @param coefficient 产能系数
- * @param afterDemandId 排在指定需求之前
+ * @param beforeDemandId 排在指定需求之前
  * @param rePlanScope 影响范围 0: 仅排产不影响其他计划, 1: 重新计算影响的其他计划
  */
 export const schedulerDemands = async (
     demandIds: number[],
     lineId: number,
     coefficient: number = 1,
-    afterDemandId?: number,
+    beforeDemandId?: number,
     rePlanScope: number = 0
 ): Promise<void> => {
     const response = await api.patch<void>('/execution/demands/scheduler', {
         demandIds,
         lineId,
         coefficient,
-        afterDemandId,
+        beforeDemandId,
         rePlanScope
     }, {
         timeout: 60000 * 5 // 设置排产接口超时时间为5分钟
@@ -220,21 +220,21 @@ export const schedulerDemands = async (
  * @param demandIds 需求ID列表
  * @param lineId 生产拉线ID
  * @param coefficient 产能系数
- * @param afterDemandId 排在指定需求之前
+ * @param beforeDemandId 排在指定需求之前
  * @param rePlanScope 影响范围 0: 仅插单不影响其他计划, 1: 重新计算影响的其他计划
  */
 export const insertOrderDemands = async (
     demandIds: number[],
     lineId: number,
     coefficient: number = 1,
-    afterDemandId?: number,
+    beforeDemandId?: number,
     rePlanScope: number = 0
 ): Promise<void> => {
     const response = await api.post<void>('/execution/demands/insert-order', {
         demandIds,
         lineId,
         coefficient,
-        afterDemandId,
+        beforeDemandId,
         rePlanScope
     }, {
         timeout: 60000 * 5 // 设置插单接口超时时间为5分钟

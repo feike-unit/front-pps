@@ -99,9 +99,9 @@ const DemandManagement: React.FC = () => {
   const [batchPlanLoading, setBatchPlanLoading] = useState<boolean>(false);
 
   // 添加表单值监听
-  const afterDemandId = Form.useWatch('afterDemandId', planForm);
-  const batchAfterDemandId = Form.useWatch('afterDemandId', batchPlanForm);
-  const insertAfterDemandId = Form.useWatch('afterDemandId', insertOrderForm);
+  const beforeDemandId = Form.useWatch('beforeDemandId', planForm);
+  const batchBeforeDemandId = Form.useWatch('beforeDemandId', batchPlanForm);
+  const insertBeforeDemandId = Form.useWatch('beforeDemandId', insertOrderForm);
 
   // 获取所有启用的生产线
   const fetchLines = async () => {
@@ -160,7 +160,7 @@ const DemandManagement: React.FC = () => {
           [currentPlanDemand!.id!],
           values.lineId,
           values.coefficient,
-          values.afterDemandId,
+          values.beforeDemandId,
           values.rePlanScope
       );
       message.success('插单成功');
@@ -449,7 +449,7 @@ const DemandManagement: React.FC = () => {
           [currentPlanDemand!.id!],
           values.lineId,
           values.coefficient,
-          values.afterDemandId,
+          values.beforeDemandId,
           values.rePlanScope // 添加影响范围参数
       );
       message.success('排产成功');
@@ -479,7 +479,7 @@ const DemandManagement: React.FC = () => {
           demandIds,
           values.lineId,
           values.coefficient,
-          values.afterDemandId,
+          values.beforeDemandId,
           values.rePlanScope // 添加影响范围参数
       );
 
@@ -1012,7 +1012,7 @@ const DemandManagement: React.FC = () => {
                           onChange={(value) => {
                             if (value) {
                               loadScheduledDemands(value);
-                              insertOrderForm.setFieldValue('afterDemandId', undefined);
+                              insertOrderForm.setFieldValue('beforeDemandId', undefined);
                               insertOrderForm.setFieldValue('rePlanScope', undefined);
                             } else {
                               setScheduledDemands([]);
@@ -1037,7 +1037,7 @@ const DemandManagement: React.FC = () => {
                       />
                     </Form.Item>
                     <Form.Item
-                        name="afterDemandId"
+                        name="beforeDemandId"
                         label="插单位置"
                         extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
                     >
@@ -1064,7 +1064,7 @@ const DemandManagement: React.FC = () => {
                           }}
                       />
                     </Form.Item>
-                    {insertAfterDemandId && (
+                    {insertBeforeDemandId && (
                         <Form.Item
                             name="rePlanScope"
                             label="影响范围"
@@ -1397,7 +1397,7 @@ const DemandManagement: React.FC = () => {
                 onChange={(value) => {
                   if (value) {
                     loadScheduledDemands(value);
-                    batchPlanForm.setFieldValue('afterDemandId', undefined);
+                    batchPlanForm.setFieldValue('beforeDemandId', undefined);
                     batchPlanForm.setFieldValue('rePlanScope', undefined);
                   } else {
                     setScheduledDemands([]);
@@ -1422,7 +1422,7 @@ const DemandManagement: React.FC = () => {
               />
             </Form.Item>
             <Form.Item
-              name="afterDemandId"
+              name="beforeDemandId"
               label="排产位置"
               extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
             >
@@ -1449,7 +1449,7 @@ const DemandManagement: React.FC = () => {
                 }}
               />
             </Form.Item>
-            {batchAfterDemandId && (
+            {batchBeforeDemandId && (
               <Form.Item
                 name="rePlanScope"
                 label="影响范围"
@@ -1605,7 +1605,7 @@ const DemandManagement: React.FC = () => {
                     onChange={(value) => {
                       if (value) {
                         loadScheduledDemands(value);
-                        planForm.setFieldValue('afterDemandId', undefined);
+                        planForm.setFieldValue('beforeDemandId', undefined);
                         planForm.setFieldValue('rePlanScope', undefined);
                       } else {
                         setScheduledDemands([]);
@@ -1630,7 +1630,7 @@ const DemandManagement: React.FC = () => {
                   />
                 </Form.Item>
                 <Form.Item
-                  name="afterDemandId"
+                  name="beforeDemandId"
                   label="排产位置"
                   extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
                 >
@@ -1657,7 +1657,7 @@ const DemandManagement: React.FC = () => {
                     }}
                   />
                 </Form.Item>
-                {afterDemandId && (
+                {beforeDemandId && (
                   <Form.Item
                     name="rePlanScope"
                     label="影响范围"
