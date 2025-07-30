@@ -1133,6 +1133,12 @@ const DemandManagement: React.FC = () => {
                     </Col>
                     <Col span={8}>
                       <div className="detail-item">
+                        <div className="label">完工时间</div>
+                        <div className="value">{detailRecord.completionTime || '-'}</div>
+                      </div>
+                    </Col>
+                    <Col span={8}>
+                      <div className="detail-item">
                         <div className="label">状态</div>
                         <div className="value">
                           <Badge

@@ -18,6 +18,8 @@ export interface Demand {
     productName?: string;
     productType: number;
     deliveryDate: string;
+    onlineTime: string;
+    completionTime: string;
     demandQuantity: number;
     purgeQuantity?: number;
     planQuantity?: number;
