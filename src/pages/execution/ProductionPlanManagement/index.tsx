@@ -525,6 +525,7 @@ const DemandManagement: React.FC = () => {
         return;
       }
       await revokeDemandsByBusinessKeyAndRePlanScope(currentPlanDemand?.businessKey, rePlanScope);
+      setRevertOrderModalVisible(false);
       message.success('撤回成功');
       actionRef.current?.reload();
     } catch (error) {
@@ -996,10 +997,10 @@ const DemandManagement: React.FC = () => {
                     <Form.Item
                         name="afterDemandId"
                         label="插单位置"
-                        extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
+                        extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
                     >
                       <Select
-                          placeholder="请选择或输入搜索要排在哪个需求之后"
+                          placeholder="请选择或输入搜索要排在哪个需求之前"
                           style={{ width: '100%' }}
                           showSearch
                           options={scheduledDemands.map(demand => ({
@@ -1033,7 +1034,7 @@ const DemandManagement: React.FC = () => {
                               <Tooltip title="仅插单不影响其他计划，保持其他计划不变">
                                 <Radio value={0}>仅插单不影响其他计划</Radio>
                               </Tooltip>
-                              <Tooltip title="插单后，需要重新计算其插入位置之后的产能而影响到的其他计划">
+                              <Tooltip title="插单后，需要重新计算其插入位置之前的产能而影响到的其他计划">
                                 <Radio value={1}>插单并重新计算影响的其他计划</Radio>
                               </Tooltip>
                             </Space>

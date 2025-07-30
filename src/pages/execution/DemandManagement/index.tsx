@@ -1039,10 +1039,10 @@ const DemandManagement: React.FC = () => {
                     <Form.Item
                         name="afterDemandId"
                         label="插单位置"
-                        extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
+                        extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
                     >
                       <Select
-                          placeholder="请选择或输入搜索要排在哪个需求之后"
+                          placeholder="请选择或输入搜索要排在哪个需求之前"
                           style={{ width: '100%' }}
                           showSearch
                           options={scheduledDemands.map(demand => ({
@@ -1424,10 +1424,10 @@ const DemandManagement: React.FC = () => {
             <Form.Item
               name="afterDemandId"
               label="排产位置"
-              extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
+              extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
             >
               <Select
-                placeholder="请选择或输入搜索要排在哪个需求之后"
+                placeholder="请选择或输入搜索要排在哪个需求之前"
                 style={{ width: '100%' }}
                 showSearch
                 options={scheduledDemands.map(demand => ({
@@ -1632,10 +1632,10 @@ const DemandManagement: React.FC = () => {
                 <Form.Item
                   name="afterDemandId"
                   label="排产位置"
-                  extra="选择或输入搜索要排在哪个需求之后，不选择则排在最后"
+                  extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
                 >
                   <Select
-                    placeholder="请选择或输入搜索要排在哪个需求之后"
+                    placeholder="请选择或输入搜索要排在哪个需求之前"
                     style={{ width: '100%' }}
                     showSearch
                     options={scheduledDemands.map(demand => ({
