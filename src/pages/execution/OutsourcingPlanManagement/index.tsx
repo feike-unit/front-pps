@@ -164,11 +164,11 @@ const OutsourcingPlanManagement: React.FC = () => {
     },
     {
       title: '到货时间',
-      dataIndex: 'deliveryDateTime',
+      dataIndex: 'onlineTime',
       valueType: 'dateTime',
       sorter: true,
       width: 130,
-      render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
+      render: (_, record) => record.onlineTime ? record.onlineTime.substring(0, 16) : '-',
     },
     {
       title: '创建时间',
@@ -393,8 +393,8 @@ const OutsourcingPlanManagement: React.FC = () => {
               },
               {
                 title: '到货时间',
-                dataIndex: 'deliveryDateTime',
-                render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
+                dataIndex: 'onlineTime',
+                render: (_, record) => record.onlineTime ? record.onlineTime.substring(0, 16) : '-',
               },
               {
                 title: '创建时间',

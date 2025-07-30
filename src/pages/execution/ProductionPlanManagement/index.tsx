@@ -367,12 +367,21 @@ const DemandManagement: React.FC = () => {
     },
     {
       title: '上线时间',
-      dataIndex: 'endDate',
+      dataIndex: 'onlineTime',
       valueType: 'dateTime',
       sorter: true,
       width: 140,
       hideInTable: status === 0,
-      render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
+      render: (_, record) => record.onlineTime ? record.onlineTime.substring(0, 16) : '-',
+    },
+    {
+      title: '完工时间',
+      dataIndex: 'completionTime',
+      valueType: 'dateTime',
+      sorter: true,
+      width: 140,
+      hideInTable: status === 0,
+      render: (_, record) => record.completionTime ? record.completionTime.substring(0, 16) : '-',
     },
     {
       title: '物料状态',
@@ -1119,7 +1128,7 @@ const DemandManagement: React.FC = () => {
                     <Col span={8}>
                       <div className="detail-item">
                         <div className="label">上线时间</div>
-                        <div className="value">{detailRecord.deliveryDateTime || '-'}</div>
+                        <div className="value">{detailRecord.onlineTime || '-'}</div>
                       </div>
                     </Col>
                     <Col span={8}>

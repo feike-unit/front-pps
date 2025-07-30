@@ -13,7 +13,8 @@ export interface PlanRuntime {
     taskQuantity: number;
     registeredQuantity: number;
     completionQuantity: number;
-    deliveryDateTime: string;
+    onlineTime: string;
+    completionTime: string;
     createdBy: number;
     createdAt: string;
     updatedAt: string;
