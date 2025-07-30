@@ -812,7 +812,7 @@ const DemandManagement: React.FC = () => {
               );
             }}
             toolBarRender={() => [
-              <Button
+              /*<Button
                   key="calendar"
                   type="primary"
                   icon={<ScheduleOutlined />}
@@ -820,7 +820,7 @@ const DemandManagement: React.FC = () => {
                   style={{ marginRight: 8 }}
               >
                 日历视图
-              </Button>,
+              </Button>,*/
               /*<Button
                   key="initDemands"
                   onClick={() => {
