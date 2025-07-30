@@ -814,11 +814,11 @@ const DemandManagement: React.FC = () => {
                     // 创建日期选择器弹窗
                     let syncDate: string | undefined;
                     Modal.confirm({
-                      title: '同步交期给ERP',
+                      title: '回写交期数据',
                       content: (
                           <div style={{ marginTop: 16 }}>
                             <span style={{ color: '#ff4d4f' }}>* </span>
-                            <span>选择同步日期：</span>
+                            <span>选择日期：</span>
                             <DatePicker
                                 onChange={(date) => {
                                   syncDate = date ? date.format('YYYY-MM-DD') : undefined;
@@ -828,24 +828,24 @@ const DemandManagement: React.FC = () => {
                       ),
                       onOk: async () => {
                         if (!syncDate) {
-                          message.error('请选择同步日期');
-                          return Promise.reject('请选择同步日期');
+                          message.error('请选择回写交期的日期');
+                          return Promise.reject('请选择回写交期的日期');
                         }
 
                         try {
                           await callbackDeliveryTime(syncDate);
-                          message.success('同步交期成功');
+                          message.success('回写交期数据成功');
                           actionRef.current?.reload();
                         } catch (error) {
                           const apiError = error as ApiError;
-                          message.error(apiError.response?.data?.message || apiError.message || '同步交期失败');
+                          message.error(apiError.response?.data?.message || apiError.message || '回写交期数据失败');
                         }
                       }
                     });
                   }}
               >
                 <SyncOutlined />
-                同步交期
+                回写交期数据
               </Button>,
               <Button
                   key="export"
