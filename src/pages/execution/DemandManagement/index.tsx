@@ -1068,7 +1068,7 @@ const DemandManagement: React.FC = () => {
                         <Form.Item
                             name="rePlanScope"
                             label="影响范围"
-                            initialValue={0}
+                            initialValue={1}
                             style={{ marginBottom: 0 }}
                         >
                           <Radio.Group>

@@ -891,7 +891,7 @@ const DemandManagement: React.FC = () => {
             width={600}
         >
           <>
-            <Radio.Group value={rePlanScope} onChange={(e) => setRePlanScope(e.target.value)}>
+            <Radio.Group value={rePlanScope !== null ? rePlanScope : 1} onChange={(e) => setRePlanScope(e.target.value)}>
               <Space direction="vertical">
                 <Radio value={0}>仅撤回不影响其他计划</Radio>
                 <Radio value={1}>撤回并重新计算影响的其他计划</Radio>
@@ -1026,7 +1026,7 @@ const DemandManagement: React.FC = () => {
                         <Form.Item
                             name="rePlanScope"
                             label="影响范围"
-                            initialValue={0}
+                            initialValue={1}
                             style={{ marginBottom: 0 }}
                         >
                           <Radio.Group>
