@@ -43,10 +43,10 @@ const Login: React.FC = () => {
         title="福佑计划管理系统"
         subTitle="欢迎回来！请登录您的账户"
         loading={loading}
-        initialValues={{
+        /*initialValues={{
           username: 'admin',
           password: 'admin123',
-        }}
+        }}*/
         onFinish={async (values) => {
           await handleSubmit(values as LoginForm);
         }}
