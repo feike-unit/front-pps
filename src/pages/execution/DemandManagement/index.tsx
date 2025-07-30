@@ -822,6 +822,45 @@ const DemandManagement: React.FC = () => {
                 日历视图
               </Button>,
               <Button
+                  key="initDemands"
+                  onClick={() => {
+                    // 创建日期选择器弹窗
+                    let syncDate: string | undefined;
+                    Modal.confirm({
+                      title: '初始化需求',
+                      content: (
+                          <div style={{ marginTop: 16 }}>
+                            <span style={{ color: '#ff4d4f' }}>* </span>
+                            <span>选择同步日期：</span>
+                            <DatePicker
+                                onChange={(date) => {
+                                  syncDate = date ? date.format('YYYY-MM-DD') : undefined;
+                                }}
+                            />
+                          </div>
+                      ),
+                      onOk: async () => {
+                        if (!syncDate) {
+                          message.error('请选择产能日历开始日期');
+                          return Promise.reject('请选择产能日历开始日期');
+                        }
+
+                        try {
+                          await initDemands(syncDate);
+                          message.success('初始化需求成功');
+                          actionRef.current?.reload();
+                        } catch (error) {
+                          const apiError = error as ApiError;
+                          message.error(apiError.response?.data?.message || apiError.message || '初始化需求失败');
+                        }
+                      }
+                    });
+                  }}
+              >
+                <SyncOutlined />
+                初始化需求
+              </Button>,
+              <Button
                   key="syncDemands"
                   onClick={() => {
                     // 创建日期选择器弹窗

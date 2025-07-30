@@ -139,8 +139,9 @@ export const updateDemandStatus = async (id: number, status: DemandStatus): Prom
 };
 
 // 初始化需求
-export const initDemands = async (): Promise<void> => {
+export const initDemands = async (syncDate: string): Promise<void> => {
     const response = await api.post('/execution/demands/init-demand', null, {
+        params: {syncDate},
         timeout: 60000 * 5 // 设置超时时间为5分钟
     });
     return response.data;
