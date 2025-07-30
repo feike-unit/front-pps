@@ -407,7 +407,7 @@ const DemandManagement: React.FC = () => {
                   </a>
                 </Tooltip>
             )}
-            {/* 删除按钮 - 只对待排产需求显示 */}
+            {/* 删除按钮 - 只对待排产需求显示
             {record.status === 0 && (
                 <Popconfirm
                     title="确定要删除该需求吗？"
@@ -422,7 +422,7 @@ const DemandManagement: React.FC = () => {
                     </a>
                   </Tooltip>
                 </Popconfirm>
-            )}
+            )}*/}
           </Space>
       ),
     },
