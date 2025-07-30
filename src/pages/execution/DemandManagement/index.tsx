@@ -821,7 +821,7 @@ const DemandManagement: React.FC = () => {
               >
                 日历视图
               </Button>,
-              <Button
+              /*<Button
                   key="initDemands"
                   onClick={() => {
                     // 创建日期选择器弹窗
@@ -859,7 +859,7 @@ const DemandManagement: React.FC = () => {
               >
                 <SyncOutlined />
                 初始化需求
-              </Button>,
+              </Button>,*/
               <Button
                   key="syncDemands"
                   onClick={() => {
