@@ -509,7 +509,7 @@ const DemandManagement: React.FC = () => {
   const handleOpenRevertOrderModal = async (record: Demand) => {
     setCurrentPlanDemand(record);
     setRevertOrderModalVisible(true);
-    setRePlanScope(null);
+    setRePlanScope(1);
   }
 
   // 处理单个撤回
