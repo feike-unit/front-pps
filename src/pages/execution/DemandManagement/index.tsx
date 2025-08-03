@@ -310,14 +310,6 @@ const DemandManagement: React.FC = () => {
       width: 100,
     },
     {
-      title: '上线时间',
-      dataIndex: 'endDate',
-      valueType: 'dateTime',
-      sorter: true,
-      width: 140,
-      render: (_, record) => record.deliveryDateTime ? record.deliveryDateTime.substring(0, 16) : '-',
-    },
-    {
       title: '创建时间',
       dataIndex: 'createdAt',
       valueType: 'dateTime',
