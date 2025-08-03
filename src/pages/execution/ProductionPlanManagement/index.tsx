@@ -342,6 +342,16 @@ const DemandManagement: React.FC = () => {
       width: 60,
     },
     {
+      title: '下达数',
+      dataIndex: 'issuedQuantity',
+      width: 60,
+    },
+    {
+      title: '报工数',
+      dataIndex: 'registeredQuantity',
+      width: 60,
+    },
+    {
       title: '完工数',
       dataIndex: 'completionQuantity',
       width: 60,
@@ -371,7 +381,6 @@ const DemandManagement: React.FC = () => {
       valueType: 'dateTime',
       sorter: true,
       width: 140,
-      hideInTable: status === 0,
       render: (_, record) => record.onlineTime ? record.onlineTime.substring(0, 16) : '-',
     },
     {
@@ -380,7 +389,6 @@ const DemandManagement: React.FC = () => {
       valueType: 'dateTime',
       sorter: true,
       width: 140,
-      hideInTable: status === 0,
       render: (_, record) => record.completionTime ? record.completionTime.substring(0, 16) : '-',
     },
     {
@@ -402,19 +410,6 @@ const DemandManagement: React.FC = () => {
       title: '变更前数量',
       dataIndex: 'changePurgeQuantity',
       width: 100,
-      hideInTable: status === 0,
-    },
-    {
-      title: '关闭净需数量',
-      dataIndex: 'closePurgeQuantity',
-      width: 110,
-      hideInTable: status === 0,
-    },
-    {
-      title: '报工数量',
-      dataIndex: 'registeredQuantity',
-      width: 100,
-      hideInTable: true,
     },
     {
       title: '变更状态',
@@ -429,35 +424,6 @@ const DemandManagement: React.FC = () => {
         [2]: { text: '已增加', status: 'processing' },
       },
       width: 100,
-      hideInTable: status === 0,
-    },
-    {
-      title: '业务标识',
-      dataIndex: 'businessKey',
-      ellipsis: true,
-      width: 120,
-      hidden: true,
-    },
-    {
-      title: 'BOM ID',
-      dataIndex: 'bomId',
-      ellipsis: true,
-      width: 200,
-      hideInTable: true,
-    },
-    {
-      title: '父BOM ID',
-      dataIndex: 'parentBomId',
-      ellipsis: true,
-      width: 200,
-      hideInTable: true,
-    },
-    {
-      title: '客户编号',
-      dataIndex: 'customerCode',
-      ellipsis: true,
-      width: 120,
-      hideInTable: true,
     },
     {
       title: '操作',
@@ -1110,8 +1076,8 @@ const DemandManagement: React.FC = () => {
                     </Col>
                     <Col span={8}>
                       <div className="detail-item">
-                        <div className="label">关闭净需数量</div>
-                        <div className="value">{detailRecord.closePurgeQuantity || 0}</div>
+                        <div className="label">下达数量</div>
+                        <div className="value">{detailRecord.registeredQuantity}</div>
                       </div>
                     </Col>
                     <Col span={8}>
