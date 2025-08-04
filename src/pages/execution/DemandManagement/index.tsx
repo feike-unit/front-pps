@@ -90,7 +90,8 @@ const DemandManagement: React.FC = () => {
 
   // 已排产需求列表
   const [scheduledDemands, setScheduledDemands] = useState<Demand[]>([]);
-  const [loadingScheduledDemands, setLoadingScheduledDemands] = useState<boolean>(false);
+  const [loadingScheduledDemands] = useState<boolean>(false);
+  const [singlePlanSearchValue, setSinglePlanSearchValue] = useState<string>('');
 
   // 批量排产需求排序列表
   const [sortedPlanList, setSortedPlanList] = useState<Demand[]>([]);
@@ -179,12 +180,6 @@ const DemandManagement: React.FC = () => {
     } finally {
       setInsertOrderLoading(false);
     }
-  };
-
-  // 切换到日历视图
-  const handleSwitchToCalendar = () => {
-    console.log('跳转到日历视图:', '/execution/demands/calendar');
-    navigate('/execution/demands/calendar');
   };
 
   // 定义表格列头单元格的通用样式
@@ -466,22 +461,6 @@ const DemandManagement: React.FC = () => {
     setSinglePlanModalVisible(true);
   };
 
-  // 处理单个删除
-  const handleSingleDelete = async (record: Demand) => {
-    try {
-      if (!record.businessKey) {
-        message.error('该需求缺少业务标识，无法删除');
-        return;
-      }
-      await deleteDemandsByBusinessKeys([record.businessKey]);
-      message.success('删除成功');
-      actionRef.current?.reload();
-    } catch (error) {
-      const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '删除失败');
-    }
-  };
-
   // 处理批量删除
   const handleBatchDelete = async () => {
     try {
@@ -531,18 +510,20 @@ const DemandManagement: React.FC = () => {
   };
 
   // 加载已排产需求列表
-  const loadScheduledDemands = async (lineId: number) => {
+  const loadScheduledDemands = debounce( async (lineId: number, keyword?: string) => {
     try {
-      setLoadingScheduledDemands(true);
-      const data = await getScheduledDemands(lineId);
-      setScheduledDemands(data);
+      if (keyword) {
+        setScheduledDemands(await getScheduledDemands(lineId, keyword));
+      } else {
+        setScheduledDemands(await getScheduledDemands(lineId));
+      }
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取已排产需求列表失败');
     } finally {
-      setLoadingScheduledDemands(false);
+      setSinglePlanSearchValue(keyword);
     }
-  };
+  }, 200);
 
   return (
       <>
@@ -1001,7 +982,7 @@ const DemandManagement: React.FC = () => {
                         extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
                     >
                       <Select
-                          placeholder="请选择或输入搜索要排在哪个需求之前"
+                          placeholder="请选择或输入搜索要插在哪个需求之前"
                           style={{ width: '100%' }}
                           showSearch
                           options={scheduledDemands.map(demand => ({
@@ -1009,9 +990,6 @@ const DemandManagement: React.FC = () => {
                             value: demand.id
                           }))}
                           disabled={!insertOrderForm.getFieldValue('lineId') || loadingScheduledDemands}
-                          filterOption={(input, option) =>
-                              (option?.label || '').toLowerCase().includes(input.toLowerCase())
-                          }
                           loading={loadingScheduledDemands}
                           allowClear
                           onChange={(value) => {
@@ -1020,6 +998,19 @@ const DemandManagement: React.FC = () => {
                             } else {
                               insertOrderForm.setFieldValue('rePlanScope', 0);
                             }
+                          }}
+                          onInputKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === 'Enter') {
+                              const lineId = insertOrderForm.getFieldValue('lineId');
+                              if (lineId) {
+                                loadScheduledDemands(lineId, singlePlanSearchValue);
+                              }
+                            }
+                          }}
+                          searchValue={singlePlanSearchValue}
+                          onSearch={(value) => {
+                            setSinglePlanSearchValue(value);
                           }}
                       />
                     </Form.Item>
@@ -1386,26 +1377,36 @@ const DemandManagement: React.FC = () => {
               extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
             >
               <Select
-                placeholder="请选择或输入搜索要排在哪个需求之前"
-                style={{ width: '100%' }}
-                showSearch
-                options={scheduledDemands.map(demand => ({
-                  label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
-                  value: demand.id
-                }))}
-                disabled={!batchPlanForm.getFieldValue('lineId') || loadingScheduledDemands}
-                filterOption={(input, option) => 
-                  (option?.label || '').toLowerCase().includes(input.toLowerCase())
-                }
-                loading={loadingScheduledDemands}
-                allowClear
-                onChange={(value) => {
-                  if (!value) {
-                    batchPlanForm.setFieldValue('rePlanScope', undefined);
-                  } else {
-                    batchPlanForm.setFieldValue('rePlanScope', 0);
-                  }
-                }}
+                  placeholder="请选择或输入搜索要排在哪个需求之前"
+                  style={{ width: '100%' }}
+                  showSearch
+                  options={scheduledDemands.map(demand => ({
+                    label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
+                    value: demand.id
+                  }))}
+                  disabled={!insertOrderForm.getFieldValue('lineId') || loadingScheduledDemands}
+                  loading={loadingScheduledDemands}
+                  allowClear
+                  onChange={(value) => {
+                    if (!value) {
+                      insertOrderForm.setFieldValue('rePlanScope', undefined);
+                    } else {
+                      insertOrderForm.setFieldValue('rePlanScope', 0);
+                    }
+                  }}
+                  onInputKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Enter') {
+                      const lineId = insertOrderForm.getFieldValue('lineId');
+                      if (lineId) {
+                        loadScheduledDemands(lineId, singlePlanSearchValue);
+                      }
+                    }
+                  }}
+                  searchValue={singlePlanSearchValue}
+                  onSearch={(value) => {
+                    setSinglePlanSearchValue(value);
+                  }}
               />
             </Form.Item>
             {batchBeforeDemandId && (
@@ -1594,26 +1595,40 @@ const DemandManagement: React.FC = () => {
                   extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
                 >
                   <Select
-                    placeholder="请选择或输入搜索要排在哪个需求之前"
-                    style={{ width: '100%' }}
-                    showSearch
-                    options={scheduledDemands.map(demand => ({
-                      label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
-                      value: demand.id
-                    }))}
-                    disabled={!planForm.getFieldValue('lineId') || loadingScheduledDemands}
-                    filterOption={(input, option) => 
-                      (option?.label || '').toLowerCase().includes(input.toLowerCase())
-                    }
-                    loading={loadingScheduledDemands}
-                    allowClear
-                    onChange={(value) => {
-                      if (!value) {
-                        planForm.setFieldValue('rePlanScope', undefined);
-                      } else {
-                        planForm.setFieldValue('rePlanScope', 0);
-                      }
-                    }}
+                      placeholder="请选择或输入搜索要排在哪个需求之前"
+                      style={{ width: '100%' }}
+                      showSearch
+                      options={scheduledDemands.map(demand => ({
+                        label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
+                        value: demand.id
+                      }))}
+                      disabled={!planForm.getFieldValue('lineId') || loadingScheduledDemands}
+                      // filterOption={(input, option) =>
+                      //     (option?.label || '').toLowerCase().includes(input.toLowerCase())
+                      // }
+                      filterOption={false}
+                      loading={loadingScheduledDemands}
+                      allowClear
+                      onChange={(value) => {
+                        if (!value) {
+                          planForm.setFieldValue('rePlanScope', undefined);
+                        } else {
+                          planForm.setFieldValue('rePlanScope', 0);
+                        }
+                      }}
+                      onInputKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === 'Enter') {
+                          const lineId = planForm.getFieldValue('lineId');
+                          if (lineId) {
+                            loadScheduledDemands(lineId, singlePlanSearchValue);
+                          }
+                        }
+                      }}
+                      searchValue={singlePlanSearchValue}
+                      onSearch={(value) => {
+                        setSinglePlanSearchValue(value);
+                      }}
                   />
                 </Form.Item>
                 {beforeDemandId && (

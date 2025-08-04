@@ -43,6 +43,7 @@ export interface Demand {
     materialStatus?: string;
     totalProductCount?: number;
     totalCompletionCount?: number;
+    lineSortNo?: string;
 }
 
 // 分页响应类型
@@ -68,19 +69,6 @@ export interface DemandPageRequest {
     keyword?: string;
     sortField?: string;
     sortOrder?: string;
-}
-
-// 插单计划日期数量类型
-export interface DateQuantity {
-    insertOrderDate: string;
-    quantity: number;
-}
-
-// 插单计划请求类型
-export interface InsertOrderRequest {
-    demandId: number;
-    dateQuantityList: DateQuantity[];
-    rePlanScope?: number;
 }
 
 // 获取需求分页列表

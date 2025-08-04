@@ -102,6 +102,7 @@ const DemandManagement: React.FC = () => {
   // 已排产需求列表
   const [scheduledDemands, setScheduledDemands] = useState<Demand[]>([]);
   const [loadingScheduledDemands, setLoadingScheduledDemands] = useState<boolean>(false);
+  const [singlePlanSearchValue, setSinglePlanSearchValue] = useState<string>('');
 
   // 批量排产需求排序列表
   const [lines, setLines] =  useState<{ label: string; value: number }[]>([]);
@@ -501,18 +502,20 @@ const DemandManagement: React.FC = () => {
   };
 
   // 加载已排产需求列表
-  const loadScheduledDemands = async (lineId: number) => {
+  const loadScheduledDemands = debounce( async (lineId: number, keyword?: string) => {
     try {
-      setLoadingScheduledDemands(true);
-      const data = await getScheduledDemands(lineId);
-      setScheduledDemands(data);
+      if (keyword) {
+        setScheduledDemands(await getScheduledDemands(lineId, keyword));
+        setSinglePlanSearchValue(keyword);
+      } else {
+        setScheduledDemands(await getScheduledDemands(lineId));
+      }
     } catch (error) {
       const apiError = error as ApiError;
       message.error(apiError.response?.data?.message || apiError.message || '获取已排产需求列表失败');
     } finally {
-      setLoadingScheduledDemands(false);
     }
-  };
+  }, 200);
 
   return (
       <>
@@ -974,17 +977,28 @@ const DemandManagement: React.FC = () => {
                             value: demand.id
                           }))}
                           disabled={!insertOrderForm.getFieldValue('lineId') || loadingScheduledDemands}
-                          filterOption={(input, option) =>
-                              (option?.label || '').toLowerCase().includes(input.toLowerCase())
-                          }
                           loading={loadingScheduledDemands}
                           allowClear
+                          filterOption={false}
                           onChange={(value) => {
                             if (!value) {
                               insertOrderForm.setFieldValue('rePlanScope', undefined);
                             } else {
                               insertOrderForm.setFieldValue('rePlanScope', 0);
                             }
+                          }}
+                          onInputKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === 'Enter') {
+                              const lineId = insertOrderForm.getFieldValue('lineId');
+                              if (lineId) {
+                                loadScheduledDemands(lineId, singlePlanSearchValue);
+                              }
+                            }
+                          }}
+                          searchValue={singlePlanSearchValue}
+                          onSearch={(value) => {
+                            setSinglePlanSearchValue(value);
                           }}
                       />
                     </Form.Item>
