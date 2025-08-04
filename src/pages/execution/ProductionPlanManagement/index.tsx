@@ -78,15 +78,15 @@ const DemandManagement: React.FC = () => {
   });
 
   // 状态切换
-  const [status, setStatus] = useState<0 | 1>(1);
+  const [status] = useState<0 | 1>(1);
   const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
 
+  const [singlePlanSearchValue, setSinglePlanSearchValue] = useState<string>('');
   const navigate = useNavigate();
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<Demand | null>(null);
 
   const [currentPlanDemand, setCurrentPlanDemand] = useState<Demand | null>(null);
-  const [planForm] = Form.useForm();
 
   // 插单相关状态
   const [insertOrderModalVisible, setInsertOrderModalVisible] = useState<boolean>(false);
@@ -95,14 +95,13 @@ const DemandManagement: React.FC = () => {
 
   //撤回
   const [revertOrderModalVisible, setRevertOrderModalVisible] = useState<boolean>(false);
-  const [revertOrderLoading, setRevertOrderLoading] = useState<boolean>(false);
+  const [revertOrderLoading] = useState<boolean>(false);
   const [rePlanScope, setRePlanScope] = useState<Number | null>(null);
 
 
   // 已排产需求列表
   const [scheduledDemands, setScheduledDemands] = useState<Demand[]>([]);
-  const [loadingScheduledDemands, setLoadingScheduledDemands] = useState<boolean>(false);
-  const [singlePlanSearchValue, setSinglePlanSearchValue] = useState<string>('');
+  const [loadingScheduledDemands] = useState<boolean>(false);
 
   // 批量排产需求排序列表
   const [lines, setLines] =  useState<{ label: string; value: number }[]>([]);
@@ -977,9 +976,9 @@ const DemandManagement: React.FC = () => {
                             value: demand.id
                           }))}
                           disabled={!insertOrderForm.getFieldValue('lineId') || loadingScheduledDemands}
+                          filterOption={false}
                           loading={loadingScheduledDemands}
                           allowClear
-                          filterOption={false}
                           onChange={(value) => {
                             if (!value) {
                               insertOrderForm.setFieldValue('rePlanScope', undefined);

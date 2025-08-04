@@ -44,6 +44,8 @@ export interface Demand {
     totalProductCount?: number;
     totalCompletionCount?: number;
     lineSortNo?: string;
+    lineCode?: string;
+    lineName?: string;
 }
 
 // 分页响应类型
