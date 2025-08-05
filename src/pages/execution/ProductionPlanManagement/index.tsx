@@ -983,7 +983,7 @@ const DemandManagement: React.FC = () => {
                             if (!value) {
                               insertOrderForm.setFieldValue('rePlanScope', undefined);
                             } else {
-                              insertOrderForm.setFieldValue('rePlanScope', 0);
+                              insertOrderForm.setFieldValue('rePlanScope', 1);
                             }
                           }}
                           onInputKeyDown={(e) => {

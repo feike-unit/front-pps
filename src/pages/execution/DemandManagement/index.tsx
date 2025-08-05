@@ -28,7 +28,7 @@ import {
     ProTable
 } from '@ant-design/pro-components';
 import { DeleteOutlined, CaretRightOutlined, CaretDownOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined, ScheduleOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
-import type { ApiError } from '../../../services/api';
+import api, { ApiError } from '../../../services/api';
 import {
     Demand,
     DemandStatus,
@@ -46,6 +46,8 @@ import debounce from 'lodash/debounce';
 import { useNavigate } from 'react-router-dom';
 import './index.less';
 import { getAllEnabledLines, Line } from '../../../services/line';
+import dayjs from "dayjs";
+import {ProductionPlanPageRequest} from "../../../services/productionPlan.ts";
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
@@ -181,6 +183,55 @@ const DemandManagement: React.FC = () => {
             setInsertOrderLoading(false);
         }
     };
+
+    const handleExportData = async () => {
+        const EXPORT_PAGE_SIZE = 10000; // 导出最大条数
+
+        try {
+            message.loading('正在导出数据...', 60); // 设置最长加载时间 60s
+
+            // 构建导出参数
+            const exportParams: ProductionPlanPageRequest = {
+                pageNum: 1,
+                pageSize: EXPORT_PAGE_SIZE,
+                ...searchParams
+            };
+
+            // 通过 axios 的方式直接调用 API，以便获取 headers
+            const response = await api.get('/execution/demands/export/wait/excel', {
+                params: exportParams,
+                responseType: 'blob',
+                timeout: 60000 * 5 // 设置超时时间为5分钟
+            });
+
+            // 从响应头中获取文件名
+            let filename = generateExportFilename();
+
+            // 创建下载链接
+            const url = window.URL.createObjectURL(response);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+
+            // 清理
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            message.destroy();
+            message.success('导出成功');
+        } catch (error) {
+            message.destroy();
+            console.error('导出失败:', error);
+            message.error('导出失败，请重试');
+        }
+    };
+
+    // 生成导出文件名
+    function generateExportFilename(): string {
+        const dateStr = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+        return `待排产订单_${dateStr}.xlsx`;
+    }
 
     // 定义表格列头单元格的通用样式
     const components: TableComponents<Demand> = {
@@ -897,7 +948,13 @@ const DemandManagement: React.FC = () => {
                     >
                         <SyncOutlined />
                         同步完工数
-                    </Button>
+                    </Button>,
+                    <Button
+                        key="export"
+                        onClick={handleExportData}
+                    >
+                        导出
+                    </Button>,
                 ]}
             />
             <Modal
@@ -1017,7 +1074,7 @@ const DemandManagement: React.FC = () => {
                                             if (!value) {
                                                 insertOrderForm.setFieldValue('rePlanScope', undefined);
                                             } else {
-                                                insertOrderForm.setFieldValue('rePlanScope', 0);
+                                                insertOrderForm.setFieldValue('rePlanScope', 1);
                                             }
                                         }}
                                         onInputKeyDown={(e) => {
@@ -1415,7 +1472,7 @@ const DemandManagement: React.FC = () => {
                                     if (!value) {
                                         batchPlanForm.setFieldValue('rePlanScope', undefined);
                                     } else {
-                                        batchPlanForm.setFieldValue('rePlanScope', 0);
+                                        batchPlanForm.setFieldValue('rePlanScope', 1);
                                     }
                                 }}
                                 onInputKeyDown={(e) => {
@@ -1639,7 +1696,7 @@ const DemandManagement: React.FC = () => {
                                             if (!value) {
                                                 planForm.setFieldValue('rePlanScope', undefined);
                                             } else {
-                                                planForm.setFieldValue('rePlanScope', 0);
+                                                planForm.setFieldValue('rePlanScope', 1);
                                             }
                                         }}
                                         onInputKeyDown={(e) => {
