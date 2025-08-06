@@ -100,10 +100,10 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    /*fetchDashboardData();
     // 每5分钟刷新一次数据
     const timer = setInterval(fetchDashboardData, 5 * 60 * 1000);
-    return () => clearInterval(timer);
+    return () => clearInterval(timer);*/
   }, []);
 
   // 需求趋势配置
