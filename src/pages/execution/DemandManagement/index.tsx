@@ -514,22 +514,6 @@ const DemandManagement: React.FC = () => {
         setSinglePlanModalVisible(true);
     };
 
-    // 处理单个删除
-    const handleSingleDelete = async (record: Demand) => {
-        try {
-            if (!record.businessKey) {
-                message.error('该需求缺少业务标识，无法删除');
-                return;
-            }
-            await deleteDemandsByBusinessKeys([record.businessKey]);
-            message.success('删除成功');
-            actionRef.current?.reload();
-        } catch (error) {
-            const apiError = error as ApiError;
-            message.error(apiError.response?.data?.message || apiError.message || '删除失败');
-        }
-    };
-
     // 处理批量删除
     const handleBatchDelete = async () => {
         try {
@@ -805,20 +789,6 @@ const DemandManagement: React.FC = () => {
                             >
                                 批量排产
                             </Button>
-                            <Popconfirm
-                                title="确定要删除选中的需求吗？"
-                                description={`将删除 ${selectedRows.length} 个待排产需求，删除后将无法恢复`}
-                                onConfirm={handleBatchDelete}
-                                okText="确定"
-                                cancelText="取消"
-                            >
-                                <Button
-                                    danger
-                                    icon={<DeleteOutlined />}
-                                >
-                                    批量删除
-                                </Button>
-                            </Popconfirm>
                         </Space>
                     );
                 }}
