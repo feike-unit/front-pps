@@ -66,6 +66,7 @@ const DemandManagement: React.FC = () => {
         deliveryDateStart?: string;
         deliveryDateEnd?: string;
         keyword?: string;
+        productKeyword?:string;
     }>({
         status: 0, // 默认只显示待排产的需求
     });
@@ -132,6 +133,15 @@ const DemandManagement: React.FC = () => {
         } catch (error: any) {
             message.error('搜索货品失败');
         }
+    }, 500);
+
+    // 处理产品关键字搜索
+    const handleProductKeywordSearch = debounce((value: string) => {
+        setSearchParams(prev => ({
+            ...prev,
+            productKeyword: value || undefined
+        }));
+        actionRef.current?.reload();
     }, 500);
 
     // 处理关键字搜索
@@ -619,20 +629,13 @@ const DemandManagement: React.FC = () => {
                 }}
                 headerTitle={
                     <Space wrap>
-                        <Select
-                            placeholder="货品编号/名称"
-                            style={{ width: 200 }}
-                            showSearch
+                        <Input
+                            placeholder="产品编码/产品名称"
+                            style={{ width: 160 }}
+                            onChange={(e) => handleProductKeywordSearch(e.target.value)}
                             allowClear
-                            defaultActiveFirstOption={false}
-                            filterOption={false}
-                            onSearch={handleProductSearch}
-                            onChange={(value: number) => {
-                                setSearchParams(prev => ({ ...prev, productId: value }));
-                                actionRef.current?.reload();
-                            }}
-                            options={searchProductOptions}
-                            onClick={() => handleProductSearch('')}
+                            onPressEnter={(e) => handleProductKeywordSearch((e.target as HTMLInputElement).value)}
+                            onClear={() => handleProductKeywordSearch('')}
                         />
                         <DatePicker.RangePicker
                             placeholder={['开始交期', '结束交期']}
@@ -647,8 +650,7 @@ const DemandManagement: React.FC = () => {
                                         setSearchParams(prev => ({
                                             ...prev,
                                             deliveryDateStart: startDate,
-                                            deliveryDateEnd: endDate,
-                                            deliveryDate: undefined
+                                            deliveryDateEnd: endDate
                                         }));
                                     }
                                 } else {
@@ -656,8 +658,7 @@ const DemandManagement: React.FC = () => {
                                     setSearchParams(prev => ({
                                         ...prev,
                                         deliveryDateStart: undefined,
-                                        deliveryDateEnd: undefined,
-                                        deliveryDate: undefined
+                                        deliveryDateEnd: undefined
                                     }));
                                 }
                                 actionRef.current?.reload();
@@ -666,7 +667,7 @@ const DemandManagement: React.FC = () => {
                         />
                         <Input
                             placeholder="业务单号/客户订单号/客户编号/名称"
-                            style={{ width: 300 }}
+                            style={{ width: 200 }}
                             onChange={(e) => handleKeywordSearch(e.target.value)}
                             allowClear
                             onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}

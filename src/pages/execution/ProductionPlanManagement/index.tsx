@@ -50,6 +50,7 @@ import './index.less';
 import { getAllEnabledLines, Line } from '../../../services/line';
 import {exportProductionPlanExcel, ProductionPlanPageRequest} from "../../../services/productionPlan";
 import api from "../../../services/api";
+import dayjs from 'dayjs';
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
@@ -66,15 +67,19 @@ const DemandManagement: React.FC = () => {
     lineId?: number;
     completionStatus?: number;  // 0: 未完成, 1: 已完成
     status?: number; // 0: 未排产 1已排产
-    deliveryDateStart?: string;
-    deliveryDateEnd?: string;
+    planDateStart?: string;
+    planDateEnd?: string;
     productType?: number;
     keyword?: string;
+    productKeyword?: string;
     deliveryStatus?: string;
     materialStatus?: string;
+    completionStatus?: number;
+    planMonth?: string; // 添加月份查询参数
   }>({
     status: 1, // 默认只显示待排产的需求
-    productType: 2
+    productType: 2,
+    planMonth: dayjs().format('YYYY-MM') // 默认为当前月份
   });
 
   // 状态切换
@@ -189,6 +194,15 @@ const DemandManagement: React.FC = () => {
     } catch (error: any) {
       message.error('搜索货品失败');
     }
+  }, 500);
+
+  // 处理产品关键字搜索
+  const handleProductKeywordSearch = debounce((value: string) => {
+    setSearchParams(prev => ({
+      ...prev,
+      productKeyword: value || undefined
+    }));
+    actionRef.current?.reload();
   }, 500);
 
   // 处理关键字搜索
@@ -555,24 +569,31 @@ const DemandManagement: React.FC = () => {
             }}
             headerTitle={
               <Space wrap>
-                <Select
-                    placeholder="货品编号/名称"
-                    style={{ width: 140 }}
-                    showSearch
-                    allowClear
-                    defaultActiveFirstOption={false}
-                    filterOption={false}
-                    onSearch={handleProductSearch}
-                    onChange={(value: number) => {
-                      setSearchParams(prev => ({ ...prev, productId: value }));
+                <DatePicker
+                    picker="month"
+                    placeholder="选择月份"
+                    style={{ width: 100 }}
+                    defaultValue={dayjs()}
+                    onChange={(date) => {
+                      const planMonth = date ? date.format('YYYY-MM') : undefined;
+                      setSearchParams(prev => ({
+                        ...prev,
+                        planMonth
+                      }));
                       actionRef.current?.reload();
                     }}
-                    options={searchProductOptions}
-                    onClick={() => handleProductSearch('')}
+                />
+                <Input
+                    placeholder="产品编码/产品名称"
+                    style={{ width: 140 }}
+                    onChange={(e) => handleProductKeywordSearch(e.target.value)}
+                    allowClear
+                    onPressEnter={(e) => handleProductKeywordSearch((e.target as HTMLInputElement).value)}
+                    onClear={() => handleProductKeywordSearch('')}
                 />
                 <Select
                     placeholder="选择拉线"
-                    style={{ width: 140 }}
+                    style={{ width: 120 }}
                     showSearch
                     allowClear
                     defaultActiveFirstOption={false}
@@ -584,8 +605,8 @@ const DemandManagement: React.FC = () => {
                     options={lines}
                 />
                 <DatePicker.RangePicker
-                    placeholder={['开始交期', '结束交期']}
-                    style={{ width: 200 }}
+                    placeholder={['开始上线日期', '结束上线日期']}
+                    style={{ width: 220 }}
                     onChange={(dates) => {
                       // 只有当两个日期都选择了，才设置日期区间参数
                       if (dates && dates[0] && dates[1]) {
@@ -595,18 +616,16 @@ const DemandManagement: React.FC = () => {
                         if (startDate && endDate) {
                           setSearchParams(prev => ({
                             ...prev,
-                            deliveryDateStart: startDate,
-                            deliveryDateEnd: endDate,
-                            deliveryDate: undefined
+                            planDateStart: startDate,
+                            planDateEnd: endDate
                           }));
                         }
                       } else {
                         // 如果没有选择完整的日期区间，则清空所有日期参数
                         setSearchParams(prev => ({
                           ...prev,
-                          deliveryDateStart: undefined,
-                          deliveryDateEnd: undefined,
-                          deliveryDate: undefined
+                          planDateStart: startDate,
+                          planDateEnd: endDate
                         }));
                       }
                       actionRef.current?.reload();
@@ -615,7 +634,7 @@ const DemandManagement: React.FC = () => {
                 />
                 <Input
                     placeholder="业务单号/客户订单号/客户编号/名称"
-                    style={{ width: 200 }}
+                    style={{ width: 160 }}
                     onChange={(e) => handleKeywordSearch(e.target.value)}
                     allowClear
                     onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
@@ -623,7 +642,7 @@ const DemandManagement: React.FC = () => {
                 />
                 <Select
                     placeholder="排产交期状态"
-                    style={{ width: 160 }}
+                    style={{ width: 120 }}
                     allowClear
                     options={[
                       { label: '超客户交期订单', value: 'overdue' },
@@ -636,7 +655,7 @@ const DemandManagement: React.FC = () => {
                 />
                 <Select
                     placeholder="物料齐套状态"
-                    style={{ width: 160 }}
+                    style={{ width: 120 }}
                     allowClear
                     options={[
                       { label: '未齐套', value: 'overdue' },
@@ -644,6 +663,19 @@ const DemandManagement: React.FC = () => {
                     ]}
                     onChange={(value) => {
                       setSearchParams(prev => ({ ...prev, materialStatus: value }));
+                      actionRef.current?.reload();
+                    }}
+                />
+                <Select
+                    placeholder="完工状态"
+                    style={{ width: 100 }}
+                    allowClear
+                    options={[
+                      { label: '未完工', value: 0 },
+                      { label: '已完工', value: 1 }
+                    ]}
+                    onChange={(value) => {
+                      setSearchParams(prev => ({ ...prev, completionStatus: value }));
                       actionRef.current?.reload();
                     }}
                 />
