@@ -177,7 +177,7 @@ const PurchasePlanManagement: React.FC = () => {
       valueType: 'dateTime',
       sorter: true,
       search: false,
-      width: 140,
+      width: 150,
     },
     {
       title: '操作',
