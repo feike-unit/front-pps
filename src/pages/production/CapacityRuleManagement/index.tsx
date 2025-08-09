@@ -545,7 +545,7 @@ const CapacityRuleManagement: React.FC = () => {
         </Space>
       }
       pagination={{
-        defaultPageSize: 20,
+        defaultPageSize: 100,
         showQuickJumper: true,
         showSizeChanger: true,
         pageSizeOptions: ['10', '20', '50', '100'],

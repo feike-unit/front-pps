@@ -233,7 +233,7 @@ const PurchasePlanManagement: React.FC = () => {
             // 构建请求参数
             const requestParams: PlanRuntimePageRequest = {
               pageNum: current || 1,
-              pageSize: pageSize || 10,
+              pageSize: pageSize || 100,
               ...restParams,
               ...searchParams,
               // 固定只查询采购件类型
@@ -310,7 +310,7 @@ const PurchasePlanManagement: React.FC = () => {
           </Space>
         }
         pagination={{
-          defaultPageSize: 20,
+          defaultPageSize: 100,
           showQuickJumper: true,
           showSizeChanger: true,
           pageSizeOptions: ['10', '20', '50', '100'],

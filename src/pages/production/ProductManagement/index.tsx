@@ -209,7 +209,7 @@ const ProductManagement: React.FC = () => {
         </Space>
       }
       pagination={{
-        defaultPageSize: 20,
+        defaultPageSize: 100,
         showQuickJumper: false,
         showSizeChanger: true,
         pageSizeOptions: ['10', '20', '50', '100'],

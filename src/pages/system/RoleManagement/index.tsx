@@ -284,7 +284,7 @@ const RoleManagement: React.FC = () => {
           try {
             const result = await getRolePage({
               pageNum: current,
-              pageSize: params.pageSize || 10,
+              pageSize: params.pageSize || 100,
               sortField,
               sortOrder: sortOrder === 'descend' ? 'desc' : sortOrder === 'ascend' ? 'asc' : undefined,
               keyword: searchKeyword,
@@ -370,7 +370,7 @@ const RoleManagement: React.FC = () => {
           },
         }}
         pagination={{
-          defaultPageSize: 20,
+          defaultPageSize: 100,
           showSizeChanger: true,
           pageSizeOptions: ['10', '20', '50', '100', '200'],
         }}

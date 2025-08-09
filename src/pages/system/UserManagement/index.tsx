@@ -779,7 +779,7 @@ const UserManagement: React.FC = () => {
         request={async (params = {}, sort, filter) => {
           const response = await getUserPage({
             pageNum: params.current,
-            pageSize: params.pageSize || 10,  // 默认每页显示10条
+            pageSize: params.pageSize || 100,  // 默认每页显示10条
             keyword: searchKeyword,
             departmentStatus,
             sortField: params.sortField,
@@ -983,7 +983,7 @@ const UserManagement: React.FC = () => {
           },
         }}
         pagination={{
-          defaultPageSize: 20,  // 默认每页显示20条
+          defaultPageSize: 100,  // 默认每页显示20条
           showSizeChanger: true,
           pageSizeOptions: ['10', '20', '50', '100', '200'],  // 可选的每页条数
         }}

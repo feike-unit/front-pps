@@ -330,7 +330,7 @@ const LineManagement: React.FC = () => {
             // 构建请求参数
             const requestParams: LinePageRequest = {
               pageNum: current || 1,
-              pageSize: pageSize || 10,
+              pageSize: pageSize || 100,
               ...restParams,
               ...searchParams,
               sortField: Object.keys(sort || {})[0],
@@ -397,7 +397,7 @@ const LineManagement: React.FC = () => {
           </Space>
         }
         pagination={{
-          defaultPageSize: 20,
+          defaultPageSize: 100,
           showQuickJumper: true,
           showSizeChanger: true,
           pageSizeOptions: ['10', '20', '50', '100'],

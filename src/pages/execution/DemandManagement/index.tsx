@@ -692,7 +692,7 @@ const DemandManagement: React.FC = () => {
 
                         const pageParams: DemandPageRequest = {
                             pageNum: current || 1,
-                            pageSize: pageSize || 10,
+                            pageSize: pageSize || 100,
                             ...restParams,
                             ...searchParams,
                             ...sortParams
@@ -733,7 +733,7 @@ const DemandManagement: React.FC = () => {
                     },
                 }}
                 pagination={{
-                    defaultPageSize: 20,
+                    defaultPageSize: 100,
                     showSizeChanger: true,
                     pageSizeOptions: ['10', '20', '50', '100'],
                 }}
