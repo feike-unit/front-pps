@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import { Space, message, Tooltip, Select, DatePicker, Modal } from 'antd';
+import {Space, message, Tooltip, DatePicker, Modal, Input, Button} from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
 import { ProTable, ProDescriptions } from '@ant-design/pro-components';
@@ -16,28 +15,33 @@ import {
   PlanRuntimePageRequest
 } from '../../../services/planRuntime';
 
-import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
+import dayjs from "dayjs";
 
 const PurchasePlanManagement: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const [searchParams, setSearchParams] = useState<{
-    planCode?: string;
-    demandCode?: string;
     productId?: number;
     status?: number;
-    startDate?: string;
-    endDate?: string;
     productType?: number;
-    batchCode?: string;
-    demandId?: number;
-    startAtBegin?: string;
-    endAtBegin?: string;
-  }>({
-    // 默认只显示采购件类型
-    productType: ProductType.PURCHASE,
+    startAt?: string;
+    endAt?: string;
+    productKeyword?: string;
+    keyword?: string;
+  }>(() => {
+    // 从 localStorage 中恢复查询条件，如果没有则使用默认值
+    const saved = localStorage.getItem('purchasePlanManagementSearchParams');
+    console.log("purchasePlanManagementSearchParams:" + saved);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return { productType: ProductType.PURCHASE };
+      }
+    }
+    return { productType: ProductType.PURCHASE };
   });
-  const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
+
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [detailRecord, setDetailRecord] = useState<PlanRuntime | null>(null);
   
@@ -57,25 +61,28 @@ const PurchasePlanManagement: React.FC = () => {
     },
   };
 
-  // 处理货品搜索
-  const handleProductSearch = debounce(async (value: string) => {
-    try {
-      // 只搜索采购件类型的货品
-      const products = await searchProducts(value || '');
-      const options = products.map(product => ({
-        label: `${product.productCode} - ${product.productName}`,
-        value: product.id!
-      }));
-      setSearchProductOptions(options);
-    } catch (error: any) {
-      message.error('搜索货品失败');
-    }
+  // 添加 useEffect 来保存查询条件到 localStorage
+  useEffect(() => {
+    localStorage.setItem('purchasePlanManagementSearchParams', JSON.stringify(searchParams));
+  }, [searchParams]);
+
+  // 处理产品关键字搜索
+  const handleProductKeywordSearch = debounce((value: string) => {
+    setSearchParams(prev => ({
+      ...prev,
+      productKeyword: value || undefined
+    }));
+    actionRef.current?.reload();
   }, 500);
 
-  // 初始加载默认选项
-  useEffect(() => {
-    handleProductSearch('');
-  }, []);
+  // 处理关键字搜索
+  const handleKeywordSearch = debounce((value: string) => {
+    setSearchParams(prev => ({
+      ...prev,
+      keyword: value || undefined
+    }));
+    actionRef.current?.reload();
+  }, 500);
 
   // 处理查看详情
   const handleViewDetails = async (record: PlanRuntime) => {
@@ -88,6 +95,14 @@ const PurchasePlanManagement: React.FC = () => {
       message.error(apiError.response?.data?.message || apiError.message || '获取详情失败');
     }
   };
+
+  // 在组件卸载时保存查询条件
+  useEffect(() => {
+    return () => {
+      // 组件卸载时保存当前查询条件
+      localStorage.setItem('purchasePlanManagementSearchParams', JSON.stringify(searchParams));
+    };
+  }, [searchParams]);
 
   const columns: ProColumns<PlanRuntime>[] = [
     {
@@ -226,7 +241,7 @@ const PurchasePlanManagement: React.FC = () => {
             },
           };
         }}
-        request={async (params = {}, sort, filter) => {
+        request={async (params = {}, sort) => {
           try {
             const { current, pageSize, ...restParams } = params;
             
@@ -278,34 +293,55 @@ const PurchasePlanManagement: React.FC = () => {
         }}
         headerTitle={
           <Space>
-            <Select
-              placeholder="货品"
-              style={{ width: 200 }}
-              showSearch
-              allowClear
-              defaultActiveFirstOption={false}
-              filterOption={false}
-              onSearch={handleProductSearch}
-              onChange={(value: number) => {
-                setSearchParams(prev => ({ ...prev, productId: value }));
-                actionRef.current?.reload();
-              }}
-              options={searchProductOptions}
-              onClick={() => handleProductSearch('')}
+            <Input
+                placeholder="产品编码/产品名称"
+                style={{width: 160}}
+                value={ searchParams.productKeyword || '' }
+                onChange={(e) => handleProductKeywordSearch(e.target.value)}
+                allowClear
+                onPressEnter={(e) => handleProductKeywordSearch((e.target as HTMLInputElement).value)}
+                onClear={() => handleProductKeywordSearch('')}
             />
-
             <DatePicker.RangePicker
-              placeholder={['下单日期', '到货日期']}
-              style={{ width: 300 }}
-              onChange={(dates) => {
-                setSearchParams(prev => ({
-                  ...prev,
-                  startAt: dates?.[0]?.format('YYYY-MM-DD'),
-                  endAt: dates?.[1]?.format('YYYY-MM-DD'),
-                }));
-                actionRef.current?.reload();
-              }}
-              allowClear
+                placeholder={['到货开始日期', '到货结束日期']}
+                value={[
+                  searchParams.startAt ? dayjs(searchParams.startAt) : undefined,
+                  searchParams.endAt ? dayjs(searchParams.endAt) : undefined
+                ]}
+                style={{ width: 220 }}
+                onChange={(dates) => {
+                  // 只有当两个日期都选择了，才设置日期区间参数
+                  if (dates && dates[0] && dates[1]) {
+                    const startDate = dates[0]?.format('YYYY-MM-DD');
+                    const endDate = dates[1]?.format('YYYY-MM-DD');
+
+                    if (startDate && endDate) {
+                      setSearchParams(prev => ({
+                        ...prev,
+                        startAt: startDate,
+                        endAt: endDate
+                      }));
+                    }
+                  } else {
+                    // 如果没有选择完整的日期区间，则清空所有日期参数
+                    setSearchParams(prev => ({
+                      ...prev,
+                      startAt: undefined,
+                      endAt: undefined
+                    }));
+                  }
+                  actionRef.current?.reload();
+                }}
+                allowClear
+            />
+            <Input
+                placeholder="业务单号/客户订单号/客户编号/名称"
+                style={{width: 200}}
+                value={ searchParams.keyword || '' }
+                onChange={(e) => handleKeywordSearch(e.target.value)}
+                allowClear
+                onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
+                onClear={() => handleKeywordSearch('')}
             />
           </Space>
         }
@@ -316,6 +352,22 @@ const PurchasePlanManagement: React.FC = () => {
           pageSizeOptions: ['10', '20', '50', '100'],
         }}
         dateFormatter="string"
+        toolBarRender={() => [
+          <Button
+              key="clearFilters"
+              onClick={() => {
+                // 清除所有查询条件
+                localStorage.removeItem('productionPlanManagementSearchParams');
+                setSearchParams({ productType: ProductType.PURCHASE });
+                // 清除表单中的输入值
+                if (actionRef.current) {
+                  actionRef.current.reload();
+                }
+              }}
+          >
+            清除条件
+          </Button>
+        ]}
       />
 
       {/* 详情对话框 */}

@@ -1,53 +1,55 @@
-import React, { useRef, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
+    Alert,
+    Badge,
     Button,
-    Space,
-    message,
-    Popconfirm,
-    Tooltip,
-    Table,
+    Card,
+    Col,
+    DatePicker,
     Form,
     Input,
-    DatePicker,
-    Select,
-    Card,
-    Row,
-    Col,
     InputNumber,
+    message,
     Modal,
-    Radio,
-    Badge,
-    Typography,
-    Alert,
+    Row,
+    Select,
+    Space,
     Spin,
+    Table,
+    Tooltip,
+    Typography,
 } from 'antd';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import type { TableComponents } from 'rc-table/lib/interface';
+import type {ActionType, ProColumns} from '@ant-design/pro-components';
+import {ProTable} from '@ant-design/pro-components';
+import type {TableComponents} from 'rc-table/lib/interface';
 import {
-    ProTable
-} from '@ant-design/pro-components';
-import { DeleteOutlined, CaretRightOutlined, CaretDownOutlined, PlayCircleOutlined, SyncOutlined, SwapOutlined, MinusCircleOutlined, ScheduleOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
-import api, { ApiError } from '../../../services/api';
+    ArrowDownOutlined,
+    ArrowUpOutlined,
+    CaretDownOutlined,
+    CaretRightOutlined,
+    EyeOutlined,
+    PlayCircleOutlined,
+    SwapOutlined,
+    SyncOutlined
+} from '@ant-design/icons';
+import api, {ApiError} from '../../../services/api';
 import {
     Demand,
-    DemandStatus,
-    getDemandPage,
     DemandPageRequest,
-    deleteDemandsByBusinessKeys,
-    syncDemands,
-    schedulerDemands,
-    getScheduledDemands,
+    DemandStatus,
     getDemandById,
-    insertOrderDemands, initDemands, callbackDeliveryTime, syncCallbackQty
+    getDemandPage,
+    getScheduledDemands,
+    insertOrderDemands,
+    schedulerDemands,
+    syncCallbackQty,
+    syncDemands
 } from '../../../services/demand';
-import {searchProducts, syncProducts} from '../../../services/product';
 import debounce from 'lodash/debounce';
-import { useNavigate } from 'react-router-dom';
 import './index.less';
-import { getAllEnabledLines, Line } from '../../../services/line';
-import dayjs from "dayjs";
+import {getAllEnabledLines, Line} from '../../../services/line';
 import {ProductionPlanPageRequest} from "../../../services/productionPlan.ts";
+import dayjs from "dayjs";
 
 // 定义状态颜色映射
 const statusColorMap: Record<number, string> = {
@@ -59,24 +61,33 @@ const statusColorMap: Record<number, string> = {
 const DemandManagement: React.FC = () => {
     const actionRef = useRef<ActionType>();
     const [expandedKeys, setExpandedKeys] = useState<number[]>([]);
+
+    // 修改 setSearchParams 的初始化，使用保存的查询条件
     const [searchParams, setSearchParams] = useState<{
         productId?: number;
-        // completionStatus?: number;  // 0: 未完成, 1: 已完成
-        status?: number; // 0: 未排产 1已排产
+        status?: number;
         deliveryDateStart?: string;
         deliveryDateEnd?: string;
         keyword?: string;
-        productKeyword?:string;
-    }>({
-        status: 0, // 默认只显示待排产的需求
+        productKeyword?: string;
+    }>(() => {
+        // 从 localStorage 中恢复查询条件，如果没有则使用默认值
+        const saved = localStorage.getItem('demandManagementSearchParams');
+        console.log("demandManagementSearchParams:" + saved);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch {
+                return {status: 0};
+            }
+        }
+        return {status: 0};
     });
 
     // 状态切换
-    const [status, setStatus] = useState<0 | 1>(0);
-    const [searchProductOptions, setSearchProductOptions] = useState<{ label: string; value: number }[]>([]);
+    const [status] = useState<0 | 1>(0);
 
     const [singlePlanSearchValue, setSinglePlanSearchValue] = useState<string>('');
-    const navigate = useNavigate();
     const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
     const [detailRecord, setDetailRecord] = useState<Demand | null>(null);
 
@@ -102,11 +113,6 @@ const DemandManagement: React.FC = () => {
     const [singlePlanLoading, setSinglePlanLoading] = useState<boolean>(false);
     const [batchPlanLoading, setBatchPlanLoading] = useState<boolean>(false);
 
-    // 添加表单值监听
-    const beforeDemandId = Form.useWatch('beforeDemandId', planForm);
-    const batchBeforeDemandId = Form.useWatch('beforeDemandId', batchPlanForm);
-    const insertBeforeDemandId = Form.useWatch('beforeDemandId', insertOrderForm);
-
     // 获取所有启用的生产线
     const fetchLines = async () => {
         try {
@@ -121,19 +127,10 @@ const DemandManagement: React.FC = () => {
         fetchLines();
     }, []);
 
-    // 处理货品搜索
-    const handleProductSearch = debounce(async (value: string) => {
-        try {
-            const products = await searchProducts(value || '');
-            const options = products.map(product => ({
-                label: `${product.productCode} - ${product.productName}`,
-                value: product.id!
-            }));
-            setSearchProductOptions(options);
-        } catch (error: any) {
-            message.error('搜索货品失败');
-        }
-    }, 500);
+    // 添加 useEffect 来保存查询条件到 localStorage
+    useEffect(() => {
+        localStorage.setItem('demandManagementSearchParams', JSON.stringify(searchParams));
+    }, [searchParams]);
 
     // 处理产品关键字搜索
     const handleProductKeywordSearch = debounce((value: string) => {
@@ -153,11 +150,6 @@ const DemandManagement: React.FC = () => {
         actionRef.current?.reload();
     }, 500);
 
-    // 初始加载默认选项
-    useEffect(() => {
-        handleProductSearch('');
-    }, []);
-
     // 处理打开插单对话框
     const handleOpenInsertOrderModal = async (record: Demand) => {
         setCurrentPlanDemand(record);
@@ -170,11 +162,13 @@ const DemandManagement: React.FC = () => {
             setInsertOrderLoading(true);
             const values = await insertOrderForm.validateFields();
             await insertOrderDemands(
-                [currentPlanDemand!.id!],
-                values.lineId,
-                values.coefficient,
-                values.beforeDemandId,
-                values.rePlanScope
+                {
+                    demandIds: [currentPlanDemand!.id!],
+                    lineId: values.lineId,
+                    coefficient: values.coefficient,
+                    beforeDemandId: values.beforeDemandId,
+                    planMonth: values.planMonth
+                }
             );
             message.success('插单成功');
             setInsertOrderModalVisible(false);
@@ -193,6 +187,14 @@ const DemandManagement: React.FC = () => {
             setInsertOrderLoading(false);
         }
     };
+
+    // 在组件卸载时保存查询条件
+    useEffect(() => {
+        return () => {
+            // 组件卸载时保存当前查询条件
+            localStorage.setItem('demandManagementSearchParams', JSON.stringify(searchParams));
+        };
+    }, [searchParams]);
 
     const handleExportData = async () => {
         const EXPORT_PAGE_SIZE = 10000; // 导出最大条数
@@ -315,9 +317,9 @@ const DemandManagement: React.FC = () => {
             dataIndex: 'productType',
             valueType: 'select',
             valueEnum: {
-                1: { text: '采购件' },
-                2: { text: '自制件' },
-                3: { text: '委外件' },
+                1: {text: '采购件'},
+                2: {text: '自制件'},
+                3: {text: '委外件'},
             },
             width: 60,
         },
@@ -360,8 +362,8 @@ const DemandManagement: React.FC = () => {
             onFilter: false,
             valueType: 'select',
             valueEnum: {
-                [0]: { text: '未完工', status: 'warning' },
-                [1]: { text: '已完工', status: 'processing' }
+                [0]: {text: '未完工', status: 'warning'},
+                [1]: {text: '已完工', status: 'processing'}
             },
             width: 100,
         },
@@ -385,10 +387,10 @@ const DemandManagement: React.FC = () => {
             onFilter: true,
             valueType: 'select',
             valueEnum: {
-                [-1]: { text: '已删除', status: 'error' },
-                [0]: { text: '未变更', status: 'default' },
-                [1]: { text: '已减少', status: 'warning' },
-                [2]: { text: '已增加', status: 'processing' },
+                [-1]: {text: '已删除', status: 'error'},
+                [0]: {text: '未变更', status: 'default'},
+                [1]: {text: '已减少', status: 'warning'},
+                [2]: {text: '已增加', status: 'processing'},
             },
             width: 100,
         },
@@ -404,40 +406,24 @@ const DemandManagement: React.FC = () => {
                     {record.status === 0 && (
                         <Tooltip title="排产">
                             <a onClick={() => handleSinglePlan(record)}>
-                                <PlayCircleOutlined style={{ color: '#1890ff' }} />
+                                <PlayCircleOutlined style={{color: '#1890ff'}}/>
                             </a>
                         </Tooltip>
                     )}
                     {/* 查看详情按钮 */}
                     <Tooltip title="查看详情">
                         <a onClick={() => handleViewDetails(record)}>
-                            <EyeOutlined style={{ color: '#1890ff' }} />
+                            <EyeOutlined style={{color: '#1890ff'}}/>
                         </a>
                     </Tooltip>
                     {/* 插单按钮 - 只对未完成的需求显示 */}
                     {record.completionStatus === 0 && (
                         <Tooltip title="插单">
                             <a onClick={() => handleOpenInsertOrderModal(record)}>
-                                <SwapOutlined style={{ color: '#1890ff' }} />
+                                <SwapOutlined style={{color: '#1890ff'}}/>
                             </a>
                         </Tooltip>
                     )}
-                    {/* 删除按钮 - 只对待排产需求显示
-            {record.status === 0 && (
-                <Popconfirm
-                    title="确定要删除该需求吗？"
-                    description="删除后将无法恢复，请确认操作"
-                    onConfirm={() => handleSingleDelete(record)}
-                    okText="确定"
-                    cancelText="取消"
-                >
-                  <Tooltip title="删除">
-                    <a>
-                      <DeleteOutlined style={{ color: '#ff4d4f' }} />
-                    </a>
-                  </Tooltip>
-                </Popconfirm>
-            )}*/}
                 </Space>
             ),
         },
@@ -461,11 +447,13 @@ const DemandManagement: React.FC = () => {
             setSinglePlanLoading(true);
             const values = await planForm.validateFields();
             await schedulerDemands(
-                [currentPlanDemand!.id!],
-                values.lineId,
-                values.coefficient,
-                values.beforeDemandId,
-                values.rePlanScope // 添加影响范围参数
+                {
+                    demandIds: [currentPlanDemand!.id!],
+                    lineId: values.lineId,
+                    coefficient: values.coefficient,
+                    beforeDemandId: values.beforeDemandId,
+                    planMonth: values.planMonth
+                } // 添加影响范围参数
             );
             message.success('排产成功');
             setSinglePlanModalVisible(false);
@@ -493,11 +481,13 @@ const DemandManagement: React.FC = () => {
             const values = await batchPlanForm.validateFields();
             const demandIds = sortedPlanList.map(row => row.id!);
             await schedulerDemands(
-                demandIds,
-                values.lineId,
-                values.coefficient,
-                values.beforeDemandId,
-                values.rePlanScope // 添加影响范围参数
+                {
+                    demandIds: demandIds,
+                    lineId: values.lineId,
+                    coefficient: values.coefficient,
+                    beforeDemandId: values.beforeDemandId,
+                    planMonth: values.planMonth
+                } // 添加影响范围参数
             );
 
             setBatchPlanModalVisible(false);
@@ -524,32 +514,6 @@ const DemandManagement: React.FC = () => {
         setSinglePlanModalVisible(true);
     };
 
-    // 处理批量删除
-    const handleBatchDelete = async () => {
-        try {
-            const businessKeys = selectedRows
-                .filter(row => row.businessKey)
-                .map(row => row.businessKey!);
-
-            if (businessKeys.length === 0) {
-                message.error('选中的需求缺少业务标识，无法删除');
-                return;
-            }
-
-            if (businessKeys.length !== selectedRows.length) {
-                message.warning('部分需求缺少业务标识，将仅删除有效的需求');
-            }
-
-            await deleteDemandsByBusinessKeys(businessKeys);
-            message.success(`成功删除 ${businessKeys.length} 个需求`);
-            actionRef.current?.reload();
-            setSelectedRows([]);
-        } catch (error) {
-            const apiError = error as ApiError;
-            message.error(apiError.response?.data?.message || apiError.message || '批量删除失败');
-        }
-    };
-
     // 处理需求排序 - 上移
     const handleMoveUp = (index: number) => {
         if (index === 0) return; // 已经是第一个，无法上移
@@ -573,20 +537,12 @@ const DemandManagement: React.FC = () => {
     };
 
     // 加载已排产需求列表
-    const loadScheduledDemands = debounce( async (lineId: number, keyword?: string) => {
+    const loadScheduledDemands = debounce(async (lineId: number, planMonth?: string, keyword?: string) => {
         try {
-            // setLoadingScheduledDemands(true);
-            if (keyword) {
-                setScheduledDemands(await getScheduledDemands(lineId, keyword));
-                setSinglePlanSearchValue(keyword);
-            } else {
-                setScheduledDemands(await getScheduledDemands(lineId));
-            }
+            setScheduledDemands(await getScheduledDemands(lineId, planMonth, keyword));
         } catch (error) {
             const apiError = error as ApiError;
             message.error(apiError.response?.data?.message || apiError.message || '获取已排产需求列表失败');
-        } finally {
-            // setLoadingScheduledDemands(false);
         }
     }, 200);
 
@@ -598,7 +554,7 @@ const DemandManagement: React.FC = () => {
                 cardBordered
                 bordered
                 defaultSize="small"
-                scroll={{ x: 'max-content' }}
+                scroll={{x: 'max-content'}}
                 components={components}
                 onRow={(record) => {
                     const completionQuantity = record.completionQuantity || 0;
@@ -631,7 +587,8 @@ const DemandManagement: React.FC = () => {
                     <Space wrap>
                         <Input
                             placeholder="产品编码/产品名称"
-                            style={{ width: 160 }}
+                            style={{width: 160}}
+                            value={ searchParams.productKeyword || '' }
                             onChange={(e) => handleProductKeywordSearch(e.target.value)}
                             allowClear
                             onPressEnter={(e) => handleProductKeywordSearch((e.target as HTMLInputElement).value)}
@@ -639,7 +596,11 @@ const DemandManagement: React.FC = () => {
                         />
                         <DatePicker.RangePicker
                             placeholder={['开始交期', '结束交期']}
-                            style={{ width: 200 }}
+                            style={{width: 220}}
+                            value={[
+                                searchParams.deliveryDateStart ? dayjs(searchParams.deliveryDateStart) : undefined,
+                                searchParams.deliveryDateEnd ? dayjs(searchParams.deliveryDateEnd) : undefined
+                            ]}
                             onChange={(dates) => {
                                 // 只有当两个日期都选择了，才设置日期区间参数
                                 if (dates && dates[0] && dates[1]) {
@@ -667,7 +628,8 @@ const DemandManagement: React.FC = () => {
                         />
                         <Input
                             placeholder="业务单号/客户订单号/客户编号/名称"
-                            style={{ width: 200 }}
+                            style={{width: 200}}
+                            value={ searchParams.keyword || '' }
                             onChange={(e) => handleKeywordSearch(e.target.value)}
                             allowClear
                             onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
@@ -675,9 +637,9 @@ const DemandManagement: React.FC = () => {
                         />
                     </Space>
                 }
-                request={async (params = {}, sort, filter) => {
+                request={async (params = {}, sort) => {
                     try {
-                        const { current, pageSize, ...restParams } = params;
+                        const {current, pageSize, ...restParams} = params;
 
                         // 如果没有排序参数，则使用默认的交期倒序排序
                         const sortParams = Object.keys(sort || {}).length > 0
@@ -741,12 +703,12 @@ const DemandManagement: React.FC = () => {
                 expandable={{
                     expandedRowKeys: expandedKeys,
                     onExpandedRowsChange: (keys) => setExpandedKeys(keys as number[]),
-                    expandIcon: ({ expanded, onExpand, record }) => {
+                    expandIcon: ({expanded, onExpand, record}) => {
                         if (record.children && record.children.length > 0) {
                             return expanded ? (
-                                <CaretDownOutlined onClick={e => onExpand(record, e)} />
+                                <CaretDownOutlined onClick={e => onExpand(record, e)}/>
                             ) : (
-                                <CaretRightOutlined onClick={e => onExpand(record, e)} />
+                                <CaretRightOutlined onClick={e => onExpand(record, e)}/>
                             );
                         }
                         return null;
@@ -763,13 +725,13 @@ const DemandManagement: React.FC = () => {
                         disabled: record.status !== 0, // 只允许选择未排产的记录
                     }),
                 }}
-                tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
+                tableAlertRender={({selectedRowKeys, onCleanSelected}) => (
                     <Space size={24}>
                         <Alert
                             message={
                                 <Space>
-                                    已选择 <a style={{ fontWeight: 600 }}>{selectedRowKeys.length}</a> 项
-                                    <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
+                                    已选择 <a style={{fontWeight: 600}}>{selectedRowKeys.length}</a> 项
+                                    <a style={{marginLeft: 8}} onClick={onCleanSelected}>
                                         取消选择
                                     </a>
                                 </Space>
@@ -794,15 +756,20 @@ const DemandManagement: React.FC = () => {
                     );
                 }}
                 toolBarRender={() => [
-                    /*<Button
-                        key="calendar"
-                        type="primary"
-                        icon={<ScheduleOutlined />}
-                        onClick={handleSwitchToCalendar}
-                        style={{ marginRight: 8 }}
+                    <Button
+                        key="clearFilters"
+                        onClick={() => {
+                            // 清除所有查询条件
+                            localStorage.removeItem('demandManagementSearchParams');
+                            // 清除表单中的输入值
+                            setSearchParams({ status: 0 });
+                            if (actionRef.current) {
+                                actionRef.current.reload();
+                            }
+                        }}
                     >
-                      日历视图
-                    </Button>,*/
+                        清除条件
+                    </Button>,
                     /*<Button
                         key="initDemands"
                         onClick={() => {
@@ -846,14 +813,15 @@ const DemandManagement: React.FC = () => {
                         key="syncDemands"
                         onClick={() => {
                             // 创建日期选择器弹窗
-                            let syncDate: string | undefined;
+                            let syncDate: string | undefined = dayjs().format('YYYY-MM-DD');
                             Modal.confirm({
                                 title: '同步需求',
                                 content: (
-                                    <div style={{ marginTop: 16 }}>
-                                        <span style={{ color: '#ff4d4f' }}>* </span>
+                                    <div style={{marginTop: 16}}>
+                                        <span style={{color: '#ff4d4f'}}>* </span>
                                         <span>选择同步日期：</span>
                                         <DatePicker
+                                            defaultValue={dayjs()}
                                             onChange={(date) => {
                                                 syncDate = date ? date.format('YYYY-MM-DD') : undefined;
                                             }}
@@ -878,21 +846,22 @@ const DemandManagement: React.FC = () => {
                             });
                         }}
                     >
-                        <SyncOutlined />
+                        <SyncOutlined/>
                         同步需求
                     </Button>,
                     <Button
                         key="syncCallbackQty"
                         onClick={() => {
                             // 创建日期选择器弹窗
-                            let syncDate: string | undefined;
+                            let syncDate: string | undefined = dayjs().format('YYYY-MM-DD');
                             Modal.confirm({
                                 title: '同步erp完工数信息',
                                 content: (
-                                    <div style={{ marginTop: 16 }}>
-                                        <span style={{ color: '#ff4d4f' }}>* </span>
+                                    <div style={{marginTop: 16}}>
+                                        <span style={{color: '#ff4d4f'}}>* </span>
                                         <span>选择同步日期：</span>
                                         <DatePicker
+                                            defaultValue={dayjs()}
                                             onChange={(date) => {
                                                 syncDate = date ? date.format('YYYY-MM-DD') : undefined;
                                             }}
@@ -917,7 +886,7 @@ const DemandManagement: React.FC = () => {
                             });
                         }}
                     >
-                        <SyncOutlined />
+                        <SyncOutlined/>
                         同步完工数
                     </Button>,
                     <Button
@@ -973,7 +942,7 @@ const DemandManagement: React.FC = () => {
                                 message={`正在为货品"${currentPlanDemand.productCode} - ${currentPlanDemand.productName}"进行插单`}
                                 type="info"
                                 showIcon
-                                style={{ marginBottom: 24 }}
+                                style={{marginBottom: 24}}
                             />
 
                             <Form form={insertOrderForm} layout="vertical">
@@ -992,18 +961,39 @@ const DemandManagement: React.FC = () => {
                                 >
                                     <Select
                                         placeholder={currentPlanDemand?.productType === 2 ? "自制件必须选择生产拉线" : "请选择生产拉线"}
-                                        style={{ width: '100%' }}
+                                        style={{width: '100%'}}
                                         options={lines.map(line => ({
                                             label: `${line.lineName} (${line.lineCode})`,
                                             value: line.id
                                         }))}
                                         onChange={(value) => {
                                             if (value) {
-                                                loadScheduledDemands(value);
+                                                const planMonth = insertOrderForm.getFieldValue('planMonth');
+                                                const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
+                                                loadScheduledDemands(value, planMonthStr);
                                                 insertOrderForm.setFieldValue('beforeDemandId', undefined);
-                                                insertOrderForm.setFieldValue('rePlanScope', undefined);
                                             } else {
                                                 setScheduledDemands([]);
+                                            }
+                                        }}
+                                    />
+                                </Form.Item>
+                                <Form.Item
+                                    name="planMonth"
+                                    label="插单月份"
+                                >
+                                    <DatePicker
+                                        picker="month"
+                                        style={{width: '100%'}}
+                                        placeholder="请选择插单月份"
+                                        format="YYYY-MM"
+                                        value={dayjs(0)}
+                                        onChange={(date) => {
+                                            const lineId = insertOrderForm.getFieldValue('lineId');
+                                            if (lineId) {
+                                                const planMonthStr = date ? dayjs(date).format('YYYY-MM') : undefined;
+                                                loadScheduledDemands(lineId, planMonthStr);
+                                                insertOrderForm.setFieldValue('beforeDemandId', undefined);
                                             }
                                         }}
                                     />
@@ -1013,12 +1003,12 @@ const DemandManagement: React.FC = () => {
                                     label="产能系数"
                                     initialValue={1}
                                     rules={[
-                                        { required: true, message: '请输入产能系数' },
-                                        { type: 'number', min: 0, message: '产能系数必须大于0' }
+                                        {required: true, message: '请输入产能系数'},
+                                        {type: 'number', min: 0, message: '产能系数必须大于0'}
                                     ]}
                                 >
                                     <InputNumber
-                                        style={{ width: '100%' }}
+                                        style={{width: '100%'}}
                                         placeholder="请输入产能系数"
                                         precision={2}
                                         step={0.1}
@@ -1031,7 +1021,7 @@ const DemandManagement: React.FC = () => {
                                 >
                                     <Select
                                         placeholder="请选择或输入搜索要排在哪个需求之前"
-                                        style={{ width: '100%' }}
+                                        style={{width: '100%'}}
                                         showSearch
                                         options={scheduledDemands.map(demand => ({
                                             label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
@@ -1041,19 +1031,14 @@ const DemandManagement: React.FC = () => {
                                         filterOption={false}
                                         loading={loadingScheduledDemands}
                                         allowClear
-                                        onChange={(value) => {
-                                            if (!value) {
-                                                insertOrderForm.setFieldValue('rePlanScope', undefined);
-                                            } else {
-                                                insertOrderForm.setFieldValue('rePlanScope', 1);
-                                            }
-                                        }}
                                         onInputKeyDown={(e) => {
                                             e.stopPropagation();
                                             if (e.key === 'Enter') {
                                                 const lineId = insertOrderForm.getFieldValue('lineId');
                                                 if (lineId) {
-                                                    loadScheduledDemands(lineId, singlePlanSearchValue);
+                                                    const planMonth = insertOrderForm.getFieldValue('planMonth');
+                                                    const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
+                                                    loadScheduledDemands(lineId, planMonthStr, singlePlanSearchValue);
                                                 }
                                             }
                                         }}
@@ -1063,25 +1048,6 @@ const DemandManagement: React.FC = () => {
                                         }}
                                     />
                                 </Form.Item>
-                                {insertBeforeDemandId && (
-                                    <Form.Item
-                                        name="rePlanScope"
-                                        label="影响范围"
-                                        initialValue={1}
-                                        style={{ marginBottom: 0 }}
-                                    >
-                                        <Radio.Group>
-                                            <Space direction="vertical">
-                                                <Tooltip title="仅插单不影响其他计划，保持其他计划不变">
-                                                    <Radio value={0}>仅插单不影响其他计划</Radio>
-                                                </Tooltip>
-                                                <Tooltip title="插单后，需要重新计算其插入位置之前的产能而影响到的其他计划">
-                                                    <Radio value={1}>插单并重新计算影响的其他计划</Radio>
-                                                </Tooltip>
-                                            </Space>
-                                        </Radio.Group>
-                                    </Form.Item>
-                                )}
                             </Form>
                         </>
                     )}
@@ -1097,9 +1063,9 @@ const DemandManagement: React.FC = () => {
                 width={1200}
             >
                 {detailRecord && (
-                    <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                    <div style={{maxHeight: '70vh', overflowY: 'auto'}}>
                         {/* 根需求信息表单 */}
-                        <Card title="基本信息" bordered={false} style={{ marginBottom: 16 }}>
+                        <Card title="基本信息" bordered={false} style={{marginBottom: 16}}>
                             <Row gutter={[16, 16]}>
                                 <Col span={8}>
                                     <div className="detail-item">
@@ -1223,7 +1189,8 @@ const DemandManagement: React.FC = () => {
                                     <div className="detail-item">
                                         <div className="label">客户订单号</div>
                                         <div className="value">
-                                            <Typography.Text copyable>{detailRecord.customerOrderDocNo}</Typography.Text>
+                                            <Typography.Text
+                                                copyable>{detailRecord.customerOrderDocNo}</Typography.Text>
                                         </div>
                                     </div>
                                 </Col>
@@ -1296,12 +1263,12 @@ const DemandManagement: React.FC = () => {
                                     rowKey="id"
                                     expandable={{
                                         defaultExpandAllRows: true,
-                                        expandIcon: ({ expanded, onExpand, record }) => {
+                                        expandIcon: ({expanded, onExpand, record}) => {
                                             if (record.children && record.children.length > 0) {
                                                 return expanded ? (
-                                                    <CaretDownOutlined onClick={e => onExpand(record, e)} />
+                                                    <CaretDownOutlined onClick={e => onExpand(record, e)}/>
                                                 ) : (
-                                                    <CaretRightOutlined onClick={e => onExpand(record, e)} />
+                                                    <CaretRightOutlined onClick={e => onExpand(record, e)}/>
                                                 );
                                             }
                                             return null;
@@ -1362,10 +1329,10 @@ const DemandManagement: React.FC = () => {
                         message={`已选择 ${sortedPlanList.length} 个未排产需求进行批量排产，可拖拽调整排产顺序`}
                         type="info"
                         showIcon
-                        style={{ marginBottom: 24 }}
+                        style={{marginBottom: 24}}
                     />
 
-                    <div style={{ marginBottom: 24 }}>
+                    <div style={{marginBottom: 24}}>
                         <Typography.Text type="warning">
                             注意：系统将根据选择的拉线和排产位置自动安排排产计划。
                         </Typography.Text>
@@ -1390,18 +1357,39 @@ const DemandManagement: React.FC = () => {
                             <Select
                                 placeholder={sortedPlanList.some(demand => demand.productType === 2) ?
                                     "包含自制件必须选择生产拉线" : "请选择生产拉线"}
-                                style={{ width: '100%' }}
+                                style={{width: '100%'}}
                                 options={lines.map(line => ({
                                     label: `${line.lineName} (${line.lineCode})`,
                                     value: line.id
                                 }))}
                                 onChange={(value) => {
                                     if (value) {
-                                        loadScheduledDemands(value);
+                                        const planMonth = batchPlanForm.getFieldValue('planMonth');
+                                        const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
+                                        loadScheduledDemands(value, planMonthStr);
                                         batchPlanForm.setFieldValue('beforeDemandId', undefined);
-                                        batchPlanForm.setFieldValue('rePlanScope', undefined);
                                     } else {
                                         setScheduledDemands([]);
+                                    }
+                                }}
+                            />
+                        </Form.Item>
+                        <Form.Item
+                            name="planMonth"
+                            label="排产月份"
+                        >
+                            <DatePicker
+                                picker="month"
+                                style={{width: '100%'}}
+                                placeholder="请选择排产月份"
+                                format="YYYY-MM"
+                                value={dayjs(0)}
+                                onChange={(date) => {
+                                    const lineId = batchPlanForm.getFieldValue('lineId');
+                                    if (lineId) {
+                                        const planMonthStr = date ? dayjs(date).format('YYYY-MM') : undefined;
+                                        loadScheduledDemands(lineId, planMonthStr);
+                                        batchPlanForm.setFieldValue('beforeDemandId', undefined);
                                     }
                                 }}
                             />
@@ -1411,12 +1399,12 @@ const DemandManagement: React.FC = () => {
                             label="产能系数"
                             initialValue={1}
                             rules={[
-                                { required: true, message: '请输入产能系数' },
-                                { type: 'number', min: 0, message: '产能系数必须大于0' }
+                                {required: true, message: '请输入产能系数'},
+                                {type: 'number', min: 0, message: '产能系数必须大于0'}
                             ]}
                         >
                             <InputNumber
-                                style={{ width: '100%' }}
+                                style={{width: '100%'}}
                                 placeholder="请输入产能系数"
                                 precision={2}
                                 step={0.1}
@@ -1429,7 +1417,7 @@ const DemandManagement: React.FC = () => {
                         >
                             <Select
                                 placeholder="请选择或输入搜索要排在哪个需求之前"
-                                style={{ width: '100%' }}
+                                style={{width: '100%'}}
                                 showSearch
                                 options={scheduledDemands.map(demand => ({
                                     label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
@@ -1439,19 +1427,14 @@ const DemandManagement: React.FC = () => {
                                 filterOption={false}
                                 loading={loadingScheduledDemands}
                                 allowClear
-                                onChange={(value) => {
-                                    if (!value) {
-                                        batchPlanForm.setFieldValue('rePlanScope', undefined);
-                                    } else {
-                                        batchPlanForm.setFieldValue('rePlanScope', 1);
-                                    }
-                                }}
                                 onInputKeyDown={(e) => {
                                     e.stopPropagation();
                                     if (e.key === 'Enter') {
                                         const lineId = batchPlanForm.getFieldValue('lineId');
                                         if (lineId) {
-                                            loadScheduledDemands(lineId, singlePlanSearchValue);
+                                            const planMonth = batchPlanForm.getFieldValue('planMonth');
+                                            const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
+                                            loadScheduledDemands(lineId, planMonthStr, singlePlanSearchValue);
                                         }
                                     }
                                 }}
@@ -1461,25 +1444,6 @@ const DemandManagement: React.FC = () => {
                                 }}
                             />
                         </Form.Item>
-                        {batchBeforeDemandId && (
-                            <Form.Item
-                                name="rePlanScope"
-                                label="影响范围"
-                                initialValue={0}
-                                style={{ marginBottom: 0 }}
-                            >
-                                <Radio.Group>
-                                    <Space direction="vertical">
-                                        <Tooltip title="仅排产不影响其他计划，保持其他计划不变">
-                                            <Radio value={0}>仅排产不影响其他计划</Radio>
-                                        </Tooltip>
-                                        <Tooltip title="排产后，需要重新计算其排产位置之前的产能而影响到的其他计划">
-                                            <Radio value={1}>排产并重新计算影响的其他计划</Radio>
-                                        </Tooltip>
-                                    </Space>
-                                </Radio.Group>
-                            </Form.Item>
-                        )}
                     </Form>
 
                     {/* 显示选中的需求列表 */}
@@ -1515,7 +1479,7 @@ const DemandManagement: React.FC = () => {
                                             <Button
                                                 type="text"
                                                 size="small"
-                                                icon={<ArrowUpOutlined />}
+                                                icon={<ArrowUpOutlined/>}
                                                 disabled={index === 0}
                                                 onClick={() => handleMoveUp(index)}
                                             />
@@ -1524,7 +1488,7 @@ const DemandManagement: React.FC = () => {
                                             <Button
                                                 type="text"
                                                 size="small"
-                                                icon={<ArrowDownOutlined />}
+                                                icon={<ArrowDownOutlined/>}
                                                 disabled={index === sortedPlanList.length - 1}
                                                 onClick={() => handleMoveDown(index)}
                                             />
@@ -1535,7 +1499,7 @@ const DemandManagement: React.FC = () => {
                         ]}
                         size="small"
                         pagination={false}
-                        scroll={{ y: 300 }}
+                        scroll={{y: 300}}
                         expandable={{
                             showExpandColumn: false
                         }}
@@ -1592,7 +1556,7 @@ const DemandManagement: React.FC = () => {
                                 message={`正在为货品"${currentPlanDemand.productCode} - ${currentPlanDemand.productName}"进行排产`}
                                 type="info"
                                 showIcon
-                                style={{ marginBottom: 24 }}
+                                style={{marginBottom: 24}}
                             />
 
                             <Form form={planForm} layout="vertical">
@@ -1601,6 +1565,7 @@ const DemandManagement: React.FC = () => {
                                     label="生产拉线"
                                     rules={[
                                         {
+                                            required: true, message: '请选择生产拉线',
                                             validator: async (_, value) => {
                                                 if (currentPlanDemand?.productType === 2 && !value) { // 2 表示自制件
                                                     throw new Error('自制件必须选择生产拉线');
@@ -1611,18 +1576,39 @@ const DemandManagement: React.FC = () => {
                                 >
                                     <Select
                                         placeholder={currentPlanDemand?.productType === 2 ? "自制件必须选择生产拉线" : "请选择生产拉线"}
-                                        style={{ width: '100%' }}
+                                        style={{width: '100%'}}
                                         options={lines.map(line => ({
                                             label: `${line.lineName} (${line.lineCode})`,
                                             value: line.id
                                         }))}
                                         onChange={(value) => {
                                             if (value) {
-                                                loadScheduledDemands(value);
+                                                const planMonth = planForm.getFieldValue('planMonth');
+                                                const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
+                                                loadScheduledDemands(value, planMonthStr);
                                                 planForm.setFieldValue('beforeDemandId', undefined);
-                                                planForm.setFieldValue('rePlanScope', undefined);
                                             } else {
                                                 setScheduledDemands([]);
+                                            }
+                                        }}
+                                    />
+                                </Form.Item>
+                                <Form.Item
+                                    name="planMonth"
+                                    label="排产月份"
+                                >
+                                    <DatePicker
+                                        picker="month"
+                                        style={{width: '100%'}}
+                                        placeholder="请选择排产月份"
+                                        format="YYYY-MM"
+                                        value={dayjs(0)}
+                                        onChange={(date) => {
+                                            const lineId = planForm.getFieldValue('lineId');
+                                            if (lineId) {
+                                                const planMonthStr = date ? dayjs(date).format('YYYY-MM') : undefined;
+                                                loadScheduledDemands(lineId, planMonthStr);
+                                                planForm.setFieldValue('beforeDemandId', undefined);
                                             }
                                         }}
                                     />
@@ -1632,12 +1618,12 @@ const DemandManagement: React.FC = () => {
                                     label="产能系数"
                                     initialValue={1}
                                     rules={[
-                                        { required: true, message: '请输入产能系数' },
-                                        { type: 'number', min: 0, message: '产能系数必须大于0' }
+                                        {required: true, message: '请输入产能系数'},
+                                        {type: 'number', min: 0, message: '产能系数必须大于0'}
                                     ]}
                                 >
                                     <InputNumber
-                                        style={{ width: '100%' }}
+                                        style={{width: '100%'}}
                                         placeholder="请输入产能系数"
                                         precision={2}
                                         step={0.1}
@@ -1650,32 +1636,24 @@ const DemandManagement: React.FC = () => {
                                 >
                                     <Select
                                         placeholder="请选择或输入搜索要排在哪个需求之前"
-                                        style={{ width: '100%' }}
+                                        style={{width: '100%'}}
                                         showSearch
                                         options={scheduledDemands.map(demand => ({
                                             label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
                                             value: demand.id
                                         }))}
                                         disabled={!planForm.getFieldValue('lineId') || loadingScheduledDemands}
-                                        // filterOption={(input, option) =>
-                                        //     (option?.label || '').toLowerCase().includes(input.toLowerCase())
-                                        // }
                                         filterOption={false}
                                         loading={loadingScheduledDemands}
                                         allowClear
-                                        onChange={(value) => {
-                                            if (!value) {
-                                                planForm.setFieldValue('rePlanScope', undefined);
-                                            } else {
-                                                planForm.setFieldValue('rePlanScope', 1);
-                                            }
-                                        }}
                                         onInputKeyDown={(e) => {
                                             e.stopPropagation();
                                             if (e.key === 'Enter') {
                                                 const lineId = planForm.getFieldValue('lineId');
                                                 if (lineId) {
-                                                    loadScheduledDemands(lineId, singlePlanSearchValue);
+                                                    const planMonth = planForm.getFieldValue('planMonth');
+                                                    const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
+                                                    loadScheduledDemands(lineId, planMonthStr, singlePlanSearchValue);
                                                 }
                                             }
                                         }}
@@ -1685,28 +1663,9 @@ const DemandManagement: React.FC = () => {
                                         }}
                                     />
                                 </Form.Item>
-                                {beforeDemandId && (
-                                    <Form.Item
-                                        name="rePlanScope"
-                                        label="影响范围"
-                                        initialValue={0}
-                                        style={{ marginBottom: 0 }}
-                                    >
-                                        <Radio.Group>
-                                            <Space direction="vertical">
-                                                <Tooltip title="仅排产不影响其他计划，保持其他计划不变">
-                                                    <Radio value={0}>仅排产不影响其他计划</Radio>
-                                                </Tooltip>
-                                                <Tooltip title="排产后，需要重新计算其排产位置之前的产能而影响到的其他计划">
-                                                    <Radio value={1}>排产并重新计算影响的其他计划</Radio>
-                                                </Tooltip>
-                                            </Space>
-                                        </Radio.Group>
-                                    </Form.Item>
-                                )}
                             </Form>
 
-                            <div style={{ marginTop: 16 }}>
+                            <div style={{marginTop: 16}}>
                                 <Typography.Text type="warning">
                                     注意：系统将根据选择的拉线和排产位置自动安排排产计划。
                                 </Typography.Text>

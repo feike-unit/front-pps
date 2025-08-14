@@ -79,40 +79,6 @@ export const getDemandPage = async (params: DemandPageRequest): Promise<PageResp
     return response.data;
 };
 
-// 创建需求
-export const createDemand = async (data: Omit<Demand, 'id' | 'createdAt' | 'updatedAt'>): Promise<Demand> => {
-    const response = await api.post('/execution/demands', data);
-    return response.data;
-};
-
-// 更新需求
-export const updateDemand = async (id: number, data: Partial<Demand>): Promise<Demand> => {
-    const response = await api.put(`/execution/demands/${id}`, data);
-    return response.data;
-};
-
-// 根据业务标识批量删除需求
-export const deleteDemandsByBusinessKeys = async (businessKeys: string[]): Promise<void> => {
-    const response = await api.delete('/execution/demands', {
-        data: businessKeys,
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
-    return response.data;
-};
-
-// 根据业务标识批量撤回排产需求
-export const revokeDemandsByBusinessKeys = async (businessKeys: string[]): Promise<void> => {
-    const response = await api.delete('/execution/demands/revoke', {
-        data: businessKeys,
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
-    return response.data;
-};
-
 export const revokeDemandsByBusinessKeyAndRePlanScope = async (businessKey: string, rePlanScope: Number): Promise<void> => {
     const response = await api.delete(`/execution/demands/revoke/${businessKey}/${rePlanScope}`);
     return response.data;
@@ -121,12 +87,6 @@ export const revokeDemandsByBusinessKeyAndRePlanScope = async (businessKey: stri
 // 获取需求详情
 export const getDemandById = async (id: number): Promise<Demand> => {
     const response = await api.get(`/execution/demands/${id}`);
-    return response.data;
-};
-
-// 更新需求状态
-export const updateDemandStatus = async (id: number, status: DemandStatus): Promise<Demand> => {
-    const response = await api.patch(`/execution/demands/${id}/status?status=${status}`);
     return response.data;
 };
 
@@ -167,11 +127,11 @@ export const callbackDeliveryTime = async (syncDate: string): Promise<void> => {
 };
 
 // 获取已排产但未完成的需求列表
-export const getScheduledDemands = async (lineId: number, keyword?: string): Promise<Demand[]> => {
+export const getScheduledDemands = async (lineId: number, planMonth?: string, keyword?: string): Promise<Demand[]> => {
     const response = await api.get<Demand[]>('/execution/demands/scheduled', {
         params: {
             lineId,
-            startDate: dayjs().format('YYYY-MM-DD'),
+            planMonth,
             keyword
         }
     });
@@ -184,21 +144,23 @@ export const getScheduledDemands = async (lineId: number, keyword?: string): Pro
  * @param lineId 生产拉线ID
  * @param coefficient 产能系数
  * @param beforeDemandId 排在指定需求之前
- * @param rePlanScope 影响范围 0: 仅排产不影响其他计划, 1: 重新计算影响的其他计划
+ * @param planMonth 排产月份
  */
 export const schedulerDemands = async (
-    demandIds: number[],
-    lineId: number,
-    coefficient: number = 1,
-    beforeDemandId?: number,
-    rePlanScope: number = 0
+    {demandIds, lineId, coefficient = 1, beforeDemandId, planMonth}: {
+        demandIds: number[],
+        lineId: number,
+        coefficient?: number,
+        beforeDemandId?: number,
+        planMonth?: string
+    }
 ): Promise<void> => {
     const response = await api.patch<void>('/execution/demands/scheduler', {
         demandIds,
         lineId,
         coefficient,
         beforeDemandId,
-        rePlanScope
+        planMonth: planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined
     }, {
         timeout: 60000 * 5 // 设置排产接口超时时间为5分钟
     });
@@ -211,21 +173,23 @@ export const schedulerDemands = async (
  * @param lineId 生产拉线ID
  * @param coefficient 产能系数
  * @param beforeDemandId 排在指定需求之前
- * @param rePlanScope 影响范围 0: 仅插单不影响其他计划, 1: 重新计算影响的其他计划
+ * @param planMonth 排产月份
  */
 export const insertOrderDemands = async (
-    demandIds: number[],
-    lineId: number,
-    coefficient: number = 1,
-    beforeDemandId?: number,
-    rePlanScope: number = 0
+    {demandIds, lineId, coefficient = 1, beforeDemandId, planMonth}: {
+        demandIds: number[],
+        lineId: number,
+        coefficient?: number,
+        beforeDemandId?: number,
+        planMonth?: string
+    }
 ): Promise<void> => {
     const response = await api.post<void>('/execution/demands/insert-order', {
         demandIds,
         lineId,
         coefficient,
         beforeDemandId,
-        rePlanScope
+        planMonth: planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined
     }, {
         timeout: 60000 * 5 // 设置插单接口超时时间为5分钟
     });
