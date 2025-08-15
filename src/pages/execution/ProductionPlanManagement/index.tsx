@@ -132,11 +132,6 @@ const DemandManagement: React.FC = () => {
     fetchLines();
   }, []);
 
-  // 添加 useEffect 来保存查询条件到 localStorage
-  useEffect(() => {
-    localStorage.setItem('productionPlanManagementSearchParams', JSON.stringify(searchParams));
-  }, [searchParams]);
-
   const handleExportScheduledData = async () => {
     const EXPORT_PAGE_SIZE = 10000; // 导出最大条数
 
@@ -566,7 +561,6 @@ const DemandManagement: React.FC = () => {
                     placeholder="产品编码/产品名称"
                     value={ searchParams.productKeyword || '' }
                     style={{ width: 140 }}
-                    onChange={(e) => handleProductKeywordSearch(e.target.value)}
                     allowClear
                     onPressEnter={(e) => handleProductKeywordSearch((e.target as HTMLInputElement).value)}
                     onClear={() => handleProductKeywordSearch('')}
@@ -621,7 +615,6 @@ const DemandManagement: React.FC = () => {
                     placeholder="业务单号/客户订单号/客户编号/名称"
                     value={ searchParams.keyword || '' }
                     style={{ width: 160 }}
-                    onChange={(e) => handleKeywordSearch(e.target.value)}
                     allowClear
                     onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
                     onClear={() => handleKeywordSearch('')}

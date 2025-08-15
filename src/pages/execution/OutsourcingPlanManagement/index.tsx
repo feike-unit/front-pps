@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import {Space, message, Tooltip, Select, DatePicker, Modal, Button, Input} from 'antd';
+import {Space, message, Tooltip, DatePicker, Modal, Button, Input} from 'antd';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import type { TableComponents } from 'rc-table/lib/interface';
 import { ProTable, ProDescriptions } from '@ant-design/pro-components';
@@ -16,7 +15,6 @@ import {
   PlanRuntimePageRequest
 } from '../../../services/planRuntime';
 
-import { searchProducts } from '../../../services/product';
 import debounce from 'lodash/debounce';
 import dayjs from "dayjs";
 
@@ -299,7 +297,6 @@ const OutsourcingPlanManagement: React.FC = () => {
                 placeholder="产品编码/产品名称"
                 style={{width: 160}}
                 value={ searchParams.productKeyword || '' }
-                onChange={(e) => handleProductKeywordSearch(e.target.value)}
                 allowClear
                 onPressEnter={(e) => handleProductKeywordSearch((e.target as HTMLInputElement).value)}
                 onClear={() => handleProductKeywordSearch('')}
@@ -340,7 +337,6 @@ const OutsourcingPlanManagement: React.FC = () => {
                 placeholder="业务单号/客户订单号/客户编号/名称"
                 style={{width: 200}}
                 value={ searchParams.keyword || '' }
-                onChange={(e) => handleKeywordSearch(e.target.value)}
                 allowClear
                 onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
                 onClear={() => handleKeywordSearch('')}

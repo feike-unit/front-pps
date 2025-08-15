@@ -589,7 +589,6 @@ const DemandManagement: React.FC = () => {
                             placeholder="产品编码/产品名称"
                             style={{width: 160}}
                             value={ searchParams.productKeyword || '' }
-                            onChange={(e) => handleProductKeywordSearch(e.target.value)}
                             allowClear
                             onPressEnter={(e) => handleProductKeywordSearch((e.target as HTMLInputElement).value)}
                             onClear={() => handleProductKeywordSearch('')}
@@ -630,7 +629,6 @@ const DemandManagement: React.FC = () => {
                             placeholder="业务单号/客户订单号/客户编号/名称"
                             style={{width: 200}}
                             value={ searchParams.keyword || '' }
-                            onChange={(e) => handleKeywordSearch(e.target.value)}
                             allowClear
                             onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
                             onClear={() => handleKeywordSearch('')}
