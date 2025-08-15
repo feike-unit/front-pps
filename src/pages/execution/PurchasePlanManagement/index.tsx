@@ -296,7 +296,7 @@ const PurchasePlanManagement: React.FC = () => {
             <Input
                 placeholder="产品编码/产品名称"
                 style={{width: 160}}
-                value={ searchParams.productKeyword || '' }
+                value={ searchParams.productKeyword || undefined }
                 allowClear
                 onPressEnter={(e) => handleProductKeywordSearch((e.target as HTMLInputElement).value)}
                 onClear={() => handleProductKeywordSearch('')}
@@ -336,7 +336,7 @@ const PurchasePlanManagement: React.FC = () => {
             <Input
                 placeholder="业务单号/客户订单号/客户编号/名称"
                 style={{width: 200}}
-                value={ searchParams.keyword || '' }
+                value={ searchParams.keyword || undefined }
                 allowClear
                 onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
                 onClear={() => handleKeywordSearch('')}

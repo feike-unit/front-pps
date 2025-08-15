@@ -559,7 +559,7 @@ const DemandManagement: React.FC = () => {
                 />
                 <Input
                     placeholder="产品编码/产品名称"
-                    value={ searchParams.productKeyword || '' }
+                    value={ searchParams.productKeyword || undefined }
                     style={{ width: 140 }}
                     allowClear
                     onPressEnter={(e) => handleProductKeywordSearch((e.target as HTMLInputElement).value)}
@@ -613,7 +613,7 @@ const DemandManagement: React.FC = () => {
                 />
                 <Input
                     placeholder="业务单号/客户订单号/客户编号/名称"
-                    value={ searchParams.keyword || '' }
+                    value={ searchParams.keyword || undefined }
                     style={{ width: 160 }}
                     allowClear
                     onPressEnter={(e) => handleKeywordSearch((e.target as HTMLInputElement).value)}
