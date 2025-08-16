@@ -546,7 +546,7 @@ const DemandManagement: React.FC = () => {
                 <DatePicker
                     picker="month"
                     placeholder="选择月份"
-                    defaultValue={ searchParams.planMonth ? dayjs(searchParams.planMonth) : dayjs() }
+                    value={searchParams.planMonth ? dayjs(searchParams.planMonth) : undefined}
                     style={{ width: 100 }}
                     onChange={(date) => {
                       const planMonth = date ? date.format('YYYY-MM') : undefined;
