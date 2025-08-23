@@ -117,9 +117,9 @@ export const syncCallbackQty = async (syncDate: string): Promise<void> => {
     return response.data;
 };
 
-// 会写交期
+// 回写交期
 export const callbackDeliveryTime = async (syncDate: string): Promise<void> => {
-    const response = await api.post('/execution/demands/sync-change-demand', null, {
+    const response = await api.post('/execution/demands/callback-delivery-time', null, {
         params: {syncDate},
         timeout: 60000 * 5 // 设置超时时间为5分钟
     });
