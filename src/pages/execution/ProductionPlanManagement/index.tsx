@@ -268,14 +268,14 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'lineCode',
       render: (_, record) => `${record.lineCode} - ${record.lineName}`,
       ellipsis: true,
-      width: 120
+      width: 100
     },
     {
-      title: '排产顺序',
+      title: '顺序',
       dataIndex: 'sortNo',
       ellipsis: true,
       sorter: true,
-      width: 60
+      width: 40
     },
     {
       title: '业务单号',
