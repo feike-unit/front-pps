@@ -264,14 +264,6 @@ const DemandManagement: React.FC = () => {
     // ProTable 列定义
     const columns: ProColumns<Demand>[] = [
         {
-            title: '排产顺序',
-            dataIndex: 'sortNo',
-            ellipsis: true,
-            copyable: true,
-            width: 60,
-            hideInTable: status === 0,
-        },
-        {
             title: '业务单号',
             dataIndex: 'businessDocNo',
             ellipsis: true,
