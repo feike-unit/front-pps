@@ -127,12 +127,13 @@ export const callbackDeliveryTime = async (syncDate: string): Promise<void> => {
 };
 
 // 获取已排产但未完成的需求列表
-export const getScheduledDemands = async (lineId: number, planMonth?: string, keyword?: string): Promise<Demand[]> => {
+export const getScheduledDemands = async (lineId: number, planMonth?: string, keyword?: string, planDateStart?: string): Promise<Demand[]> => {
     const response = await api.get<Demand[]>('/execution/demands/scheduled', {
         params: {
             lineId,
             planMonth,
-            keyword
+            keyword,
+            planDateStart: planDateStart ? dayjs(planDateStart).format('YYYY-MM-DD') : undefined
         }
     });
     return response.data;
@@ -163,6 +164,27 @@ export const schedulerDemands = async (
         planMonth: planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined
     }, {
         timeout: 60000 * 5 // 设置排产接口超时时间为5分钟
+    });
+    return response.data;
+};
+
+export const schedulerDemandsByTargetDate = async (
+    {demandIds, lineId, coefficient = 1, targetPlanDate, beforeDemandId}: {
+        demandIds: number[],
+        lineId: number,
+        coefficient?: number,
+        targetPlanDate: string,
+        beforeDemandId?: number
+    }
+): Promise<void> => {
+    const response = await api.patch<void>('/execution/demands/scheduler-by-date', {
+        demandIds,
+        lineId,
+        coefficient,
+        targetPlanDate: dayjs(targetPlanDate).format('YYYY-MM-DD'),
+        beforeDemandId
+    }, {
+        timeout: 60000 * 5
     });
     return response.data;
 };

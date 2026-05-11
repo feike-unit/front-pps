@@ -16,6 +16,7 @@ import {
     Space,
     Spin,
     Table,
+    Tabs,
     Tooltip,
     Typography,
 } from 'antd';
@@ -41,6 +42,7 @@ import {
     getDemandPage,
     getScheduledDemands,
     insertOrderDemands,
+    schedulerDemandsByTargetDate,
     schedulerDemands,
     syncCallbackQty,
     syncDemands
@@ -57,6 +59,8 @@ const statusColorMap: Record<number, string> = {
     [DemandStatus.INCOMPLETE]: 'rgba(24, 144, 255, 0.15)', // 未完成 - 蓝色
     [DemandStatus.COMPLETED]: 'rgba(82, 196, 26, 0.15)',   // 已完成 - 绿色
 };
+
+type ScheduleMode = 'month' | 'date';
 
 const DemandManagement: React.FC = () => {
     const actionRef = useRef<ActionType>();
@@ -112,6 +116,8 @@ const DemandManagement: React.FC = () => {
     const [lines, setLines] = useState<Line[]>([]);
     const [singlePlanLoading, setSinglePlanLoading] = useState<boolean>(false);
     const [batchPlanLoading, setBatchPlanLoading] = useState<boolean>(false);
+    const [singlePlanMode, setSinglePlanMode] = useState<ScheduleMode>('month');
+    const [batchPlanMode, setBatchPlanMode] = useState<ScheduleMode>('month');
 
     // 获取所有启用的生产线
     const fetchLines = async () => {
@@ -438,15 +444,25 @@ const DemandManagement: React.FC = () => {
         try {
             setSinglePlanLoading(true);
             const values = await planForm.validateFields();
-            await schedulerDemands(
-                {
+            if (singlePlanMode === 'date') {
+                await schedulerDemandsByTargetDate({
                     demandIds: [currentPlanDemand!.id!],
                     lineId: values.lineId,
                     coefficient: values.coefficient,
-                    beforeDemandId: values.beforeDemandId,
-                    planMonth: values.planMonth
-                } // 添加影响范围参数
-            );
+                    targetPlanDate: values.targetPlanDate,
+                    beforeDemandId: values.beforeDemandId
+                });
+            } else {
+                await schedulerDemands(
+                    {
+                        demandIds: [currentPlanDemand!.id!],
+                        lineId: values.lineId,
+                        coefficient: values.coefficient,
+                        beforeDemandId: values.beforeDemandId,
+                        planMonth: values.planMonth
+                    }
+                );
+            }
             message.success('排产成功');
             setSinglePlanModalVisible(false);
             setSinglePlanSearchValue('');
@@ -472,15 +488,25 @@ const DemandManagement: React.FC = () => {
             setBatchPlanLoading(true);
             const values = await batchPlanForm.validateFields();
             const demandIds = sortedPlanList.map(row => row.id!);
-            await schedulerDemands(
-                {
-                    demandIds: demandIds,
+            if (batchPlanMode === 'date') {
+                await schedulerDemandsByTargetDate({
+                    demandIds,
                     lineId: values.lineId,
                     coefficient: values.coefficient,
-                    beforeDemandId: values.beforeDemandId,
-                    planMonth: values.planMonth
-                } // 添加影响范围参数
-            );
+                    targetPlanDate: values.targetPlanDate,
+                    beforeDemandId: values.beforeDemandId
+                });
+            } else {
+                await schedulerDemands(
+                    {
+                        demandIds,
+                        lineId: values.lineId,
+                        coefficient: values.coefficient,
+                        beforeDemandId: values.beforeDemandId,
+                        planMonth: values.planMonth
+                    }
+                );
+            }
 
             setBatchPlanModalVisible(false);
             setSelectedRows([]);
@@ -529,14 +555,79 @@ const DemandManagement: React.FC = () => {
     };
 
     // 加载已排产需求列表
-    const loadScheduledDemands = debounce(async (lineId: number, planMonth?: string, keyword?: string) => {
+    const loadScheduledDemands = debounce(async (lineId: number, planMonth?: string, keyword?: string, planDateStart?: string) => {
         try {
-            setScheduledDemands(await getScheduledDemands(lineId, planMonth, keyword));
+            setScheduledDemands(await getScheduledDemands(lineId, planMonth, keyword, planDateStart));
         } catch (error) {
             const apiError = error as ApiError;
             message.error(apiError.response?.data?.message || apiError.message || '获取已排产需求列表失败');
         }
     }, 200);
+
+    const handleScheduleModeChange = (mode: ScheduleMode, form: typeof planForm | typeof batchPlanForm) => {
+        form.setFieldValue('beforeDemandId', undefined);
+        if (mode === 'date') {
+            form.setFieldValue('planMonth', undefined);
+            setSinglePlanSearchValue('');
+            return;
+        }
+        form.setFieldValue('targetPlanDate', undefined);
+    };
+
+    const renderScheduleModeTabs = (mode: ScheduleMode, onChange: (value: ScheduleMode) => void) => (
+        <Tabs
+            activeKey={mode}
+            onChange={(value) => onChange(value as ScheduleMode)}
+            items={[
+                { key: 'month', label: '指定月份' },
+                { key: 'date', label: '指定日期' }
+            ]}
+            style={{ marginBottom: 16 }}
+        />
+    );
+
+    const renderSchedulePositionField = (form: typeof planForm | typeof batchPlanForm, mode: ScheduleMode) => {
+        return (
+            <Form.Item
+                name="beforeDemandId"
+                label="排产位置"
+                extra={mode === 'date'
+                    ? '选择或输入搜索要排在哪个需求之前；不选择时系统会从所选日期当天可用空档自动切入'
+                    : '选择或输入搜索要排在哪个需求之前，不选择则排在最后'}
+            >
+                <Select
+                    placeholder="请选择或输入搜索要排在哪个需求之前"
+                    style={{width: '100%'}}
+                    showSearch
+                    options={scheduledDemands.map(demand => ({
+                        label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
+                        value: demand.id
+                    }))}
+                    disabled={!form.getFieldValue('lineId') || loadingScheduledDemands}
+                    filterOption={false}
+                    loading={loadingScheduledDemands}
+                    allowClear
+                    onInputKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === 'Enter') {
+                            const lineId = form.getFieldValue('lineId');
+                            if (lineId) {
+                                const planMonth = mode === 'month' ? form.getFieldValue('planMonth') : undefined;
+                                const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
+                                const targetPlanDate = mode === 'date' ? form.getFieldValue('targetPlanDate') : undefined;
+                                const targetPlanDateStr = targetPlanDate ? dayjs(targetPlanDate).format('YYYY-MM-DD') : undefined;
+                                loadScheduledDemands(lineId, planMonthStr, singlePlanSearchValue, targetPlanDateStr);
+                            }
+                        }
+                    }}
+                    searchValue={singlePlanSearchValue}
+                    onSearch={(value) => {
+                        setSinglePlanSearchValue(value);
+                    }}
+                />
+            </Form.Item>
+        );
+    };
 
     return (
         <>
@@ -1329,6 +1420,10 @@ const DemandManagement: React.FC = () => {
                     </div>
 
                     <Form form={batchPlanForm} layout="vertical">
+                        {renderScheduleModeTabs(batchPlanMode, (mode) => {
+                            setBatchPlanMode(mode);
+                            handleScheduleModeChange(mode, batchPlanForm);
+                        })}
                         <Form.Item
                             name="lineId"
                             label="生产拉线"
@@ -1354,9 +1449,11 @@ const DemandManagement: React.FC = () => {
                                 }))}
                                 onChange={(value) => {
                                     if (value) {
-                                        const planMonth = batchPlanForm.getFieldValue('planMonth');
+                                        const planMonth = batchPlanMode === 'month' ? batchPlanForm.getFieldValue('planMonth') : undefined;
                                         const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
-                                        loadScheduledDemands(value, planMonthStr);
+                                        const targetPlanDate = batchPlanMode === 'date' ? batchPlanForm.getFieldValue('targetPlanDate') : undefined;
+                                        const targetPlanDateStr = targetPlanDate ? dayjs(targetPlanDate).format('YYYY-MM-DD') : undefined;
+                                        loadScheduledDemands(value, planMonthStr, undefined, targetPlanDateStr);
                                         batchPlanForm.setFieldValue('beforeDemandId', undefined);
                                     } else {
                                         setScheduledDemands([]);
@@ -1364,26 +1461,48 @@ const DemandManagement: React.FC = () => {
                                 }}
                             />
                         </Form.Item>
-                        <Form.Item
-                            name="planMonth"
-                            label="排产月份"
-                        >
-                            <DatePicker
-                                picker="month"
-                                style={{width: '100%'}}
-                                placeholder="请选择排产月份"
-                                format="YYYY-MM"
-                                value={dayjs(0)}
-                                onChange={(date) => {
-                                    const lineId = batchPlanForm.getFieldValue('lineId');
-                                    if (lineId) {
-                                        const planMonthStr = date ? dayjs(date).format('YYYY-MM') : undefined;
-                                        loadScheduledDemands(lineId, planMonthStr);
-                                        batchPlanForm.setFieldValue('beforeDemandId', undefined);
-                                    }
-                                }}
-                            />
-                        </Form.Item>
+                        {batchPlanMode === 'month' ? (
+                            <Form.Item
+                                name="planMonth"
+                                label="排产月份"
+                            >
+                                <DatePicker
+                                    picker="month"
+                                    style={{width: '100%'}}
+                                    placeholder="请选择排产月份"
+                                    format="YYYY-MM"
+                                    onChange={(date) => {
+                                        const lineId = batchPlanForm.getFieldValue('lineId');
+                                        if (lineId) {
+                                            const planMonthStr = date ? dayjs(date).format('YYYY-MM') : undefined;
+                                            loadScheduledDemands(lineId, planMonthStr);
+                                            batchPlanForm.setFieldValue('beforeDemandId', undefined);
+                                        }
+                                    }}
+                                />
+                            </Form.Item>
+                        ) : (
+                            <Form.Item
+                                name="targetPlanDate"
+                                label="排到日期"
+                                rules={[{ required: true, message: '请选择排产日期' }]}
+                            >
+                                <DatePicker
+                                    style={{width: '100%'}}
+                                    placeholder="请选择排产日期"
+                                    format="YYYY-MM-DD"
+                                    onChange={() => {
+                                        const lineId = batchPlanForm.getFieldValue('lineId');
+                                        if (lineId) {
+                                            const targetPlanDate = batchPlanForm.getFieldValue('targetPlanDate');
+                                            const targetPlanDateStr = targetPlanDate ? dayjs(targetPlanDate).format('YYYY-MM-DD') : undefined;
+                                            loadScheduledDemands(lineId, undefined, undefined, targetPlanDateStr);
+                                            batchPlanForm.setFieldValue('beforeDemandId', undefined);
+                                        }
+                                    }}
+                                />
+                            </Form.Item>
+                        )}
                         <Form.Item
                             name="coefficient"
                             label="产能系数"
@@ -1400,40 +1519,7 @@ const DemandManagement: React.FC = () => {
                                 step={0.1}
                             />
                         </Form.Item>
-                        <Form.Item
-                            name="beforeDemandId"
-                            label="排产位置"
-                            extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
-                        >
-                            <Select
-                                placeholder="请选择或输入搜索要排在哪个需求之前"
-                                style={{width: '100%'}}
-                                showSearch
-                                options={scheduledDemands.map(demand => ({
-                                    label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
-                                    value: demand.id
-                                }))}
-                                disabled={!batchPlanForm.getFieldValue('lineId') || loadingScheduledDemands}
-                                filterOption={false}
-                                loading={loadingScheduledDemands}
-                                allowClear
-                                onInputKeyDown={(e) => {
-                                    e.stopPropagation();
-                                    if (e.key === 'Enter') {
-                                        const lineId = batchPlanForm.getFieldValue('lineId');
-                                        if (lineId) {
-                                            const planMonth = batchPlanForm.getFieldValue('planMonth');
-                                            const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
-                                            loadScheduledDemands(lineId, planMonthStr, singlePlanSearchValue);
-                                        }
-                                    }
-                                }}
-                                searchValue={singlePlanSearchValue}
-                                onSearch={(value) => {
-                                    setSinglePlanSearchValue(value);
-                                }}
-                            />
-                        </Form.Item>
+                        {renderSchedulePositionField(batchPlanForm, batchPlanMode)}
                     </Form>
 
                     {/* 显示选中的需求列表 */}
@@ -1550,6 +1636,10 @@ const DemandManagement: React.FC = () => {
                             />
 
                             <Form form={planForm} layout="vertical">
+                                {renderScheduleModeTabs(singlePlanMode, (mode) => {
+                                    setSinglePlanMode(mode);
+                                    handleScheduleModeChange(mode, planForm);
+                                })}
                                 <Form.Item
                                     name="lineId"
                                     label="生产拉线"
@@ -1573,9 +1663,11 @@ const DemandManagement: React.FC = () => {
                                         }))}
                                         onChange={(value) => {
                                             if (value) {
-                                                const planMonth = planForm.getFieldValue('planMonth');
+                                                const planMonth = singlePlanMode === 'month' ? planForm.getFieldValue('planMonth') : undefined;
                                                 const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
-                                                loadScheduledDemands(value, planMonthStr);
+                                                const targetPlanDate = singlePlanMode === 'date' ? planForm.getFieldValue('targetPlanDate') : undefined;
+                                                const targetPlanDateStr = targetPlanDate ? dayjs(targetPlanDate).format('YYYY-MM-DD') : undefined;
+                                                loadScheduledDemands(value, planMonthStr, undefined, targetPlanDateStr);
                                                 planForm.setFieldValue('beforeDemandId', undefined);
                                             } else {
                                                 setScheduledDemands([]);
@@ -1583,26 +1675,48 @@ const DemandManagement: React.FC = () => {
                                         }}
                                     />
                                 </Form.Item>
-                                <Form.Item
-                                    name="planMonth"
-                                    label="排产月份"
-                                >
-                                    <DatePicker
-                                        picker="month"
-                                        style={{width: '100%'}}
-                                        placeholder="请选择排产月份"
-                                        format="YYYY-MM"
-                                        value={dayjs(0)}
-                                        onChange={(date) => {
-                                            const lineId = planForm.getFieldValue('lineId');
-                                            if (lineId) {
-                                                const planMonthStr = date ? dayjs(date).format('YYYY-MM') : undefined;
-                                                loadScheduledDemands(lineId, planMonthStr);
-                                                planForm.setFieldValue('beforeDemandId', undefined);
-                                            }
-                                        }}
-                                    />
-                                </Form.Item>
+                                {singlePlanMode === 'month' ? (
+                                    <Form.Item
+                                        name="planMonth"
+                                        label="排产月份"
+                                    >
+                                        <DatePicker
+                                            picker="month"
+                                            style={{width: '100%'}}
+                                            placeholder="请选择排产月份"
+                                            format="YYYY-MM"
+                                            onChange={(date) => {
+                                                const lineId = planForm.getFieldValue('lineId');
+                                                if (lineId) {
+                                                    const planMonthStr = date ? dayjs(date).format('YYYY-MM') : undefined;
+                                                    loadScheduledDemands(lineId, planMonthStr);
+                                                    planForm.setFieldValue('beforeDemandId', undefined);
+                                                }
+                                            }}
+                                        />
+                                    </Form.Item>
+                                ) : (
+                                    <Form.Item
+                                        name="targetPlanDate"
+                                        label="排到日期"
+                                        rules={[{ required: true, message: '请选择排产日期' }]}
+                                    >
+                                        <DatePicker
+                                            style={{width: '100%'}}
+                                            placeholder="请选择排产日期"
+                                            format="YYYY-MM-DD"
+                                            onChange={() => {
+                                                const lineId = planForm.getFieldValue('lineId');
+                                                if (lineId) {
+                                                    const targetPlanDate = planForm.getFieldValue('targetPlanDate');
+                                                    const targetPlanDateStr = targetPlanDate ? dayjs(targetPlanDate).format('YYYY-MM-DD') : undefined;
+                                                    loadScheduledDemands(lineId, undefined, undefined, targetPlanDateStr);
+                                                    planForm.setFieldValue('beforeDemandId', undefined);
+                                                }
+                                            }}
+                                        />
+                                    </Form.Item>
+                                )}
                                 <Form.Item
                                     name="coefficient"
                                     label="产能系数"
@@ -1619,40 +1733,7 @@ const DemandManagement: React.FC = () => {
                                         step={0.1}
                                     />
                                 </Form.Item>
-                                <Form.Item
-                                    name="beforeDemandId"
-                                    label="排产位置"
-                                    extra="选择或输入搜索要排在哪个需求之前，不选择则排在最后"
-                                >
-                                    <Select
-                                        placeholder="请选择或输入搜索要排在哪个需求之前"
-                                        style={{width: '100%'}}
-                                        showSearch
-                                        options={scheduledDemands.map(demand => ({
-                                            label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
-                                            value: demand.id
-                                        }))}
-                                        disabled={!planForm.getFieldValue('lineId') || loadingScheduledDemands}
-                                        filterOption={false}
-                                        loading={loadingScheduledDemands}
-                                        allowClear
-                                        onInputKeyDown={(e) => {
-                                            e.stopPropagation();
-                                            if (e.key === 'Enter') {
-                                                const lineId = planForm.getFieldValue('lineId');
-                                                if (lineId) {
-                                                    const planMonth = planForm.getFieldValue('planMonth');
-                                                    const planMonthStr = planMonth ? dayjs(planMonth).format('YYYY-MM') : undefined;
-                                                    loadScheduledDemands(lineId, planMonthStr, singlePlanSearchValue);
-                                                }
-                                            }
-                                        }}
-                                        searchValue={singlePlanSearchValue}
-                                        onSearch={(value) => {
-                                            setSinglePlanSearchValue(value);
-                                        }}
-                                    />
-                                </Form.Item>
+                                {renderSchedulePositionField(planForm, singlePlanMode)}
                             </Form>
 
                             <div style={{marginTop: 16}}>
