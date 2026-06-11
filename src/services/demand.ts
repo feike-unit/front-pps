@@ -20,6 +20,7 @@ export interface Demand {
     deliveryDate: string;
     onlineTime: string;
     completionTime: string;
+    targetDateMark?: number;
     demandQuantity: number;
     purgeQuantity?: number;
     planQuantity?: number;

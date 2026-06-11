@@ -586,6 +586,50 @@ const DemandManagement: React.FC = () => {
         />
     );
 
+    const renderTargetDateMark = (demand: Demand) => (
+        demand.targetDateMark === 1 ? (
+            <span
+                style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    border: '1px solid #1677ff',
+                    color: '#1677ff',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                }}
+            >
+                指
+            </span>
+        ) : null
+    );
+
+    const renderScheduledDemandOption = (demand: Demand) => (
+        <div
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: '80px 130px minmax(220px, 1fr) 170px',
+                    gap: 8,
+                    alignItems: 'center',
+                    minWidth: 620,
+            }}
+        >
+            <span>{demand.lineSortNo}</span>
+            <span>{demand.businessDocNo}</span>
+            <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                {demand.productName}
+            </span>
+            <Space size={6}>
+                <span>{demand.completionTime ? demand.completionTime.substring(0, 16) : '-'}</span>
+                {renderTargetDateMark(demand)}
+            </Space>
+        </div>
+    );
+
     const renderSchedulePositionField = (form: typeof planForm | typeof batchPlanForm, mode: ScheduleMode) => {
         return (
             <Form.Item
@@ -598,9 +642,10 @@ const DemandManagement: React.FC = () => {
                 <Select
                     placeholder="请选择或输入搜索要排在哪个需求之前"
                     style={{width: '100%'}}
+                    popupMatchSelectWidth={720}
                     showSearch
                     options={scheduledDemands.map(demand => ({
-                        label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
+                        label: renderScheduledDemandOption(demand),
                         value: demand.id
                     }))}
                     disabled={!form.getFieldValue('lineId') || loadingScheduledDemands}
@@ -1103,9 +1148,10 @@ const DemandManagement: React.FC = () => {
                                     <Select
                                         placeholder="请选择或输入搜索要排在哪个需求之前"
                                         style={{width: '100%'}}
+                                        popupMatchSelectWidth={720}
                                         showSearch
                                         options={scheduledDemands.map(demand => ({
-                                            label: `${demand.lineSortNo} ${demand.businessDocNo} ${demand.productName} ${demand.deliveryDate}`,
+                                            label: renderScheduledDemandOption(demand),
                                             value: demand.id
                                         }))}
                                         disabled={!insertOrderForm.getFieldValue('lineId') || loadingScheduledDemands}
