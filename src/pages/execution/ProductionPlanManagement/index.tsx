@@ -386,8 +386,31 @@ const DemandManagement: React.FC = () => {
       dataIndex: 'completionTime',
       valueType: 'dateTime',
       sorter: true,
-      width: 140,
-      render: (_, record) => record.completionTime ? record.completionTime.substring(0, 16) : '-',
+      width: 160,
+      render: (_, record) => (
+        <Space size={6}>
+          <span>{record.completionTime ? record.completionTime.substring(0, 16) : '-'}</span>
+          {record.targetDateMark === 1 ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 20,
+                height: 20,
+                borderRadius: '50%',
+                border: '1px solid #1677ff',
+                color: '#1677ff',
+                fontSize: 12,
+                fontWeight: 600,
+                lineHeight: '20px',
+              }}
+            >
+              指
+            </span>
+          ) : null}
+        </Space>
+      ),
     },
     {
       title: '物料状态',
@@ -445,8 +468,8 @@ const DemandManagement: React.FC = () => {
                   </a>
                 </Tooltip>
             )}
-            {/* 删除按钮 - 只对待排产需求显示 */}
-            {record.status === 1 && (
+            {/* 撤回按钮 - 只对已排产且未完工的需求显示 */}
+            {record.status === 1 && record.completionStatus === 0 && (
                 <Popconfirm
                     title="确定要撤回当前排产需求吗？"
                     description=""

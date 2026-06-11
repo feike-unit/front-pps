@@ -14,6 +14,8 @@ export interface ProductionPlan {
   completedQuantity: number;
   startDate: string;
   endDate: string;
+  completionTime?: string;
+  targetDateMark?: number;
   status: number;
   remark?: string;
   createdBy: string;
