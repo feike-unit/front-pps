@@ -37,6 +37,7 @@ export interface Demand {
     parentBomId?: string;
     status: number;
     changeStatus?: number;
+    purgeQuantity?: number;
     remark?: string;
     createdAt?: string;
     updatedAt?: string;

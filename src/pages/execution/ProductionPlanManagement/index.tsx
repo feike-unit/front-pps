@@ -468,16 +468,20 @@ const DemandManagement: React.FC = () => {
                   </a>
                 </Tooltip>
             )}
-            {/* 撤回按钮 - 只对已排产且未完工的需求显示 */}
-            {record.status === 1 && record.completionStatus === 0 && (
+            {/* 撤回/释放按钮 */}
+            {((record.status === 1 && record.completionStatus === 0)
+              || (record.status === 2
+                && record.changeStatus === -1
+                && Number(record.purgeQuantity || 0) === 0
+                && !!record.onlineTime)) && (
                 <Popconfirm
-                    title="确定要撤回当前排产需求吗？"
+                    title={record.status === 2 ? "确定要释放当前产能吗？" : "确定要撤回当前排产需求吗？"}
                     description=""
                     onConfirm={() => handleSingleRevoke(record)}
                     okText="确定"
                     cancelText="取消"
                 >
-                  <Tooltip title="撤回">
+                  <Tooltip title={record.status === 2 ? "释放" : "撤回"}>
                     <a>
                       <RollbackOutlined style={{ color: '#ff4d4f' }} />
                     </a>
@@ -508,11 +512,11 @@ const DemandManagement: React.FC = () => {
         return;
       }
       await revokeDemandsByBusinessKeyAndRePlanScope(currentPlanDemand?.businessKey, 1);
-      message.success('撤回成功');
+      message.success(currentPlanDemand?.status === 2 ? '释放成功' : '撤回成功');
       actionRef.current?.reload();
     } catch (error) {
       const apiError = error as ApiError;
-      message.error(apiError.response?.data?.message || apiError.message || '撤回失败');
+      message.error(apiError.response?.data?.message || apiError.message || (currentPlanDemand?.status === 2 ? '释放失败' : '撤回失败'));
     }
   };
 
